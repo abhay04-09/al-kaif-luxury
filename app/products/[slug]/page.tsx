@@ -30,6 +30,9 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   const relatedProducts = products
     .filter((item) => item.category === product.category && item.id !== product.id)
     .slice(0, 3);
+  // The main image may be updated independently from an existing gallery.
+  // Always render it first so the product page matches the catalogue card.
+  const productImages = [...new Set([product.image, ...product.gallery])];
 
   return (
     <>
@@ -37,7 +40,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
       <main className="mx-auto min-h-screen max-w-7xl px-5 pb-24 pt-32 sm:px-8 lg:px-10">
         <section className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="grid gap-4 sm:grid-cols-2">
-            {product.gallery.map((image) => (
+            {productImages.map((image) => (
               <div className="relative aspect-[4/5] overflow-hidden border border-white/10 bg-onyx" key={image}>
                 <Image
                   alt={product.name}
