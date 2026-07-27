@@ -17,12 +17,6 @@ function listToText(values: string[]) {
   return values.join("\n");
 }
 
-function fallbackImage(category: ProductCategory) {
-  return category === "jewellery"
-    ? "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1400&q=85"
-    : "https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&w=1400&q=85";
-}
-
 export function ProductForm({ product }: ProductFormProps) {
   const router = useRouter();
   const [category, setCategory] = useState<ProductCategory>(product?.category ?? "jewellery");
@@ -101,8 +95,15 @@ export function ProductForm({ product }: ProductFormProps) {
     setError("");
     setIsSaving(true);
 
-    const mainImage = image.trim() || fallbackImage(category);
-    const galleryImages = gallery.trim() || mainImage;
+    const mainImage = image.trim();
+
+    if (!mainImage) {
+      setError("Upload or take a main product photo before saving.");
+      setIsSaving(false);
+      return;
+    }
+
+    const galleryImages = gallery.trim();
 
     const payload = {
       name: formData.get("name"),
@@ -204,10 +205,10 @@ export function ProductForm({ product }: ProductFormProps) {
         <input className={inputClass} defaultValue={product?.material} name="material" required />
       </label>
 
-      <label className="grid gap-2 text-sm text-porcelain/70">
-        Main image URL
-        <input className={inputClass} name="image" onChange={(event) => setImage(event.target.value)} type="text" value={image} />
-      </label>
+      <div className="grid gap-2 text-sm text-porcelain/70">
+        <p>Main product image</p>
+        <p className="text-xs leading-5 text-porcelain/50">Choose an existing photo or take one now. It uploads directly to Cloudinary when selected.</p>
+      </div>
 
       <label className="inline-flex min-h-12 w-fit cursor-pointer items-center justify-center bg-gold px-5 py-3 text-[0.72rem] uppercase tracking-luxury text-obsidian transition hover:bg-gold-light">
         <input
@@ -248,16 +249,12 @@ export function ProductForm({ product }: ProductFormProps) {
         </div>
       ) : null}
 
-      <label className="grid gap-2 text-sm text-porcelain/70">
-        Gallery image URLs
-        <textarea
-          className={textareaClass}
-          onChange={(event) => setGallery(event.target.value)}
-          name="gallery"
-          placeholder="One image URL per line"
-          value={gallery}
-        />
-      </label>
+      <div className="grid gap-2 text-sm text-porcelain/70">
+        <p>Product gallery</p>
+        <p className="text-xs leading-5 text-porcelain/50">
+          {gallery.trim() ? `${gallery.trim().split("\n").length} gallery image(s) ready.` : "Add optional extra photos from your device."}
+        </p>
+      </div>
 
       <label className="inline-flex min-h-12 w-fit cursor-pointer items-center justify-center border border-gold px-5 py-3 text-[0.72rem] uppercase tracking-luxury text-gold-light transition hover:bg-gold hover:text-obsidian">
         <input
