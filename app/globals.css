@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-obsidian: 11 11 11;
+  --color-onyx: 17 17 17;
+  --color-gold: 197 160 89;
+  --color-gold-light: 223 194 124;
+  --color-porcelain: 245 242 238;
+  --color-mist: 167 167 167;
+  --color-graphite: 42 42 42;
+
+  --background: rgb(var(--color-obsidian));
+  --foreground: rgb(var(--color-porcelain));
+
+  --font-display: "Cormorant Garamond", "Times New Roman", Georgia, serif;
+  --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
+
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  --color-obsidian: 245 242 238;
+  --color-onyx: 255 252 247;
+  --color-gold: 155 118 49;
+  --color-gold-light: 181 137 62;
+  --color-porcelain: 17 17 17;
+  --color-mist: 84 84 84;
+  --color-graphite: 218 210 197;
+
+  --background: rgb(var(--color-obsidian));
+  --foreground: rgb(var(--color-porcelain));
+
+  color-scheme: light;
+}
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
+  color: var(--foreground);
+  scroll-behavior: auto;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 50% 0%, rgb(var(--color-gold) / 0.08), transparent 32rem),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  transition:
+  background-color 500ms ease,
+  color 500ms ease;
+}
+
+body * {
+  transition-property:
+    background-color,
+    border-color,
+    color,
+    fill,
+    stroke;
+  transition-duration: 350ms;
+  transition-timing-function: ease;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(197, 160, 89, 0.36);
+  color: #f5f2ee;
+}
+
+.film-grain::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  opacity: 0.13;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 3px 3px;
+  mix-blend-mode: soft-light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}
