@@ -164,47 +164,6 @@ export function ProductForm({ product }: ProductFormProps) {
         </select>
       </label>
 
-      <label className="grid gap-2 text-sm text-porcelain/70">
-        Product name
-        <input className={inputClass} defaultValue={product?.name} name="name" required />
-      </label>
-
-      <label className="grid gap-2 text-sm text-porcelain/70">
-        Collection
-        <input className={inputClass} defaultValue={product?.collection} name="collection" required />
-      </label>
-
-      <div className="grid gap-5 sm:grid-cols-2">
-        <label className="grid gap-2 text-sm text-porcelain/70">
-          Price in INR
-          <input
-            className={inputClass}
-            defaultValue={product?.price}
-            min="0"
-            name="price"
-            required
-            type="number"
-          />
-        </label>
-
-        <label className="grid gap-2 text-sm text-porcelain/70">
-          Stock
-          <input
-            className={inputClass}
-            defaultValue={product?.stock ?? 0}
-            min="0"
-            name="stock"
-            required
-            type="number"
-          />
-        </label>
-      </div>
-
-      <label className="grid gap-2 text-sm text-porcelain/70">
-        Material
-        <input className={inputClass} defaultValue={product?.material} name="material" required />
-      </label>
-
       <div className="grid gap-2 text-sm text-porcelain/70">
         <p>Main product image</p>
         <p className="text-xs leading-5 text-porcelain/50">Choose an existing photo or take one now. It uploads directly to Cloudinary when selected.</p>
@@ -248,6 +207,33 @@ export function ProductForm({ product }: ProductFormProps) {
           <p className="mt-3 text-sm text-porcelain/65">Click Save Product or Update Product to attach this image to the product.</p>
         </div>
       ) : null}
+
+      <label className="grid gap-2 text-sm text-porcelain/70">
+        Product name
+        <input className={inputClass} defaultValue={product?.name} name="name" required />
+      </label>
+
+      <label className="grid gap-2 text-sm text-porcelain/70">
+        Collection
+        <input className={inputClass} defaultValue={product?.collection} name="collection" required />
+      </label>
+
+      <div className="grid gap-5 sm:grid-cols-2">
+        <label className="grid gap-2 text-sm text-porcelain/70">
+          Price in INR
+          <input className={inputClass} defaultValue={product?.price} min="0" name="price" required type="number" />
+        </label>
+
+        <label className="grid gap-2 text-sm text-porcelain/70">
+          Stock
+          <input className={inputClass} defaultValue={product?.stock ?? 0} min="0" name="stock" required type="number" />
+        </label>
+      </div>
+
+      <label className="grid gap-2 text-sm text-porcelain/70">
+        Material
+        <input className={inputClass} defaultValue={product?.material} name="material" required />
+      </label>
 
       <div className="grid gap-2 text-sm text-porcelain/70">
         <p>Product gallery</p>
