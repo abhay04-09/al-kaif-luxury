@@ -224,6 +224,30 @@ export function ProductForm({ product }: ProductFormProps) {
         {uploadingTarget === "main" ? "Uploading Image..." : "Upload Main Image"}
       </label>
 
+      <label className="inline-flex min-h-12 w-fit cursor-pointer items-center justify-center border border-gold px-5 py-3 text-[0.72rem] uppercase tracking-luxury text-gold-light transition hover:bg-gold hover:text-obsidian">
+        <input
+          accept="image/*"
+          capture="environment"
+          className="sr-only"
+          disabled={uploadingTarget !== null}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) void uploadImage(file, "main");
+            event.target.value = "";
+          }}
+          type="file"
+        />
+        {uploadingTarget === "main" ? "Uploading Photo..." : "Take Product Photo"}
+      </label>
+
+      {image ? (
+        <div className="border border-white/10 bg-obsidian p-4">
+          <p className="mb-3 text-[0.68rem] uppercase tracking-luxury text-gold-light">Main image preview</p>
+          <img alt="Selected main product image" className="aspect-[4/5] w-48 object-cover" src={image} />
+          <p className="mt-3 text-sm text-porcelain/65">Click Save Product or Update Product to attach this image to the product.</p>
+        </div>
+      ) : null}
+
       <label className="grid gap-2 text-sm text-porcelain/70">
         Gallery image URLs
         <textarea
