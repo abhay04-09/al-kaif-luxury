@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { signIn } from "next-auth/react";
 import { Navbar } from "@/components/layout/navbar";
 
@@ -18,6 +18,24 @@ export default function LoginPage() {
   const [otpRequested, setOtpRequested] = useState(false);
   const [otpMessage, setOtpMessage] = useState("");
   const [isOtpSubmitting, setIsOtpSubmitting] = useState(false);
+  const [googleIsAvailable, setGoogleIsAvailable] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch("/api/auth/providers")
+      .then(async (response) => (response.ok ? response.json() : {}))
+      .then((providers: Record<string, unknown>) => {
+        if (isMounted) setGoogleIsAvailable(Boolean(providers.google));
+      })
+      .catch(() => {
+        if (isMounted) setGoogleIsAvailable(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -49,7 +67,12 @@ export default function LoginPage() {
     setMessage("");
     setIsSubmitting(true);
 
-    await signIn("google", { callbackUrl: "/" });
+    try {
+      await signIn("google", { callbackUrl: "/" });
+    } catch {
+      setMessage("Google sign-in is currently unavailable. Please use email and password.");
+      setIsSubmitting(false);
+    }
   }
 
   async function handleOtpRequest() {
@@ -149,14 +172,16 @@ export default function LoginPage() {
             {isSubmitting ? "Logging in..." : "Login"}
           </button>
 
-          <button
-            className="min-h-12 border border-white/10 px-6 py-3 text-[0.72rem] uppercase tracking-luxury text-porcelain transition hover:border-gold-light disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isSubmitting}
-            onClick={handleGoogleLogin}
-            type="button"
-          >
-            Continue with Google
-          </button>
+          {googleIsAvailable ? (
+            <button
+              className="min-h-12 border border-white/10 px-6 py-3 text-[0.72rem] uppercase tracking-luxury text-porcelain transition hover:border-gold-light disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isSubmitting}
+              onClick={handleGoogleLogin}
+              type="button"
+            >
+              Continue with Google
+            </button>
+          ) : null}
 
           <button
             className="min-h-12 border border-white/10 px-6 py-3 text-[0.72rem] uppercase tracking-luxury text-porcelain transition hover:border-gold-light"

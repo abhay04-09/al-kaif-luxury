@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthSessionProvider } from "@/components/auth/auth-session-provider";
 import { WhatsAppButton } from "@/components/layout/whatsapp-button";
 import { SmoothScrollProvider } from "@/components/motion/smooth-scroll-provider";
+import { ThemeProvider } from "@/components/theme/theme-provider";
 
 export const metadata: Metadata = {
   title: "AL-KAIF | Luxury Jewellery & Watches",
@@ -21,8 +22,10 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthSessionProvider>
-          <SmoothScrollProvider>{children}</SmoothScrollProvider>
-          <WhatsAppButton />
+          <ThemeProvider>
+            <SmoothScrollProvider>{children}</SmoothScrollProvider>
+            <WhatsAppButton />
+          </ThemeProvider>
         </AuthSessionProvider>
       </body>
     </html>

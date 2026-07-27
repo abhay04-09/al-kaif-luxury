@@ -1,14 +1,19 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { LogOut, Menu, Search, ShoppingBag, UserRound } from "lucide-react";
+import { useState } from "react";
+import { LogOut, Menu, Moon, Search, ShoppingBag, Sun, UserRound, X } from "lucide-react";
 import { primaryNavigation } from "@/lib/navigation";
+import { useTheme } from "@/components/theme/theme-provider";
 
 export function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session, status } = useSession();
+  const { theme, toggleTheme } = useTheme();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   async function handleLogout() {
     await signOut({ redirect: false });
@@ -22,18 +27,29 @@ export function Navbar() {
     ? [...primaryNavigation, { label: "Admin", href: "/admin" }]
     : primaryNavigation;
 
+  function closeMenu() {
+    setIsMenuOpen(false);
+  }
+
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-obsidian/10 backdrop-blur-sm">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-obsidian/95 backdrop-blur-sm">
       <nav
         aria-label="Primary navigation"
         className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10"
       >
         <button
-          aria-label="Open navigation menu"
+          aria-controls="mobile-navigation"
+          aria-expanded={isMenuOpen}
+          aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
           className="inline-flex h-10 w-10 items-center justify-center text-porcelain transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light lg:hidden"
+          onClick={() => setIsMenuOpen((current) => !current)}
           type="button"
         >
-          <Menu aria-hidden="true" className="h-5 w-5" strokeWidth={1.4} />
+          {isMenuOpen ? (
+            <X aria-hidden="true" className="h-5 w-5" strokeWidth={1.4} />
+          ) : (
+            <Menu aria-hidden="true" className="h-5 w-5" strokeWidth={1.4} />
+          )}
         </button>
 
         <Link
@@ -62,6 +78,19 @@ export function Navbar() {
             type="button"
           >
             <Search aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
+          </button>
+
+          <button
+            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            className="inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
+            onClick={toggleTheme}
+            type="button"
+          >
+            {theme === "dark" ? (
+              <Sun aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
+            ) : (
+              <Moon aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
+            )}
           </button>
 
           {isLoggedIn ? (
@@ -105,6 +134,32 @@ export function Navbar() {
           </Link>
         </div>
       </nav>
+
+      {isMenuOpen ? (
+        <nav
+          aria-label="Mobile navigation"
+          className="border-t border-white/10 bg-obsidian px-5 py-5 lg:hidden"
+          id="mobile-navigation"
+        >
+          <div className="mx-auto grid max-w-7xl gap-1">
+            {navigation.map((item) => {
+              const isCurrent = item.href === pathname;
+
+              return (
+                <Link
+                  aria-current={isCurrent ? "page" : undefined}
+                  className="flex min-h-12 items-center border-b border-white/10 py-3 text-sm uppercase tracking-luxury text-porcelain/85 transition hover:border-gold-light hover:text-gold-light"
+                  href={item.href}
+                  key={item.href}
+                  onClick={closeMenu}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      ) : null}
     </header>
   );
 }
