@@ -23,8 +23,9 @@ export function Navbar() {
 
   const isLoggedIn = status === "authenticated" && Boolean(session?.user);
   const isAdmin = isLoggedIn && session?.user.role === "ADMIN";
+  // The admin panel is a separate application.
   const navigation = isAdmin
-    ? [...primaryNavigation, { label: "Admin", href: "/admin" }]
+    ? [...primaryNavigation, { label: "Admin", href: "https://al-kaiff-admin.pages.dev" }]
     : primaryNavigation;
 
   function closeMenu() {

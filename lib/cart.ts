@@ -1,10 +1,15 @@
-import { getProductById } from "@/lib/products";
-import type { CartItem } from "@/types/product";
+import type { CartItem, Product } from "@/types/product";
 
-export function getCartSummary(items: CartItem[]) {
+/**
+ * Builds cart totals from the live catalogue. Callers pass the products they have
+ * loaded from the API; anything no longer in the catalogue is dropped from the summary.
+ */
+export function getCartSummary(items: CartItem[], catalogue: Product[]) {
+  const byId = new Map(catalogue.map((product) => [product.id, product]));
+
   const lines = items
     .map((item) => {
-      const product = getProductById(item.productId);
+      const product = byId.get(item.productId);
 
       if (!product) {
         return null;

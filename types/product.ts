@@ -1,4 +1,6 @@
-export type ProductCategory = "jewellery" | "watches";
+// Categories are managed in the admin panel, so this is an open-ended slug
+// (e.g. "jewellery", "watches", "perfumes", or anything added later).
+export type ProductCategory = string;
 
 export type Product = {
   id: string;

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import { AddToCartButton } from "@/components/products/add-to-cart-button";
 import { ProductCard } from "@/components/products/product-card";
-import { formatPrice, products as fallbackProducts } from "@/lib/products";
+import { formatPrice } from "@/lib/products";
 import { getStoreProductBySlug, getStoreProducts } from "@/lib/product-service";
 
 type ProductDetailPageProps = {
@@ -12,11 +12,9 @@ type ProductDetailPageProps = {
   }>;
 };
 
-export function generateStaticParams() {
-  return fallbackProducts.map((product) => ({
-    slug: product.slug
-  }));
-}
+// Pages are rendered on demand from the live catalogue, so nothing is baked in
+// at build time — new products appear as soon as they are added in the admin panel.
+export const dynamic = "force-dynamic";
 
 export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { slug } = await params;

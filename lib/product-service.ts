@@ -1,264 +1,103 @@
 import "server-only";
-import { prisma } from "@/lib/prisma";
-import { products as fallbackProducts } from "@/lib/products";
+import { apiGet, type ApiCategory, type ApiProduct } from "@/lib/api";
 import type { Product, ProductCategory } from "@/types/product";
 
-type DbProduct = {
-  id: string;
-  slug: string;
-  name: string;
-  collection: string;
-  price: number;
-  currency: string;
-  image: string;
-  gallery: string[];
-  description: string;
-  details: string[];
-  material: string;
-  stock: number;
-  featured: boolean;
-};
+// Products are managed in the AL-KAIFF admin panel and served by the
+// Cloudflare Worker API. This module is the only place that talks to it.
 
-export type ProductInput = {
-  name: string;
-  category: ProductCategory;
-  collection: string;
-  price: number;
-  image: string;
-  gallery: string[];
-  description: string;
-  details: string[];
-  material: string;
-  stock: number;
-  featured: boolean;
-};
-
-function normalizeProduct(product: DbProduct, category: ProductCategory): Product {
-  return {
-    id: product.id,
-    slug: product.slug,
-    name: product.name,
-    category,
-    collection: product.collection,
-    price: product.price,
-    currency: "INR",
-    image: product.image,
-    gallery: product.gallery,
-    description: product.description,
-    details: product.details,
-    material: product.material,
-    stock: product.stock,
-    featured: product.featured
-  };
-}
-
-function sortProducts(products: Product[]) {
-  return products.sort((first, second) => first.name.localeCompare(second.name));
-}
-
-function slugify(value: string) {
+export function slugify(value: string) {
   return value
-    .trim()
     .toLowerCase()
+    .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
 
-async function createUniqueSlug(name: string, category: ProductCategory, ignoredProductId?: string) {
-  const baseSlug = slugify(name) || "al-kaif-product";
-  let slug = baseSlug;
-  let counter = 2;
+/** Turns the specifications object into the bullet list the product page renders. */
+function toDetails(product: ApiProduct): string[] {
+  const details: string[] = [];
+  const specs = product.specifications ?? {};
 
-  while (true) {
-    const existing =
-      category === "jewellery"
-        ? await prisma.jewelleryProduct.findUnique({ where: { slug } })
-        : await prisma.watchProduct.findUnique({ where: { slug } });
+  for (const [key, value] of Object.entries(specs)) {
+    if (!value) continue;
+    const label = key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
 
-    if (!existing || existing.id === ignoredProductId) {
-      return slug;
+    if (typeof value === "string" || typeof value === "number") {
+      details.push(`${label}: ${value}`);
+    } else if (typeof value === "object") {
+      for (const [innerKey, innerValue] of Object.entries(value as Record<string, unknown>)) {
+        if (innerValue) {
+          details.push(`${innerKey.replace(/^./, (c) => c.toUpperCase())} notes: ${innerValue}`);
+        }
+      }
     }
-
-    slug = `${baseSlug}-${counter}`;
-    counter += 1;
   }
+
+  if (product.artisanStory) details.push(product.artisanStory);
+  if (product.sku) details.push(`SKU: ${product.sku}`);
+
+  return details;
 }
 
-export async function getStoreProducts(category?: ProductCategory): Promise<Product[]> {
-  if (!process.env.DATABASE_URL) {
-    return fallbackProducts.filter((product) => !category || product.category === category);
-  }
+function normalize(product: ApiProduct): Product {
+  const specs = (product.specifications ?? {}) as Record<string, unknown>;
 
-  try {
-    if (category === "jewellery") {
-      const jewellery = await prisma.jewelleryProduct.findMany({ orderBy: { createdAt: "desc" } });
-      return jewellery.map((product) => normalizeProduct(product, "jewellery"));
-    }
+  return {
+    id: product.id,
+    // The backend has no slug column, so derive a stable one from the name and
+    // fall back to the id when a name produces nothing usable.
+    slug: slugify(product.name) || product.id,
+    name: product.name,
+    category: product.category,
+    collection: product.subtitle || product.category,
+    price: Math.round(product.priceINR),
+    currency: "INR",
+    image: product.image,
+    gallery: product.secondaryImages ?? [],
+    description: product.description,
+    details: toDetails(product),
+    material: typeof specs.material === "string" ? specs.material : "",
+    stock: product.inStock ? 99 : 0,
+    featured: Boolean(product.featured)
+  };
+}
 
-    if (category === "watches") {
-      const watches = await prisma.watchProduct.findMany({ orderBy: { createdAt: "desc" } });
-      return watches.map((product) => normalizeProduct(product, "watches"));
-    }
+async function fetchProducts(category?: ProductCategory, subcategory?: string): Promise<Product[]> {
+  const params = new URLSearchParams();
+  if (category) params.set("category", category);
+  if (subcategory) params.set("subcategory", subcategory);
+  const query = params.toString();
 
-    const [jewellery, watches] = await Promise.all([
-      prisma.jewelleryProduct.findMany({ orderBy: { createdAt: "desc" } }),
-      prisma.watchProduct.findMany({ orderBy: { createdAt: "desc" } })
-    ]);
+  const products = await apiGet<ApiProduct[]>(`/api/products${query ? `?${query}` : ""}`);
+  if (!products) return [];
+  return products.map(normalize);
+}
 
-    return sortProducts([
-      ...jewellery.map((product) => normalizeProduct(product, "jewellery")),
-      ...watches.map((product) => normalizeProduct(product, "watches"))
-    ]);
-  } catch (error) {
-    console.warn("Using fallback products because database products could not load.", error);
-    return fallbackProducts.filter((product) => !category || product.category === category);
-  }
+export async function getStoreProducts(
+  category?: ProductCategory,
+  subcategory?: string
+): Promise<Product[]> {
+  return fetchProducts(category, subcategory);
 }
 
 export async function getFeaturedStoreProducts(): Promise<Product[]> {
-  const products = await getStoreProducts();
-  return products.filter((product) => product.featured);
+  const products = await fetchProducts();
+  const featured = products.filter((product) => product.featured);
+  // If nothing is flagged as featured yet, show the newest pieces instead of an empty row.
+  return featured.length > 0 ? featured : products.slice(0, 4);
 }
 
 export async function getStoreProductBySlug(slug: string): Promise<Product | undefined> {
-  if (!process.env.DATABASE_URL) {
-    return fallbackProducts.find((product) => product.slug === slug);
-  }
-
-  try {
-    const jewellery = await prisma.jewelleryProduct.findUnique({ where: { slug } });
-
-    if (jewellery) {
-      return normalizeProduct(jewellery, "jewellery");
-    }
-
-    const watch = await prisma.watchProduct.findUnique({ where: { slug } });
-
-    if (watch) {
-      return normalizeProduct(watch, "watches");
-    }
-  } catch (error) {
-    console.warn("Using fallback product because database product could not load.", error);
-  }
-
-  return fallbackProducts.find((product) => product.slug === slug);
+  const products = await fetchProducts();
+  return products.find((product) => product.slug === slug);
 }
 
 export async function getStoreProductById(id: string): Promise<Product | undefined> {
-  if (!process.env.DATABASE_URL) {
-    return fallbackProducts.find((product) => product.id === id);
-  }
-
-  try {
-    const jewellery = await prisma.jewelleryProduct.findUnique({ where: { id } });
-
-    if (jewellery) {
-      return normalizeProduct(jewellery, "jewellery");
-    }
-
-    const watch = await prisma.watchProduct.findUnique({ where: { id } });
-
-    if (watch) {
-      return normalizeProduct(watch, "watches");
-    }
-  } catch (error) {
-    console.warn("Using fallback product because database product could not load.", error);
-  }
-
-  return fallbackProducts.find((product) => product.id === id);
+  const product = await apiGet<ApiProduct>(`/api/products/${id}`);
+  return product ? normalize(product) : undefined;
 }
 
-export async function createStoreProduct(input: ProductInput): Promise<Product> {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL is required before products can be saved.");
-  }
-
-  const slug = await createUniqueSlug(input.name, input.category);
-  const data = {
-    slug,
-    name: input.name,
-    collection: input.collection,
-    price: input.price,
-    currency: "INR",
-    image: input.image,
-    gallery: input.gallery,
-    description: input.description,
-    details: input.details,
-    material: input.material,
-    stock: input.stock,
-    featured: input.featured
-  };
-
-  if (input.category === "jewellery") {
-    const product = await prisma.jewelleryProduct.create({ data });
-    return normalizeProduct(product, "jewellery");
-  }
-
-  const product = await prisma.watchProduct.create({ data });
-  return normalizeProduct(product, "watches");
-}
-
-export async function updateStoreProduct(id: string, input: ProductInput): Promise<Product> {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL is required before products can be saved.");
-  }
-  
-  const existing = await getStoreProductById(id);
-
-  if (!existing) {
-    throw new Error("Product not found.");
-  }
-
-  if (existing.category !== input.category) {
-    throw new Error("Product category cannot be changed after creation.");
-  }
-
-  const slug =
-    existing.name === input.name
-      ? existing.slug
-      : await createUniqueSlug(input.name, input.category, id);
-  const data = {
-    slug,
-    name: input.name,
-    collection: input.collection,
-    price: input.price,
-    currency: "INR",
-    image: input.image,
-    gallery: input.gallery,
-    description: input.description,
-    details: input.details,
-    material: input.material,
-    stock: input.stock,
-    featured: input.featured
-  };
-
-  if (input.category === "jewellery") {
-    const product = await prisma.jewelleryProduct.update({ where: { id }, data });
-    return normalizeProduct(product, "jewellery");
-  }
-
-  const product = await prisma.watchProduct.update({ where: { id }, data });
-  return normalizeProduct(product, "watches");
-}
-export async function deleteStoreProduct(id: string): Promise<void> {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL is required before products can be deleted.");
-  }
-
-  const existing = await getStoreProductById(id);
-
-  if (!existing) {
-    throw new Error("Product not found.");
-  }
-
-  if (existing.category === "jewellery") {
-    await prisma.jewelleryProduct.delete({
-      where: { id }
-    });
-    return;
-  }
-
-  await prisma.watchProduct.delete({
-    where: { id }
-  });
+/** Top-level categories (with their sub-categories) as configured in the admin panel. */
+export async function getStoreCategories(): Promise<ApiCategory[]> {
+  return (await apiGet<ApiCategory[]>("/api/categories")) ?? [];
 }

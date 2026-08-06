@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getCartSummary } from "@/lib/cart";
+import { useCatalogue } from "@/lib/use-catalogue";
 import { formatPrice } from "@/lib/products";
 import type { CartItem } from "@/types/product";
 
@@ -17,7 +18,8 @@ export function CartView() {
     setItems(stored ? JSON.parse(stored) : []);
   }, []);
 
-  const summary = useMemo(() => getCartSummary(items), [items]);
+  const { catalogue } = useCatalogue();
+  const summary = useMemo(() => getCartSummary(items, catalogue), [items, catalogue]);
 
   const persist = (nextItems: CartItem[]) => {
     setItems(nextItems);
