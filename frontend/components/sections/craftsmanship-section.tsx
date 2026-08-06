@@ -47,7 +47,7 @@ export function CraftsmanshipSection() {
             className="object-cover opacity-70 transition duration-[1600ms] hover:scale-105"
           />
 
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,11,11,0.9)_0%,rgba(11,11,11,0.58)_48%,rgba(11,11,11,0.22)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(var(--color-obsidian)/0.9)_0%,rgb(var(--color-obsidian)/0.58)_48%,rgb(var(--color-obsidian)/0.22)_100%)]" />
 
           <div className="absolute inset-x-0 bottom-0 p-8 sm:p-12 lg:p-16">
             <motion.div

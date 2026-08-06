@@ -9,7 +9,7 @@ const heroImage =
 
 export function HeroSection() {
   return (
-    <section className="film-grain relative isolate flex min-h-screen overflow-hidden bg-[#0B0B0B]">
+    <section className="film-grain relative isolate flex min-h-screen overflow-hidden bg-obsidian">
       <div className="absolute inset-0 -z-20">
         <video
           aria-hidden="true"
@@ -33,8 +33,8 @@ export function HeroSection() {
         />
       </div>
 
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(11,11,11,0.92)_0%,rgba(11,11,11,0.68)_42%,rgba(11,11,11,0.36)_100%)]" />
-      <div className="absolute inset-x-0 bottom-0 -z-10 h-1/2 bg-gradient-to-t from-[#0B0B0B] via-[#0B0B0B]/75 to-transparent" />
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgb(var(--color-obsidian)/0.92)_0%,rgb(var(--color-obsidian)/0.68)_42%,rgb(var(--color-obsidian)/0.36)_100%)]" />
+      <div className="absolute inset-x-0 bottom-0 -z-10 h-1/2 bg-gradient-to-t from-obsidian via-obsidian/75 to-transparent" />
 
       <div className="mx-auto flex w-full max-w-7xl items-end px-5 pb-24 pt-32 sm:px-8 sm:pb-28 lg:px-10 lg:pb-32">
         <motion.div
@@ -47,11 +47,11 @@ export function HeroSection() {
             High Jewellery & Swiss Timepieces
           </p>
 
-          <h1 className="font-serif text-[clamp(4rem,12vw,10.5rem)] leading-[0.86] text-[#F5F2EE]">
+          <h1 className="font-serif text-[clamp(4rem,12vw,10.5rem)] leading-[0.86] text-porcelain">
             AL-KAIF
           </h1>
 
-          <p className="mt-7 max-w-2xl text-base leading-8 text-[#F5F2EE]/78 sm:text-lg">
+          <p className="mt-7 max-w-2xl text-base leading-8 text-porcelain/78 sm:text-lg">
             A private world of heirloom jewellery and precise mechanical watches,
             composed with restraint, rarity, and a devotion to lasting craft.
           </p>
@@ -59,7 +59,7 @@ export function HeroSection() {
           <div className="mt-10">
             <a
               href="#collections"
-              className="group inline-flex min-h-12 items-center gap-3 border border-gold/70 px-6 py-3 text-[0.72rem] uppercase tracking-luxury text-[#F5F2EE] transition duration-500 hover:border-gold-light hover:bg-gold hover:text-[#0B0B0B] focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
+              className="group inline-flex min-h-12 items-center gap-3 border border-gold/70 px-6 py-3 text-[0.72rem] uppercase tracking-luxury text-porcelain transition duration-500 hover:border-gold-light hover:bg-gold hover:text-obsidian focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
             >
               <span>Discover the Collection</span>
               <ArrowUpRight
@@ -74,7 +74,7 @@ export function HeroSection() {
 
       <motion.a
         aria-label="Scroll to brand story"
-        className="absolute bottom-8 right-5 hidden items-center gap-4 text-[0.68rem] uppercase tracking-luxury text-[#F5F2EE]/70 transition hover:text-gold-light sm:right-8 md:flex lg:right-10"
+        className="absolute bottom-8 right-5 hidden items-center gap-4 text-[0.68rem] uppercase tracking-luxury text-porcelain/70 transition hover:text-gold-light sm:right-8 md:flex lg:right-10"
         href="#story"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
