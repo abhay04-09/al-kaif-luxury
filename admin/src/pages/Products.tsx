@@ -504,7 +504,7 @@ export const ProductsPage: React.FC = () => {
       {/* Add / Edit modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="bg-[#00140a] border border-[#C5A059] p-8 max-w-2xl w-full rounded-sm space-y-4 max-h-[92vh] overflow-y-auto">
+          <div className="bg-[#00140a] border border-[#C5A059] p-8 max-w-3xl w-full rounded-sm space-y-4 max-h-[92vh] overflow-y-auto">
             <div className="flex justify-between items-center pb-3 border-b border-[#2A2A2a]">
               <h3 className="font-serif text-xl text-gold-gradient uppercase">
                 {editing ? 'Edit Product' : 'Add Product'}
@@ -582,9 +582,23 @@ export const ProductsPage: React.FC = () => {
               {/* Main image */}
               <div>
                 <label className="text-[#DFC27C] block mb-1">MAIN IMAGE</label>
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-4">
                   {form.image && (
-                    <img src={form.image} alt="Preview" className="w-14 h-14 object-cover rounded-xs border border-[#2A2A2a]" />
+                    <div className="relative shrink-0">
+                      <img
+                        src={form.image}
+                        alt="Main product"
+                        className="w-36 h-36 object-cover rounded-xs border border-[#2A2A2a]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, image: '' }))}
+                        title="Remove main image"
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 hover:bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   )}
                   <label
                     onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
@@ -594,7 +608,7 @@ export const ProductsPage: React.FC = () => {
                       setIsDragging(false);
                       handleDroppedImages(Array.from(e.dataTransfer.files));
                     }}
-                    className={`flex-1 flex flex-col items-center justify-center gap-1 p-4 border border-dashed rounded-xs cursor-pointer transition-colors ${
+                    className={`flex-1 self-stretch min-h-36 flex flex-col items-center justify-center gap-1 p-4 border border-dashed rounded-xs cursor-pointer transition-colors ${
                       isDragging ? 'border-[#FFD700] bg-[#C5A059]/10 text-[#FFD700]' : 'border-[#C5A059]/60 hover:border-[#FFD700] text-[#DFC27C]'
                     }`}
                   >
@@ -621,16 +635,21 @@ export const ProductsPage: React.FC = () => {
               {/* Gallery */}
               <div>
                 <label className="text-[#DFC27C] block mb-1">GALLERY IMAGES</label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-3">
                   {(form.secondaryImages ?? []).map((url, i) => (
-                    <div key={i} className="relative group/img">
-                      <img src={url} alt={`Gallery ${i + 1}`} className="w-14 h-14 object-cover rounded-xs border border-[#2A2A2a]" />
+                    <div key={i} className="relative">
+                      <img
+                        src={url}
+                        alt={`Gallery ${i + 1}`}
+                        className="w-24 h-24 object-cover rounded-xs border border-[#2A2A2a]"
+                      />
                       <button
                         type="button"
                         onClick={() => setForm(f => ({ ...f, secondaryImages: (f.secondaryImages ?? []).filter((_, j) => j !== i) }))}
-                        className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-600 text-white rounded-full items-center justify-center hidden group-hover/img:flex"
+                        title="Remove this image"
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 hover:bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg"
                       >
-                        <X className="w-2.5 h-2.5" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   ))}
@@ -640,10 +659,11 @@ export const ProductsPage: React.FC = () => {
                       e.preventDefault();
                       handleGalleryUpload(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
                     }}
-                    className="w-14 h-14 flex items-center justify-center border border-dashed border-[#C5A059]/60 rounded-xs cursor-pointer hover:border-[#FFD700] text-[#DFC27C]"
+                    className="w-24 h-24 flex flex-col items-center justify-center gap-1 border border-dashed border-[#C5A059]/60 rounded-xs cursor-pointer hover:border-[#FFD700] text-[#DFC27C]"
                     title="Click, drop images here, or paste with Ctrl+V"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-5 h-5" />
+                    <span className="text-[9px] uppercase tracking-wider">Add</span>
                     <input
                       type="file" accept="image/*" multiple className="hidden" disabled={isUploading}
                       onChange={e => { if (e.target.files?.length) handleGalleryUpload(e.target.files); }}
