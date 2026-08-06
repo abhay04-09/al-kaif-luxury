@@ -66,7 +66,7 @@ export function LuxuryPreloader() {
         <motion.div
           aria-label="AL-KAIF experience loading"
           aria-live="polite"
-          className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-obsidian"
+          className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black"
           exit={{ opacity: 0 }}
           initial={{ opacity: 1 }}
           transition={{ duration: 0.9, ease: [0.19, 1, 0.22, 1] }}
@@ -74,7 +74,7 @@ export function LuxuryPreloader() {
           <video
             ref={videoRef}
             autoPlay
-            className="max-h-full max-w-full object-contain"
+            className="h-full w-full object-contain"
             muted
             onEnded={dismiss}
             onError={dismiss}
