@@ -39,7 +39,7 @@ export function Footer() {
             </Link>
 
             <p className="mt-6 max-w-sm text-sm leading-7 text-porcelain/65">
-              AL-KAIF creates fine jewellery and watches for those who value
+              AL-KAIF creates fine jewellery and perfumes for those who value
               rarity, restraint, and enduring craft.
             </p>
           </div>

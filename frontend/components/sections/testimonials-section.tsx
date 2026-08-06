@@ -17,7 +17,7 @@ const testimonials = [
   },
   {
     quote:
-      "Their watches and jewellery carry presence without needing to announce themselves.",
+      "Their perfumes and jewellery carry presence without needing to announce themselves.",
     name: "Heritage Buyer",
     location: "Mumbai"
   }

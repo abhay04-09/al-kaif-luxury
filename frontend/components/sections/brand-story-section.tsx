@@ -34,7 +34,7 @@ export function BrandStorySection() {
 
           <p className="mt-8 max-w-xl text-base leading-8 text-mist sm:text-lg">
             AL-KAIF is shaped by a quiet devotion to permanence. Every jewel,
-            every timepiece, and every surface is considered with patience,
+            every fragrance, and every surface is considered with patience,
             precision, and restraint.
           </p>
 

@@ -58,7 +58,7 @@ export function Navbar() {
             AL-KAIF
           </span>
           <span className="block text-[9px] font-light uppercase tracking-imperial text-gold-light opacity-85">
-            Fine Jewellery &amp; Watches
+            Fine Jewellery &amp; Perfumes
           </span>
         </Link>
 

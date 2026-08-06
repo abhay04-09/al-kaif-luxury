@@ -1,7 +1,7 @@
 import { MessageCircle } from "lucide-react";
 
 const enquiryMessage =
-  "Hello AL-KAIF, I would like to know more about your jewellery and watch collection.";
+  "Hello AL-KAIF, I would like to know more about your jewellery and perfume collection.";
 
 export function WhatsAppButton() {
   const phoneNumber = process.env.WHATSAPP_NUMBER?.replace(/\D/g, "");

@@ -36,7 +36,7 @@ export function FeaturedProductsSection({ products }: FeaturedProductsSectionPro
           </div>
 
           <p className="max-w-md text-sm leading-7 text-porcelain/65 sm:text-base">
-            A considered selection of AL-KAIF jewellery and watches, curated for
+            A considered selection of AL-KAIF jewellery and perfumes, curated for
             presence, precision, and permanence.
           </p>
         </motion.div>

@@ -30,9 +30,9 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "AL-KAIF | Luxury Jewellery & Watches",
+  title: "AL-KAIF | Luxury Jewellery & Perfumes",
   description:
-    "A cinematic luxury digital experience for AL-KAIF fine jewellery and watches.",
+    "A cinematic luxury digital experience for AL-KAIF fine jewellery and perfumes.",
   metadataBase: new URL("https://al-kaif.example")
 };
 

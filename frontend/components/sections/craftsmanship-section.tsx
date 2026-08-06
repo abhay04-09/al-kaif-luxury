@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Gem, Hammer, Watch } from "lucide-react";
+import { Gem, Hammer, SprayCan } from "lucide-react";
 
 const craftPillars = [
   {
@@ -18,10 +18,10 @@ const craftPillars = [
       "Gold surfaces are shaped, refined, and polished with patience until the material feels alive."
   },
   {
-    icon: Watch,
-    title: "Mechanical Precision",
+    icon: SprayCan,
+    title: "Fragrance Composition",
     description:
-      "Every watch is considered through movement, balance, finishing, and enduring reliability."
+      "Every accord is built from rare oils and resins, balanced for depth, sillage, and long wear."
   }
 ];
 

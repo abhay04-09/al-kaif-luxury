@@ -44,7 +44,7 @@ export function HeroSection() {
           transition={{ delay: 2.15, duration: 1.2, ease: [0.19, 1, 0.22, 1] }}
         >
           <p className="mb-5 text-[0.72rem] uppercase tracking-luxury text-gold-light">
-            High Jewellery & Swiss Timepieces
+            High Jewellery & Bespoke Perfumes
           </p>
 
           <h1 className="font-serif text-[clamp(4rem,12vw,10.5rem)] leading-[0.86] text-porcelain">
@@ -52,7 +52,7 @@ export function HeroSection() {
           </h1>
 
           <p className="mt-7 max-w-2xl text-base leading-8 text-porcelain/78 sm:text-lg">
-            A private world of heirloom jewellery and precise mechanical watches,
+            A private world of heirloom jewellery and rare bespoke perfumes,
             composed with restraint, rarity, and a devotion to lasting craft.
           </p>
 
