@@ -99,6 +99,7 @@ export const ProductsPage: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [seoOpen, setSeoOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // row action menu
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -241,7 +242,7 @@ export const ProductsPage: React.FC = () => {
     setIsUploading(false);
   };
 
-  const handleGalleryUpload = async (files: FileList) => {
+  const handleGalleryUpload = async (files: FileList | File[]) => {
     setIsUploading(true);
     for (const file of Array.from(files)) {
       const url = await uploadImage(file);
@@ -249,6 +250,54 @@ export const ProductsPage: React.FC = () => {
     }
     setIsUploading(false);
   };
+
+  /** Pasted or dropped images fill the main slot first, then the gallery. */
+  const handleDroppedImages = async (files: File[]) => {
+    const images = files.filter(file => file.type.startsWith('image/'));
+    if (images.length === 0) return;
+
+    setIsUploading(true);
+    let [first, ...rest] = images;
+
+    if (!form.image) {
+      const url = await uploadImage(first);
+      if (url) {
+        setForm(f => ({ ...f, image: url }));
+        toast.success('Main image added');
+      }
+    } else {
+      rest = images;
+    }
+
+    for (const file of rest) {
+      const url = await uploadImage(file);
+      if (url) {
+        setForm(f => ({ ...f, secondaryImages: [...(f.secondaryImages ?? []), url] }));
+        toast.success('Added to gallery');
+      }
+    }
+    setIsUploading(false);
+  };
+
+  // Ctrl+V anywhere in the open product form uploads a copied image.
+  useEffect(() => {
+    if (!isModalOpen) return;
+
+    const onPaste = (event: ClipboardEvent) => {
+      const files = Array.from(event.clipboardData?.items ?? [])
+        .filter(item => item.kind === 'file' && item.type.startsWith('image/'))
+        .map(item => item.getAsFile())
+        .filter((file): file is File => file !== null);
+
+      if (files.length > 0) {
+        event.preventDefault();
+        handleDroppedImages(files);
+      }
+    };
+
+    document.addEventListener('paste', onPaste);
+    return () => document.removeEventListener('paste', onPaste);
+  }, [isModalOpen, form.image]);
 
   const categoryName = (id: string) => categories.find(c => c.id === id)?.name ?? id;
 
@@ -537,9 +586,25 @@ export const ProductsPage: React.FC = () => {
                   {form.image && (
                     <img src={form.image} alt="Preview" className="w-14 h-14 object-cover rounded-xs border border-[#2A2A2a]" />
                   )}
-                  <label className="flex-1 flex items-center justify-center gap-2 p-3 border border-dashed border-[#C5A059]/60 rounded-xs cursor-pointer hover:border-[#FFD700] text-[#DFC27C]">
-                    <Upload className="w-4 h-4" />
-                    <span>{isUploading ? 'UPLOADING…' : 'Upload photo'}</span>
+                  <label
+                    onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={e => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                      handleDroppedImages(Array.from(e.dataTransfer.files));
+                    }}
+                    className={`flex-1 flex flex-col items-center justify-center gap-1 p-4 border border-dashed rounded-xs cursor-pointer transition-colors ${
+                      isDragging ? 'border-[#FFD700] bg-[#C5A059]/10 text-[#FFD700]' : 'border-[#C5A059]/60 hover:border-[#FFD700] text-[#DFC27C]'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Upload className="w-4 h-4" />
+                      <span>{isUploading ? 'UPLOADING…' : 'Upload photo'}</span>
+                    </span>
+                    <span className="text-[10px] text-[#A7A7A7]">
+                      or drag an image here, or press Ctrl+V to paste
+                    </span>
                     <input
                       type="file" accept="image/*" className="hidden" disabled={isUploading}
                       onChange={e => { const f = e.target.files?.[0]; if (f) handleMainUpload(f); }}
@@ -569,7 +634,15 @@ export const ProductsPage: React.FC = () => {
                       </button>
                     </div>
                   ))}
-                  <label className="w-14 h-14 flex items-center justify-center border border-dashed border-[#C5A059]/60 rounded-xs cursor-pointer hover:border-[#FFD700] text-[#DFC27C]">
+                  <label
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => {
+                      e.preventDefault();
+                      handleGalleryUpload(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+                    }}
+                    className="w-14 h-14 flex items-center justify-center border border-dashed border-[#C5A059]/60 rounded-xs cursor-pointer hover:border-[#FFD700] text-[#DFC27C]"
+                    title="Click, drop images here, or paste with Ctrl+V"
+                  >
                     <Plus className="w-4 h-4" />
                     <input
                       type="file" accept="image/*" multiple className="hidden" disabled={isUploading}
@@ -577,6 +650,9 @@ export const ProductsPage: React.FC = () => {
                     />
                   </label>
                 </div>
+                <p className="mt-1.5 text-[10px] text-[#A7A7A7]">
+                  Drop several images at once, or paste with Ctrl+V.
+                </p>
               </div>
 
               <div>
