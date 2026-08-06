@@ -1,0 +1,18 @@
+# Copy this file to `.dev.vars` (same folder) and fill in real values.
+# `.dev.vars` is used by `npm run dev` and must NEVER be committed to git.
+
+# From Supabase dashboard -> Project Settings -> API
+SUPABASE_URL="https://YOUR-PROJECT-ref.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY="eyJ...your service_role key..."
+
+# Any long random string (used to sign login tokens). Example: run
+#   node -e "console.log(crypto.randomBytes(48).toString('hex'))"
+JWT_SECRET="change-me-to-a-long-random-string"
+
+# From Razorpay dashboard -> Account & Settings -> API Keys
+RAZORPAY_KEY_ID="rzp_test_xxxxxxxx"
+RAZORPAY_KEY_SECRET="xxxxxxxxxxxxxxxx"
+
+# The admin account created by the one-time /api/setup/init call
+ADMIN_EMAIL="admin@alkaif.com"
+ADMIN_PASSWORD="choose-a-strong-password"

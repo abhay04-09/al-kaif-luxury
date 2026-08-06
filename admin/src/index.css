@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+body {
+  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  background: #011a0d;
+  color: #f5f2ee;
+}
+
+.font-serif {
+  font-family: "Cinzel", serif;
+}
+
+.text-gold-gradient {
+  background: linear-gradient(120deg, #c5a059, #ffd700, #dfc27c);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

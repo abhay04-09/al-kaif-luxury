@@ -1,0 +1,19 @@
+name = "al-kaiff-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# R2 bucket for product images.
+# Create it once with:  npx wrangler r2 bucket create al-kaiff-images
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "al-kaiff-images"
+
+# Secrets (set these with `npx wrangler secret put <NAME>` for production,
+# and in a local `.dev.vars` file for `npm run dev`):
+#   SUPABASE_URL
+#   SUPABASE_SERVICE_ROLE_KEY
+#   JWT_SECRET
+#   RAZORPAY_KEY_ID
+#   RAZORPAY_KEY_SECRET
+#   ADMIN_EMAIL
+#   ADMIN_PASSWORD
