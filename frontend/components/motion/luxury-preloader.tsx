@@ -1,16 +1,64 @@
 "use client";
 
-import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const SPLASH_SOURCE = "/media/al-kaif-splash.mp4";
+const SESSION_KEY = "al-kaif:splash-seen";
+const MAX_DURATION_MS = 12000;
 
 export function LuxuryPreloader() {
   const [isVisible, setIsVisible] = useState(true);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const dismiss = useCallback(() => {
+    setIsVisible(false);
+    window.sessionStorage.setItem(SESSION_KEY, "1");
+  }, []);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => setIsVisible(false), 2600);
+    if (window.sessionStorage.getItem(SESSION_KEY) === "1") {
+      setIsVisible(false);
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    if (prefersReducedMotion) {
+      dismiss();
+      return;
+    }
+
+    // Safety net: never trap the visitor if the file stalls or fails to decode.
+    const timeout = window.setTimeout(dismiss, MAX_DURATION_MS);
     return () => window.clearTimeout(timeout);
-  }, []);
+  }, [dismiss]);
+
+  useEffect(() => {
+    if (!isVisible) {
+      return;
+    }
+
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isVisible]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!isVisible || !video) {
+      return;
+    }
+
+    // Some browsers ignore the autoplay attribute until the element is ready.
+    const play = video.play();
+    if (play) {
+      play.catch(() => dismiss());
+    }
+  }, [dismiss, isVisible]);
 
   return (
     <AnimatePresence>
@@ -23,68 +71,26 @@ export function LuxuryPreloader() {
           initial={{ opacity: 1 }}
           transition={{ duration: 0.9, ease: [0.19, 1, 0.22, 1] }}
         >
-          <motion.div
-            className="flex w-full max-w-xl flex-col items-center px-6 text-center"
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: [0.19, 1, 0.22, 1] }}
+          <video
+            ref={videoRef}
+            autoPlay
+            className="h-full w-full object-contain"
+            muted
+            onEnded={dismiss}
+            onError={dismiss}
+            playsInline
+            preload="auto"
           >
-            <motion.div
-              className="relative h-52 w-52 sm:h-64 sm:w-64"
-              initial={{ opacity: 0, scale: 0.94, filter: "blur(10px)" }}
-              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-              transition={{
-                duration: 1.35,
-                ease: [0.19, 1, 0.22, 1]
-              }}
-            >
-              <Image
-                src="/brand/al-kaif-logo.png"
-                alt="AL-KAIF logo"
-                fill
-                priority
-                sizes="256px"
-                className="object-contain"
-              />
-            </motion.div>
+            <source src={SPLASH_SOURCE} type="video/mp4" />
+          </video>
 
-            <motion.div
-              className="mt-2 h-px w-32 bg-gold"
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{
-                delay: 0.65,
-                duration: 0.9,
-                ease: [0.19, 1, 0.22, 1]
-              }}
-            />
-
-            <motion.p
-              className="mt-6 text-[0.68rem] uppercase tracking-luxury text-gold-light"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                delay: 0.9,
-                duration: 0.8,
-                ease: [0.19, 1, 0.22, 1]
-              }}
-            >
-              Premium and royal since 2019
-            </motion.p>
-
-            <motion.p
-              className="mt-3 text-[0.65rem] uppercase tracking-luxury text-mist"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{
-                delay: 1.15,
-                duration: 0.8,
-                ease: [0.19, 1, 0.22, 1]
-              }}
-            >
-              Fine Jewellery & Watches
-            </motion.p>
-          </motion.div>
+          <button
+            className="absolute bottom-8 right-5 min-h-11 border border-gold/50 px-5 py-2 text-[0.65rem] uppercase tracking-luxury text-mist transition duration-500 hover:border-gold-light hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light sm:right-8 lg:right-10"
+            onClick={dismiss}
+            type="button"
+          >
+            Skip
+          </button>
         </motion.div>
       ) : null}
     </AnimatePresence>
