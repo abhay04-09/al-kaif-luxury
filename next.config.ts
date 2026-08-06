@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
         // Product photos uploaded through the admin panel are served from R2
         // by the Worker API (/api/images/...).
         protocol: "https",
+        hostname: "al-kaiff-api.adpatel8376.workers.dev"
+      },
+      {
+        protocol: "https",
         hostname: "**.workers.dev"
       },
       {
