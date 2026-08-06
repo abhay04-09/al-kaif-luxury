@@ -3,10 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --color-obsidian: 0 43 27;
-  --color-onyx: 0 61 39;
-  --color-gold: 197 160 89;
-  --color-gold-light: 223 194 124;
+  /* Palette lifted from al-kaif.vercel.app so both sites read as one brand. */
+  --color-obsidian: 1 31 16; /* #011f10 — page ground */
+  --color-onyx: 0 43 27; /* #002b1b — raised surface */
+  --color-verdant: 0 61 39; /* #003d27 — hover / highest surface */
+  --color-abyss: 0 20 10; /* #00140a — recessed wells, footer */
+  --color-gold: 197 160 89; /* #c5a059 */
+  --color-gold-light: 223 194 124; /* #dfc27c */
+  --color-gold-bright: 255 215 0; /* #ffd700 — glints, selection text */
   --color-porcelain: 245 242 238;
   --color-mist: 167 167 167;
   --color-graphite: 42 42 42;
@@ -14,17 +18,17 @@
   --background: rgb(var(--color-obsidian));
   --foreground: rgb(var(--color-porcelain));
 
-  --font-display: "Cormorant Garamond", "Times New Roman", Georgia, serif;
-  --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
-
   color-scheme: dark;
 }
 
 html[data-theme="light"] {
   --color-obsidian: 238 243 239;
   --color-onyx: 250 253 250;
+  --color-verdant: 226 235 229;
+  --color-abyss: 214 226 218;
   --color-gold: 143 108 43;
   --color-gold-light: 168 127 55;
+  --color-gold-bright: 176 132 12;
   --color-porcelain: 4 26 16;
   --color-mist: 62 82 72;
   --color-graphite: 205 218 209;
@@ -78,8 +82,45 @@ select {
 }
 
 ::selection {
-  background: rgba(197, 160, 89, 0.36);
-  color: #f5f2ee;
+  background: rgb(var(--color-gold) / 0.3);
+  color: rgb(var(--color-gold-bright));
+}
+
+/*
+ * Gold treatments taken from the reference site. The gradient text needs the
+ * transparent fill, so it only works on elements whose colour comes from here.
+ */
+.gold-gradient-text {
+  background: linear-gradient(
+    135deg,
+    rgb(var(--color-gold)),
+    rgb(var(--color-gold-light)),
+    rgb(var(--color-gold))
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.gold-glow {
+  box-shadow: 0 0 15px rgb(var(--color-gold) / 0.25);
+}
+
+.gold-glow-hover {
+  transition: box-shadow 500ms ease;
+}
+
+.gold-glow-hover:hover {
+  box-shadow: 0 0 25px rgb(var(--color-gold-bright) / 0.35);
+}
+
+/* Fine gold dot field the reference layers behind its editorial sections. */
+.gold-dot-field {
+  background-image: radial-gradient(
+    rgb(var(--color-gold) / 0.55) 0.5px,
+    transparent 0.5px
+  );
+  background-size: 22px 22px;
 }
 
 .film-grain::after {
