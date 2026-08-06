@@ -91,15 +91,20 @@ select {
  * transparent fill, so it only works on elements whose colour comes from here.
  */
 .gold-gradient-text {
-  background: linear-gradient(
-    135deg,
-    rgb(var(--color-gold)),
-    rgb(var(--color-gold-light)),
-    rgb(var(--color-gold))
-  );
+  background: linear-gradient(135deg, gold, #dfc27c, #c5a059 70%, #fff5c0);
   -webkit-background-clip: text;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
   color: transparent;
+}
+
+/* Fine gold dot field behind the hero. */
+.editorial-grid-pattern {
+  background-image: radial-gradient(
+    rgb(var(--color-gold)) 0.5px,
+    transparent 0.5px
+  );
+  background-size: 20px 20px;
 }
 
 .gold-glow {

@@ -1,6 +1,7 @@
-﻿export const primaryNavigation = [
-  { label: "Collections", href: "/products" },
+export const primaryNavigation = [
+  { label: "New Arrivals", href: "/products" },
   { label: "Jewellery", href: "/products?category=jewellery" },
-  { label: "Watches", href: "/products?category=watches" },
+  { label: "Perfumes", href: "/products?category=perfumes" },
+  { label: "Timepieces", href: "/products?category=watches" },
   { label: "Orders", href: "/orders" }
 ] as const;

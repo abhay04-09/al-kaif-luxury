@@ -35,7 +35,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   return (
     <>
       <Navbar />
-      <main className="mx-auto min-h-screen max-w-7xl px-5 pb-24 pt-32 sm:px-8 lg:px-10">
+      <main className="mx-auto min-h-screen max-w-7xl px-5 pb-24 pt-16 sm:px-8 lg:px-10">
         <section className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="grid gap-4 sm:grid-cols-2">
             {productImages.map((image) => (

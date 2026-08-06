@@ -4,7 +4,7 @@ export default function CheckoutPage() {
   return (
     <>
       <Navbar />
-      <main className="mx-auto min-h-screen max-w-6xl px-5 pb-24 pt-36 sm:px-8 lg:px-10">
+      <main className="mx-auto min-h-screen max-w-6xl px-5 pb-24 pt-16 sm:px-8 lg:px-10">
         <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light">Checkout</p>
         <h1 className="mt-4 font-serif text-5xl text-porcelain">Secure Checkout</h1>
         <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_22rem]">

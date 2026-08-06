@@ -6,6 +6,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import { LogOut, Menu, Moon, Search, ShoppingBag, Sun, UserRound, X } from "lucide-react";
 import { primaryNavigation } from "@/lib/navigation";
+import { AlKaifMark } from "@/components/brand/al-kaif-mark";
 import { useTheme } from "@/components/theme/theme-provider";
 
 export function Navbar() {
@@ -33,7 +34,7 @@ export function Navbar() {
   }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-obsidian/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 border-b border-gold/30 bg-obsidian/90 shadow-2xl backdrop-blur-md">
       <nav
         aria-label="Primary navigation"
         className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10"
@@ -53,12 +54,16 @@ export function Navbar() {
           )}
         </button>
 
-        <Link className="group leading-tight" href="/">
-          <span className="gold-gradient-text block font-serif text-xl font-medium uppercase tracking-[0.25em] sm:text-2xl">
-            AL-KAIF
-          </span>
-          <span className="block text-[9px] font-light uppercase tracking-imperial text-gold-light opacity-85">
-            Fine Jewellery &amp; Perfumes
+        <Link className="group flex items-center gap-3 text-left" href="/">
+          <AlKaifMark className="h-9 w-9 shrink-0 drop-shadow-[0_0_8px_rgba(255,215,0,0.4)] transition-transform duration-500 group-hover:scale-105 md:h-11 md:w-11" />
+
+          <span className="leading-tight">
+            <span className="gold-gradient-text block font-serif text-xl font-medium uppercase tracking-[0.25em] sm:text-2xl">
+              AL-KAIF
+            </span>
+            <span className="block text-[9px] font-light uppercase tracking-imperial text-gold-light opacity-85">
+              Fine Jewellery &amp; Perfumes
+            </span>
           </span>
         </Link>
 

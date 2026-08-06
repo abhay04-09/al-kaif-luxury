@@ -24,7 +24,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   return (
     <>
       <Navbar />
-      <main className="mx-auto min-h-screen max-w-7xl px-5 pb-24 pt-36 sm:px-8 lg:px-10">
+      <main className="mx-auto min-h-screen max-w-7xl px-5 pb-24 pt-16 sm:px-8 lg:px-10">
         <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light">AL-KAIF Shop</p>
         <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div>

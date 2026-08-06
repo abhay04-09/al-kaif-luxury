@@ -26,7 +26,7 @@ export default async function ProfilePage() {
   return (
     <>
       <Navbar />
-      <main className="mx-auto min-h-screen max-w-3xl px-5 pb-24 pt-36 sm:px-8">
+      <main className="mx-auto min-h-screen max-w-3xl px-5 pb-24 pt-16 sm:px-8">
         <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light">Account</p>
         <h1 className="mt-4 font-serif text-5xl text-porcelain">My Profile</h1>
 

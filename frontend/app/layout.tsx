@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Cinzel, Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { AnnouncementBar } from "@/components/layout/announcement-bar";
 import { AuthSessionProvider } from "@/components/auth/auth-session-provider";
 import { WhatsAppButton } from "@/components/layout/whatsapp-button";
 import { SmoothScrollProvider } from "@/components/motion/smooth-scroll-provider";
@@ -49,6 +50,7 @@ export default function RootLayout({
       <body>
         <AuthSessionProvider>
           <ThemeProvider>
+            <AnnouncementBar />
             <SmoothScrollProvider>{children}</SmoothScrollProvider>
             <WhatsAppButton />
           </ThemeProvider>
