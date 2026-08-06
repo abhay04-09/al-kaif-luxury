@@ -29,7 +29,12 @@ export function Footer() {
                 alt="AL-KAIF"
                 fill
                 sizes="176px"
-                className="object-contain object-left"
+                /*
+                 * The PNG has an opaque near-black background baked in, which
+                 * reads as a dark rectangle on the green ground. Screen blending
+                 * drops the black to the page colour and keeps the gold artwork.
+                 */
+                className="object-contain object-left mix-blend-screen"
               />
             </Link>
 

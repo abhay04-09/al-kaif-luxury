@@ -53,11 +53,13 @@ export function Navbar() {
           )}
         </button>
 
-        <Link
-          className="font-serif text-xl tracking-[0.26em] text-porcelain sm:text-2xl"
-          href="/"
-        >
-          AL-KAIF
+        <Link className="group leading-tight" href="/">
+          <span className="gold-gradient-text block font-serif text-xl font-medium uppercase tracking-[0.25em] sm:text-2xl">
+            AL-KAIF
+          </span>
+          <span className="block text-[9px] font-light uppercase tracking-imperial text-gold-light opacity-85">
+            Fine Jewellery &amp; Watches
+          </span>
         </Link>
 
         <div className="hidden items-center gap-10 lg:flex">
