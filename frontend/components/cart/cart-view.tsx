@@ -27,10 +27,19 @@ export function CartView() {
     window.dispatchEvent(new Event("al-kaif-cart-updated"));
   };
 
-  const updateQuantity = (productId: string, direction: "increase" | "decrease") => {
+  // A piece taken in two sizes is two separate lines, so the size has to match
+  // as well as the id before a line is changed.
+  const isSameLine = (item: CartItem, productId: string, size?: string) =>
+    item.productId === productId && (item.size ?? null) === (size ?? null);
+
+  const updateQuantity = (
+    productId: string,
+    size: string | undefined,
+    direction: "increase" | "decrease"
+  ) => {
     const nextItems = items
       .map((item) =>
-        item.productId === productId
+        isSameLine(item, productId, size)
           ? {
               ...item,
               quantity:
@@ -45,8 +54,8 @@ export function CartView() {
     persist(nextItems);
   };
 
-  const removeItem = (productId: string) => {
-    persist(items.filter((item) => item.productId !== productId));
+  const removeItem = (productId: string, size?: string) => {
+    persist(items.filter((item) => !isSameLine(item, productId, size)));
   };
 
   if (summary.lines.length === 0) {
@@ -72,21 +81,26 @@ export function CartView() {
           <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light">Shopping Bag</p>
           <h1 className="mt-4 font-serif text-5xl text-porcelain">Selected Pieces</h1>
           <div className="mt-10 divide-y divide-white/10 border-y border-white/10">
-            {summary.lines.map(({ product, quantity, lineTotal }) => (
-              <div className="grid gap-5 py-6 sm:grid-cols-[1fr_auto]" key={product.id}>
+            {summary.lines.map(({ product, quantity, size, lineTotal }) => (
+              <div className="grid gap-5 py-6 sm:grid-cols-[1fr_auto]" key={`${product.id}-${size ?? ""}`}>
                 <div>
                   <p className="text-xs uppercase tracking-luxury text-gold-light">
                     {product.collection}
                   </p>
                   <h2 className="mt-2 font-serif text-2xl text-porcelain">{product.name}</h2>
                   <p className="mt-2 text-sm text-porcelain/60">{product.material}</p>
+                  {size && (
+                    <p className="mt-2 text-xs uppercase tracking-luxury text-porcelain/70">
+                      Size: <span className="text-gold-light">{size}</span>
+                    </p>
+                  )}
                   <p className="mt-4 text-sm text-porcelain/80">{formatPrice(lineTotal)}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <button
                     aria-label={`Decrease ${product.name} quantity`}
                     className="grid h-10 w-10 place-items-center border border-white/10 text-porcelain transition hover:border-gold-light hover:text-gold-light"
-                    onClick={() => updateQuantity(product.id, "decrease")}
+                    onClick={() => updateQuantity(product.id, size, "decrease")}
                     type="button"
                   >
                     <Minus aria-hidden="true" className="h-4 w-4" />
@@ -95,7 +109,7 @@ export function CartView() {
                   <button
                     aria-label={`Increase ${product.name} quantity`}
                     className="grid h-10 w-10 place-items-center border border-white/10 text-porcelain transition hover:border-gold-light hover:text-gold-light"
-                    onClick={() => updateQuantity(product.id, "increase")}
+                    onClick={() => updateQuantity(product.id, size, "increase")}
                     type="button"
                   >
                     <Plus aria-hidden="true" className="h-4 w-4" />
@@ -103,7 +117,7 @@ export function CartView() {
                   <button
                     aria-label={`Remove ${product.name}`}
                     className="grid h-10 w-10 place-items-center border border-white/10 text-porcelain transition hover:border-gold-light hover:text-gold-light"
-                    onClick={() => removeItem(product.id)}
+                    onClick={() => removeItem(product.id, size)}
                     type="button"
                   >
                     <Trash2 aria-hidden="true" className="h-4 w-4" />

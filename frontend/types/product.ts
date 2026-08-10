@@ -17,9 +17,12 @@ export type Product = {
   material: string;
   stock: number;
   featured: boolean;
+  /** Selectable size options, e.g. ring sizes. Empty when the piece has no sizes. */
+  sizes: string[];
 };
 
 export type CartItem = {
   productId: string;
   quantity: number;
+  size?: string;
 };

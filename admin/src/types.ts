@@ -16,7 +16,8 @@ export interface Product {
   category: CategoryType;
   subcategory?: string | null;
   priceINR: number;
-  priceUSD: number;
+  /** Optional — the shop prices in INR; kept for legacy rows. */
+  priceUSD?: number;
   image: string;
   secondaryImages?: string[];
   description: string;
@@ -38,6 +39,8 @@ export interface Product {
   };
   artisanStory?: string;
   sku: string;
+  /** Selectable size options shown as buttons on the storefront. */
+  sizes?: string[];
   seoTitle?: string | null;
   seoDescription?: string | null;
   seoKeywords?: string | null;

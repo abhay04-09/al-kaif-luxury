@@ -58,7 +58,8 @@ function normalize(product: ApiProduct): Product {
     details: toDetails(product),
     material: typeof specs.material === "string" ? specs.material : "",
     stock: product.inStock ? 99 : 0,
-    featured: Boolean(product.featured)
+    featured: Boolean(product.featured),
+    sizes: product.sizes ?? []
   };
 }
 

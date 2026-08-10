@@ -18,7 +18,7 @@ export function rowToProduct(r: any): Product {
     category: r.category,
     subcategory: r.subcategory ?? null,
     priceINR: Number(r.price_inr),
-    priceUSD: Number(r.price_usd),
+    priceUSD: Number(r.price_usd ?? 0),
     image: r.image,
     secondaryImages: r.secondary_images ?? [],
     description: r.description ?? '',
@@ -28,6 +28,7 @@ export function rowToProduct(r: any): Product {
     specifications: r.specifications ?? {},
     artisanStory: r.artisan_story ?? undefined,
     sku: r.sku ?? '',
+    sizes: r.sizes ?? [],
     seoTitle: r.seo_title ?? null,
     seoDescription: r.seo_description ?? null,
     seoKeywords: r.seo_keywords ?? null,
@@ -52,6 +53,7 @@ export function productToRow(p: Partial<Product>): Record<string, unknown> {
   if (p.specifications !== undefined) row.specifications = p.specifications;
   if (p.artisanStory !== undefined) row.artisan_story = p.artisanStory;
   if (p.sku !== undefined) row.sku = p.sku;
+  if (p.sizes !== undefined) row.sizes = p.sizes;
   if (p.seoTitle !== undefined) row.seo_title = p.seoTitle || null;
   if (p.seoDescription !== undefined) row.seo_description = p.seoDescription || null;
   if (p.seoKeywords !== undefined) row.seo_keywords = p.seoKeywords || null;

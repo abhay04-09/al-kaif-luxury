@@ -14,8 +14,8 @@ const EMPTY_FORM: Partial<Product> = {
   category: 'jewellery',
   subcategory: '',
   sku: '',
+  sizes: [],
   priceINR: 100000,
-  priceUSD: 1200,
   image: '',
   secondaryImages: [],
   description: '',
@@ -101,6 +101,18 @@ export const ProductsPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [seoOpen, setSeoOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [sizeInput, setSizeInput] = useState('');
+
+  const addSize = () => {
+    const size = sizeInput.trim();
+    if (!size) return;
+    if ((form.sizes ?? []).includes(size)) {
+      toast.error(`"${size}" is already listed`);
+      return;
+    }
+    setForm(f => ({ ...f, sizes: [...(f.sizes ?? []), size] }));
+    setSizeInput('');
+  };
 
   // row action menu
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -572,23 +584,60 @@ export const ProductsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[#DFC27C] block mb-1">PRICE (INR) *</label>
+              <div>
+                <label className="text-[#DFC27C] block mb-1">PRICE (INR) *</label>
+                <input
+                  type="number" required value={form.priceINR ?? ''}
+                  onChange={e => setForm({ ...form, priceINR: Number(e.target.value) })}
+                  className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
+                />
+              </div>
+
+              {/* Sizes */}
+              <div>
+                <label className="text-[#DFC27C] block mb-1">SIZE OPTIONS</label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {(form.sizes ?? []).map((size, i) => (
+                    <span
+                      key={`${size}-${i}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#C5A059]/15 border border-[#C5A059]/50 text-[#FFD700] rounded-xs"
+                    >
+                      {size}
+                      <button
+                        type="button"
+                        title={`Remove size ${size}`}
+                        onClick={() => setForm(f => ({ ...f, sizes: (f.sizes ?? []).filter((_, j) => j !== i) }))}
+                        className="text-[#DFC27C] hover:text-red-400"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
                   <input
-                    type="number" required value={form.priceINR ?? ''}
-                    onChange={e => setForm({ ...form, priceINR: Number(e.target.value) })}
-                    className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
+                    type="text"
+                    value={sizeInput}
+                    onChange={e => setSizeInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ',') {
+                        e.preventDefault();
+                        addSize();
+                      }
+                    }}
+                    placeholder="Type a size and press Enter"
+                    className="flex-1 min-w-44 bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
                   />
+                  <button
+                    type="button"
+                    onClick={addSize}
+                    className="px-3 py-2.5 border border-[#C5A059]/60 text-[#DFC27C] hover:text-[#FFD700] hover:border-[#FFD700] rounded-xs uppercase tracking-wider text-[10px]"
+                  >
+                    Add
+                  </button>
                 </div>
-                <div>
-                  <label className="text-[#DFC27C] block mb-1">PRICE (USD) *</label>
-                  <input
-                    type="number" required value={form.priceUSD ?? ''}
-                    onChange={e => setForm({ ...form, priceUSD: Number(e.target.value) })}
-                    className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
-                  />
-                </div>
+                <p className="mt-1.5 text-[10px] text-[#A7A7A7]">
+                  Customers pick one of these on the product page, and their choice appears on the order.
+                  Leave empty if the piece has no sizes.
+                </p>
               </div>
 
               {/* Main image */}

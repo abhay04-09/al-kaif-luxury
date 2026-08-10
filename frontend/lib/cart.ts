@@ -18,6 +18,7 @@ export function getCartSummary(items: CartItem[], catalogue: Product[]) {
       return {
         product,
         quantity: item.quantity,
+        size: item.size,
         lineTotal: product.price * item.quantity
       };
     })

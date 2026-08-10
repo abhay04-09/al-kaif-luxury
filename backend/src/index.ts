@@ -234,7 +234,7 @@ async function priceItems(env: Env, items: IncomingItem[]) {
     if (!product) throw new Error(`Product not found: ${i.productId}`);
     const quantity = Math.max(1, Math.min(50, Math.floor(Number(i.quantity) || 1)));
     subtotalINR += product.priceINR * quantity;
-    subtotalUSD += product.priceUSD * quantity;
+    subtotalUSD += (product.priceUSD ?? 0) * quantity;
     return { product, quantity, selectedMetal: i.selectedMetal, selectedSize: i.selectedSize };
   });
 

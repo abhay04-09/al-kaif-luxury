@@ -13,7 +13,7 @@ export type ApiProduct = {
   category: string;
   subcategory?: string | null;
   priceINR: number;
-  priceUSD: number;
+  priceUSD?: number;
   image: string;
   secondaryImages?: string[];
   description: string;
@@ -23,6 +23,7 @@ export type ApiProduct = {
   specifications?: Record<string, unknown>;
   artisanStory?: string;
   sku: string;
+  sizes?: string[];
   seoTitle?: string | null;
   seoDescription?: string | null;
   seoKeywords?: string | null;

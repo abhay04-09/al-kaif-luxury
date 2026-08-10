@@ -155,7 +155,14 @@ export const OrdersPage: React.FC = () => {
                   {item.product.image && (
                     <img src={item.product.image} alt={item.product.name} className="w-10 h-10 object-cover rounded-xs border border-[#2A2A2a]" />
                   )}
-                  <span className="flex-1 text-[#F5F2EE]">{item.product.name}</span>
+                  <span className="flex-1 text-[#F5F2EE]">
+                    {item.product.name}
+                    {item.selectedSize && (
+                      <span className="ml-2 px-2 py-0.5 bg-[#C5A059]/15 border border-[#C5A059]/40 text-[#FFD700] text-[10px] uppercase tracking-wider rounded-xs">
+                        Size: {item.selectedSize}
+                      </span>
+                    )}
+                  </span>
                   <span className="text-[#A7A7A7]">× {item.quantity}</span>
                   <span className="font-mono text-[#FFD700]">
                     ₹{(item.product.priceINR * item.quantity).toLocaleString('en-IN')}
