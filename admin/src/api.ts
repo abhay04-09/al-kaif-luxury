@@ -1,8 +1,13 @@
 // Central API helper for the Cloudflare Worker backend.
 // In dev, Vite proxies /api -> http://localhost:8787 (see vite.config.ts).
-// In production, set VITE_API_URL to your Worker URL, e.g. https://al-kaiff-api.YOUR-SUBDOMAIN.workers.dev
+// VITE_API_URL overrides the Worker URL; without the fallback below a build
+// missing that variable posts to the Pages domain itself and every call 405s.
 
-export const API_BASE: string = (import.meta as any).env?.VITE_API_URL || '';
+const PRODUCTION_API = 'https://al-kaiff-api.adpatel8376.workers.dev';
+
+const env = (import.meta as any).env ?? {};
+
+export const API_BASE: string = env.VITE_API_URL || (env.DEV ? '' : PRODUCTION_API);
 
 const TOKEN_KEY = 'alkaiff_token';
 
