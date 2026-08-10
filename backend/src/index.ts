@@ -125,6 +125,8 @@ app.put('/api/products/:id', requireAdmin, async c => {
   const db = getDb(c.env);
   const row = productToRow(body);
   delete row.id; // never change the primary key
+  // Clearing the SKU field hands the code back to us, same as on create.
+  if (row.sku !== undefined && !row.sku) row.sku = `ALK-NEW-${Math.floor(1000 + Math.random() * 9000)}`;
   const { data, error } = await db.from('products').update(row).eq('id', c.req.param('id')).select('*').maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return c.json({ error: 'Product not found' }, 404);

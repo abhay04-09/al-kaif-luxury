@@ -13,6 +13,7 @@ const EMPTY_FORM: Partial<Product> = {
   subtitle: '',
   category: 'jewellery',
   subcategory: '',
+  sku: '',
   priceINR: 100000,
   priceUSD: 1200,
   image: '',
@@ -532,6 +533,17 @@ export const ProductsPage: React.FC = () => {
                     className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="text-[#DFC27C] block mb-1">SKU / PRODUCT CODE</label>
+                <input
+                  type="text"
+                  value={form.sku ?? ''}
+                  onChange={e => setForm({ ...form, sku: e.target.value })}
+                  placeholder="e.g. ALK-EAR-001 — leave blank to generate one automatically"
+                  className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs font-mono focus:border-[#C5A059] focus:outline-none"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
