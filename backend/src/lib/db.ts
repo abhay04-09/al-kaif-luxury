@@ -32,6 +32,7 @@ export function rowToProduct(r: any): Product {
     seoTitle: r.seo_title ?? null,
     seoDescription: r.seo_description ?? null,
     seoKeywords: r.seo_keywords ?? null,
+    createdAt: r.created_at ?? null,
   };
 }
 

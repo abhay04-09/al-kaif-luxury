@@ -44,6 +44,8 @@ export interface Product {
   seoTitle?: string | null;
   seoDescription?: string | null;
   seoKeywords?: string | null;
+  /** Set by the database on insert; read-only. */
+  createdAt?: string | null;
 }
 
 export interface CartItem {

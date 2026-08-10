@@ -26,13 +26,43 @@ const EMPTY_FORM: Partial<Product> = {
 
 const SORT_OPTS = [
   { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
   { value: 'alpha', label: 'A → Z' },
   { value: 'price-high', label: 'Price: high to low' },
   { value: 'price-low', label: 'Price: low to high' },
 ] as const;
 type SortOpt = (typeof SORT_OPTS)[number]['value'];
 
-const PER_PAGE = 10;
+const PER_PAGE_OPTS = [10, 25, 50] as const;
+
+/** "3 days ago" for recent uploads, an absolute date once that stops being useful. */
+function relativeDate(iso?: string | null) {
+  if (!iso) return '—';
+  const then = new Date(iso);
+  if (Number.isNaN(then.getTime())) return '—';
+
+  const days = Math.floor((Date.now() - then.getTime()) / 86_400_000);
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 30) return `${days} days ago`;
+  return then.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/** Page buttons around the current page, with `null` standing in for a gap. */
+function pageNumbers(current: number, total: number): (number | null)[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const pages = new Set([1, total, current, current - 1, current + 1]);
+  const shown = [...pages].filter(n => n >= 1 && n <= total).sort((a, b) => a - b);
+
+  return shown.flatMap((n, i) => (i > 0 && n - shown[i - 1] > 1 ? [null, n] : [n]));
+}
+
+function exactDate(iso?: string | null) {
+  if (!iso) return 'Date unknown';
+  const then = new Date(iso);
+  return Number.isNaN(then.getTime()) ? 'Date unknown' : then.toLocaleString('en-IN');
+}
 
 function CharBar({ count, limit }: { count: number; limit: number }) {
   const pct = Math.min((count / limit) * 100, 100);
@@ -75,6 +105,7 @@ function SkeletonRow() {
       <td className="p-4"><div className="h-5 bg-[#1a2a1f] rounded-full w-20" /></td>
       <td className="p-4"><div className="h-3.5 bg-[#1a2a1f] rounded w-20" /></td>
       <td className="p-4 hidden lg:table-cell"><div className="h-3.5 bg-[#1a2a1f] rounded w-16" /></td>
+      <td className="p-4 hidden xl:table-cell"><div className="h-3.5 bg-[#1a2a1f] rounded w-20" /></td>
       <td className="p-4"><div className="h-5 bg-[#1a2a1f] rounded-full w-16" /></td>
       <td className="p-4"><div className="w-4 h-4 bg-[#1a2a1f] rounded-full ml-1" /></td>
       <td className="p-4"><div className="h-7 w-7 bg-[#1a2a1f] rounded-xs ml-auto" /></td>
@@ -92,6 +123,7 @@ export const ProductsPage: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOpt>('newest');
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState<number>(10);
 
   // modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -114,9 +146,27 @@ export const ProductsPage: React.FC = () => {
     setSizeInput('');
   };
 
-  // row action menu
+  // Row action menu. The table scrolls, which clips an absolutely positioned
+  // menu, so it is pinned to the viewport from the button's own rectangle.
   const [menuFor, setMenuFor] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const MENU_HEIGHT = 128;
+
+  const openMenu = (id: string, button: HTMLElement) => {
+    if (menuFor === id) {
+      setMenuFor(null);
+      return;
+    }
+    const rect = button.getBoundingClientRect();
+    const flipUp = rect.bottom + MENU_HEIGHT > window.innerHeight - 12;
+    setMenuPos({
+      top: flipUp ? rect.top - MENU_HEIGHT - 6 : rect.bottom + 6,
+      right: window.innerWidth - rect.right,
+    });
+    setMenuFor(id);
+  };
 
   const refresh = async () => {
     try {
@@ -137,8 +187,16 @@ export const ProductsPage: React.FC = () => {
     const close = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuFor(null);
     };
+    // Pinned to the viewport, so scrolling would leave it stranded.
+    const dismiss = () => setMenuFor(null);
     document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
+    window.addEventListener('scroll', dismiss, true);
+    window.addEventListener('resize', dismiss);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      window.removeEventListener('scroll', dismiss, true);
+      window.removeEventListener('resize', dismiss);
+    };
   }, []);
 
   const selectedCategory = categories.find(c => c.id === form.category);
@@ -154,17 +212,20 @@ export const ProductsPage: React.FC = () => {
         p => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.subtitle.toLowerCase().includes(q)
       );
     }
+    const uploadedAt = (p: Product) => new Date(p.createdAt ?? 0).getTime() || 0;
+    if (sortBy === 'newest') list.sort((a, b) => uploadedAt(b) - uploadedAt(a));
+    if (sortBy === 'oldest') list.sort((a, b) => uploadedAt(a) - uploadedAt(b));
     if (sortBy === 'alpha') list.sort((a, b) => a.name.localeCompare(b.name));
     if (sortBy === 'price-high') list.sort((a, b) => b.priceINR - a.priceINR);
     if (sortBy === 'price-low') list.sort((a, b) => a.priceINR - b.priceINR);
     return list;
   }, [products, search, categoryFilter, sortBy]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const pageSafe = Math.min(page, totalPages);
-  const pageItems = filtered.slice((pageSafe - 1) * PER_PAGE, pageSafe * PER_PAGE);
+  const pageItems = filtered.slice((pageSafe - 1) * perPage, pageSafe * perPage);
 
-  useEffect(() => { setPage(1); }, [search, categoryFilter, sortBy]);
+  useEffect(() => { setPage(1); }, [search, categoryFilter, sortBy, perPage]);
 
   // ── actions ──
   const openAdd = () => {
@@ -381,6 +442,7 @@ export const ProductsPage: React.FC = () => {
               <th className="p-4">Category</th>
               <th className="p-4">Price (INR)</th>
               <th className="p-4 hidden lg:table-cell">SKU</th>
+              <th className="p-4 hidden xl:table-cell">Added</th>
               <th className="p-4">Status</th>
               <th className="p-4">Featured</th>
               <th className="p-4 text-right">Actions</th>
@@ -391,7 +453,7 @@ export const ProductsPage: React.FC = () => {
 
             {!loading && pageItems.length === 0 && (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={8}>
                   <div className="flex flex-col items-center justify-center py-16 gap-3">
                     <div className="w-14 h-14 rounded-xs bg-[#00140a] border border-[#2A2A2a] flex items-center justify-center">
                       {search || categoryFilter !== 'all'
@@ -423,9 +485,21 @@ export const ProductsPage: React.FC = () => {
                 <td className="p-4">
                   <div className="flex items-center gap-3">
                     <img src={p.image} alt={p.name} className="w-11 h-11 object-cover rounded-xs border border-[#2A2A2a]" />
-                    <div>
+                    <div className="min-w-0">
                       <span className="font-serif text-white block">{p.name}</span>
                       <span className="text-[10px] text-[#A7A7A7]">{p.subtitle}</span>
+                      {(p.sizes ?? []).length > 0 && (
+                        <span className="flex flex-wrap gap-1 mt-1.5">
+                          {(p.sizes ?? []).map(size => (
+                            <span
+                              key={size}
+                              className="px-1.5 py-px bg-[#C5A059]/10 border border-[#C5A059]/30 text-[#DFC27C] text-[9px] uppercase tracking-wider rounded-xs"
+                            >
+                              {size}
+                            </span>
+                          ))}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </td>
@@ -437,6 +511,9 @@ export const ProductsPage: React.FC = () => {
                 </td>
                 <td className="p-4 font-mono text-[#FFD700]">₹{p.priceINR.toLocaleString('en-IN')}</td>
                 <td className="p-4 font-mono text-[#A7A7A7] hidden lg:table-cell">{p.sku || '—'}</td>
+                <td className="p-4 hidden xl:table-cell text-[#A7A7A7] whitespace-nowrap" title={exactDate(p.createdAt)}>
+                  {relativeDate(p.createdAt)}
+                </td>
                 <td className="p-4">
                   <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] rounded-full border ${
                     p.inStock
@@ -456,9 +533,10 @@ export const ProductsPage: React.FC = () => {
                     <Star className={`w-4 h-4 transition-colors ${p.featured ? 'text-[#FFD700] fill-[#FFD700]' : 'text-[#3a3a3a] hover:text-[#C5A059]'}`} />
                   </button>
                 </td>
-                <td className="p-4 text-right relative">
+                <td className="p-4 text-right">
                   <button
-                    onClick={() => setMenuFor(menuFor === p.id ? null : p.id)}
+                    onClick={e => openMenu(p.id, e.currentTarget)}
+                    aria-label={`Actions for ${p.name}`}
                     className="p-1.5 border border-[#2A2A2a] hover:border-[#C5A059] text-[#DFC27C] rounded-xs"
                   >
                     <MoreHorizontal className="w-4 h-4" />
@@ -466,7 +544,8 @@ export const ProductsPage: React.FC = () => {
                   {menuFor === p.id && (
                     <div
                       ref={menuRef}
-                      className="absolute right-4 top-12 z-20 w-40 bg-[#00140a] border border-[#C5A059]/50 rounded-xs shadow-2xl text-left overflow-hidden"
+                      style={{ top: menuPos.top, right: menuPos.right }}
+                      className="fixed z-50 w-40 bg-[#00140a] border border-[#C5A059]/50 rounded-xs shadow-2xl text-left overflow-hidden"
                     >
                       <button onClick={() => openEdit(p)} className="w-full px-4 py-2.5 text-left hover:bg-[#C5A059]/10 flex items-center gap-2 text-[#F5F2EE]">
                         <Edit2 className="w-3.5 h-3.5 text-[#DFC27C]" /> Edit
@@ -487,26 +566,58 @@ export const ProductsPage: React.FC = () => {
       </div>
 
       {/* Pagination */}
-      {!loading && filtered.length > PER_PAGE && (
-        <div className="flex items-center justify-between text-xs text-[#A7A7A7]">
-          <span>
-            Showing {(pageSafe - 1) * PER_PAGE + 1}–{Math.min(pageSafe * PER_PAGE, filtered.length)} of {filtered.length}
-          </span>
-          <div className="flex items-center gap-2">
+      {!loading && filtered.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[#A7A7A7]">
+          <div className="flex items-center gap-3">
+            <span>
+              Showing {(pageSafe - 1) * perPage + 1}–{Math.min(pageSafe * perPage, filtered.length)} of {filtered.length}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-wider">Per page</span>
+              <select
+                value={perPage}
+                onChange={e => setPerPage(Number(e.target.value))}
+                className="bg-[#00140a] border border-[#2A2A2a] text-[#DFC27C] px-2 py-1 rounded-xs focus:outline-none focus:border-[#C5A059] cursor-pointer"
+              >
+                {PER_PAGE_OPTS.map(n => <option key={n} value={n} className="bg-[#00140a]">{n}</option>)}
+              </select>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={pageSafe === 1}
-              className="p-2 border border-[#2A2A2a] rounded-xs hover:border-[#C5A059] disabled:opacity-40"
+              aria-label="Previous page"
+              className="p-2 border border-[#2A2A2a] rounded-xs hover:border-[#C5A059] disabled:opacity-30 disabled:hover:border-[#2A2A2a]"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="px-3 py-1.5 bg-[#00140a] border border-[#2A2A2a] rounded-xs text-[#DFC27C]">
-              {pageSafe} / {totalPages}
-            </span>
+
+            {pageNumbers(pageSafe, totalPages).map((n, i) =>
+              n === null ? (
+                <span key={`gap-${i}`} className="px-1.5 text-[#3a3a3a]">…</span>
+              ) : (
+                <button
+                  key={n}
+                  onClick={() => setPage(n)}
+                  aria-current={n === pageSafe ? 'page' : undefined}
+                  className={`min-w-8 px-2.5 py-1.5 border rounded-xs transition-colors ${
+                    n === pageSafe
+                      ? 'bg-[#C5A059] border-[#C5A059] text-black font-semibold'
+                      : 'bg-[#00140a] border-[#2A2A2a] text-[#DFC27C] hover:border-[#C5A059]'
+                  }`}
+                >
+                  {n}
+                </button>
+              )
+            )}
+
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={pageSafe === totalPages}
-              className="p-2 border border-[#2A2A2a] rounded-xs hover:border-[#C5A059] disabled:opacity-40"
+              aria-label="Next page"
+              className="p-2 border border-[#2A2A2a] rounded-xs hover:border-[#C5A059] disabled:opacity-30 disabled:hover:border-[#2A2A2a]"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
