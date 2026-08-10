@@ -272,6 +272,9 @@ async function priceItems(env: Env, items: IncomingItem[]) {
   const lines = items.map(i => {
     const product = byId.get(i.productId);
     if (!product) throw new Error(`Product not found: ${i.productId}`);
+    // A piece can sell out or be archived while it sits in someone's bag.
+    if (product.archived) throw new Error(`No longer available: ${product.name}`);
+    if (!product.inStock) throw new Error(`Out of stock: ${product.name}`);
     const quantity = Math.max(1, Math.min(50, Math.floor(Number(i.quantity) || 1)));
     subtotalINR += product.priceINR * quantity;
     subtotalUSD += (product.priceUSD ?? 0) * quantity;

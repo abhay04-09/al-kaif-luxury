@@ -88,6 +88,11 @@ export function CartView() {
                     {product.collection}
                   </p>
                   <h2 className="mt-2 font-serif text-2xl text-porcelain">{product.name}</h2>
+                  {!product.inStock && (
+                    <p className="mt-2 text-xs uppercase tracking-luxury text-red-400">
+                      Sold out — remove to continue
+                    </p>
+                  )}
                   <p className="mt-2 text-sm text-porcelain/60">{product.material}</p>
                   {size && (
                     <p className="mt-2 text-xs uppercase tracking-luxury text-porcelain/70">
@@ -143,12 +148,18 @@ export function CartView() {
               <span>{formatPrice(summary.total)}</span>
             </div>
           </div>
-          <Link
-            className="mt-8 flex min-h-12 items-center justify-center bg-gold px-6 py-3 text-[0.72rem] uppercase tracking-luxury text-obsidian transition hover:bg-gold-light"
-            href="/checkout"
-          >
-            Continue to Checkout
-          </Link>
+          {summary.hasSoldOut ? (
+            <span className="mt-8 flex min-h-12 cursor-not-allowed items-center justify-center border border-white/15 px-6 py-3 text-center text-[0.72rem] uppercase tracking-luxury text-porcelain/45">
+              Remove sold out pieces
+            </span>
+          ) : (
+            <Link
+              className="mt-8 flex min-h-12 items-center justify-center bg-gold px-6 py-3 text-[0.72rem] uppercase tracking-luxury text-obsidian transition hover:bg-gold-light"
+              href="/checkout"
+            >
+              Continue to Checkout
+            </Link>
+          )}
         </aside>
       </div>
     </section>

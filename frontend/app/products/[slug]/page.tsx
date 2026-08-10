@@ -72,7 +72,12 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
               </ul>
             </div>
             <p className="mt-5 text-sm text-porcelain/60">Material: {product.material}</p>
-            <p className="mt-2 text-sm text-porcelain/60">Available stock: {product.stock}</p>
+            <p className="mt-2 text-sm text-porcelain/60">
+              Availability:{" "}
+              <span className={product.inStock ? "text-gold-light" : "text-porcelain/45"}>
+                {product.inStock ? "In stock" : "Sold out"}
+              </span>
+            </p>
           </div>
         </section>
         <section className="mt-24">

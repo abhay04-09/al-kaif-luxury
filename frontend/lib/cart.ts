@@ -24,12 +24,17 @@ export function getCartSummary(items: CartItem[], catalogue: Product[]) {
     })
     .filter((line) => line !== null);
 
-  const subtotal = lines.reduce((total, line) => total + line.lineTotal, 0);
+  // A piece can sell out after it was added, so it is shown but not charged.
+  const hasSoldOut = lines.some((line) => !line.product.inStock);
+  const subtotal = lines
+    .filter((line) => line.product.inStock)
+    .reduce((total, line) => total + line.lineTotal, 0);
   const shipping = subtotal > 0 ? 0 : 0;
   const total = subtotal + shipping;
 
   return {
     lines,
+    hasSoldOut,
     subtotal,
     shipping,
     total

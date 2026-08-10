@@ -17,6 +17,10 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
   const [added, setAdded] = useState(false);
 
   const addToCart = () => {
+    if (!product.inStock) {
+      return;
+    }
+
     if (sizes.length > 0 && !selectedSize) {
       setError("Please choose a size first.");
       return;
@@ -41,6 +45,19 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
     setAdded(true);
     window.setTimeout(() => setAdded(false), 2000);
   };
+
+  if (!product.inStock) {
+    return (
+      <div className="grid gap-3">
+        <span className="inline-flex min-h-12 w-fit cursor-not-allowed items-center gap-3 border border-white/15 px-6 py-3 text-[0.72rem] uppercase tracking-luxury text-porcelain/45">
+          Sold Out
+        </span>
+        <p className="text-[0.72rem] text-porcelain/60">
+          This piece is currently unavailable. Please check back soon.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4">

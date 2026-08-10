@@ -15,7 +15,8 @@ export type Product = {
   description: string;
   details: string[];
   material: string;
-  stock: number;
+  /** Set from the admin panel; drives the sold-out state across the shop. */
+  inStock: boolean;
   featured: boolean;
   /** Selectable size options, e.g. ring sizes. Empty when the piece has no sizes. */
   sizes: string[];
