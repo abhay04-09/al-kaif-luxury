@@ -46,6 +46,9 @@ export interface Product {
   seoKeywords?: string | null;
   /** Set by the database on insert; read-only. */
   createdAt?: string | null;
+  /** Archived pieces are kept but hidden from the storefront. */
+  archived?: boolean;
+  archivedAt?: string | null;
 }
 
 export interface CartItem {

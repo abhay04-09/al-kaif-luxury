@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Plus, Search, Edit2, Trash2, X, Upload, Package, Star,
   MoreHorizontal, Copy, SlidersHorizontal, ChevronLeft, ChevronRight,
-  Globe, ChevronDown,
+  Globe, ChevronDown, Archive, ArchiveRestore,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { apiFetch, apiJson } from '../api';
@@ -113,7 +113,8 @@ function SkeletonRow() {
   );
 }
 
-export const ProductsPage: React.FC = () => {
+/** Renders the live catalogue, or the archive when `archived` is set. */
+export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = false }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,6 +122,7 @@ export const ProductsPage: React.FC = () => {
   // toolbar state
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [stockFilter, setStockFilter] = useState<'all' | 'in' | 'out'>('all');
   const [sortBy, setSortBy] = useState<SortOpt>('newest');
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState<number>(10);
@@ -152,7 +154,8 @@ export const ProductsPage: React.FC = () => {
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  const MENU_HEIGHT = 128;
+  // Roughly 42px a row: Edit / Duplicate / Archive / Delete, minus one in the archive.
+  const MENU_HEIGHT = archived ? 128 : 170;
 
   const openMenu = (id: string, button: HTMLElement) => {
     if (menuFor === id) {
@@ -170,7 +173,7 @@ export const ProductsPage: React.FC = () => {
 
   const refresh = async () => {
     try {
-      setProducts(await apiJson<Product[]>('/api/products'));
+      setProducts(await apiJson<Product[]>(`/api/products${archived ? '?archived=true' : ''}`));
     } catch (err: any) {
       toast.error(err?.message || 'Could not load products');
     } finally {
@@ -205,6 +208,7 @@ export const ProductsPage: React.FC = () => {
   // ── filtering / sorting / pagination ──
   const filtered = useMemo(() => {
     let list = [...products];
+    if (stockFilter !== 'all') list = list.filter(p => (stockFilter === 'in' ? p.inStock : !p.inStock));
     if (categoryFilter !== 'all') list = list.filter(p => p.category === categoryFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -219,13 +223,22 @@ export const ProductsPage: React.FC = () => {
     if (sortBy === 'price-high') list.sort((a, b) => b.priceINR - a.priceINR);
     if (sortBy === 'price-low') list.sort((a, b) => a.priceINR - b.priceINR);
     return list;
-  }, [products, search, categoryFilter, sortBy]);
+  }, [products, search, categoryFilter, stockFilter, sortBy]);
+
+  const stockCounts = useMemo(
+    () => ({
+      all: products.length,
+      in: products.filter(p => p.inStock).length,
+      out: products.filter(p => !p.inStock).length,
+    }),
+    [products]
+  );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const pageSafe = Math.min(page, totalPages);
   const pageItems = filtered.slice((pageSafe - 1) * perPage, pageSafe * perPage);
 
-  useEffect(() => { setPage(1); }, [search, categoryFilter, sortBy, perPage]);
+  useEffect(() => { setPage(1); }, [search, categoryFilter, stockFilter, sortBy, perPage]);
 
   // ── actions ──
   const openAdd = () => {
@@ -270,6 +283,33 @@ export const ProductsPage: React.FC = () => {
       toast.success('Product deleted');
     } catch (err: any) {
       toast.error(err?.message || 'Could not delete the product');
+    }
+  };
+
+  const handleArchive = async (p: Product, restore: boolean) => {
+    setMenuFor(null);
+    try {
+      await apiJson(`/api/products/${p.id}/archive`, {
+        method: 'PUT',
+        body: JSON.stringify({ archived: !restore }),
+      });
+      // The row belongs to the other list now, so drop it from this one.
+      setProducts(prev => prev.filter(x => x.id !== p.id));
+      toast.success(restore ? `"${p.name}" restored to the catalogue` : `"${p.name}" archived`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not update the product');
+    }
+  };
+
+  const toggleStock = async (p: Product) => {
+    const next = !p.inStock;
+    setProducts(prev => prev.map(x => (x.id === p.id ? { ...x, inStock: next } : x)));
+    try {
+      await apiJson(`/api/products/${p.id}`, { method: 'PUT', body: JSON.stringify({ inStock: next }) });
+      toast.success(next ? 'Marked in stock' : 'Marked out of stock');
+    } catch (err: any) {
+      setProducts(prev => prev.map(x => (x.id === p.id ? { ...x, inStock: !next } : x)));
+      toast.error(err?.message || 'Could not update stock');
     }
   };
 
@@ -380,18 +420,62 @@ export const ProductsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl text-gold-gradient uppercase">Products</h1>
+          <h1 className="font-serif text-2xl text-gold-gradient uppercase">
+            {archived ? 'Archived' : 'Products'}
+          </h1>
           <p className="text-[11px] text-[#A7A7A7] mt-1">
-            {loading ? 'Loading…' : `${filtered.length} of ${products.length} pieces`}
+            {loading
+              ? 'Loading…'
+              : archived
+                ? `${filtered.length} of ${products.length} archived — hidden from the shop`
+                : `${filtered.length} of ${products.length} pieces`}
           </p>
         </div>
-        <button
-          onClick={openAdd}
-          className="px-4 py-2.5 bg-[#C5A059] text-black text-xs font-semibold uppercase tracking-wider rounded-xs hover:bg-[#FFD700] flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Product</span>
-        </button>
+        {!archived && (
+          <button
+            onClick={openAdd}
+            className="px-4 py-2.5 bg-[#C5A059] text-black text-xs font-semibold uppercase tracking-wider rounded-xs hover:bg-[#FFD700] flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Product</span>
+          </button>
+        )}
+      </div>
+
+      {/* Stock status tabs */}
+      <div className="flex flex-wrap gap-2">
+        {([
+          { id: 'all', label: 'All' },
+          { id: 'in', label: 'In stock' },
+          { id: 'out', label: 'Out of stock' },
+        ] as const).map(tab => {
+          const active = stockFilter === tab.id;
+          const count = stockCounts[tab.id];
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setStockFilter(tab.id)}
+              className={`px-3.5 py-2 text-xs uppercase tracking-wider rounded-xs border transition-colors flex items-center gap-2 ${
+                active
+                  ? 'bg-[#C5A059] border-[#C5A059] text-black font-semibold'
+                  : 'bg-[#00140a] border-[#2A2A2a] text-[#DFC27C] hover:border-[#C5A059]'
+              }`}
+            >
+              {tab.label}
+              <span
+                className={`px-1.5 py-px text-[10px] rounded-full ${
+                  active
+                    ? 'bg-black/20 text-black'
+                    : tab.id === 'out' && count > 0
+                      ? 'bg-red-500/15 text-red-400'
+                      : 'bg-[#1a2a1f] text-[#A7A7A7]'
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Toolbar */}
@@ -456,21 +540,33 @@ export const ProductsPage: React.FC = () => {
                 <td colSpan={8}>
                   <div className="flex flex-col items-center justify-center py-16 gap-3">
                     <div className="w-14 h-14 rounded-xs bg-[#00140a] border border-[#2A2A2a] flex items-center justify-center">
-                      {search || categoryFilter !== 'all'
+                      {search || categoryFilter !== 'all' || stockFilter !== 'all'
                         ? <Search className="w-6 h-6 text-[#A7A7A7]" />
-                        : <Package className="w-6 h-6 text-[#A7A7A7]" />}
+                        : archived
+                          ? <Archive className="w-6 h-6 text-[#A7A7A7]" />
+                          : <Package className="w-6 h-6 text-[#A7A7A7]" />}
                     </div>
                     <p className="text-white font-medium">
                       {search
                         ? `No results for "${search}"`
-                        : categoryFilter !== 'all'
-                          ? 'No products in this category'
-                          : 'No products yet'}
+                        : stockFilter === 'out'
+                          ? 'Nothing is out of stock'
+                          : stockFilter === 'in'
+                            ? 'Nothing is in stock'
+                            : categoryFilter !== 'all'
+                              ? 'No products in this category'
+                              : archived
+                                ? 'Nothing archived'
+                                : 'No products yet'}
                     </p>
                     <p className="text-[#A7A7A7] text-[11px]">
-                      {search || categoryFilter !== 'all' ? 'Try different keywords or clear the filters.' : 'Start building your luxury catalogue.'}
+                      {search || categoryFilter !== 'all' || stockFilter !== 'all'
+                        ? 'Try different keywords or clear the filters.'
+                        : archived
+                          ? 'Archived pieces are hidden from the shop but kept here, and can be restored any time.'
+                          : 'Start building your luxury catalogue.'}
                     </p>
-                    {!search && categoryFilter === 'all' && (
+                    {!archived && !search && categoryFilter === 'all' && stockFilter === 'all' && (
                       <button onClick={openAdd} className="mt-1 px-4 py-2 bg-[#C5A059] text-black rounded-xs font-semibold flex items-center gap-2 hover:bg-[#FFD700]">
                         <Plus className="w-3.5 h-3.5" /> Add first product
                       </button>
@@ -515,14 +611,18 @@ export const ProductsPage: React.FC = () => {
                   {relativeDate(p.createdAt)}
                 </td>
                 <td className="p-4">
-                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] rounded-full border ${
-                    p.inStock
-                      ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30'
-                      : 'bg-red-950/60 text-red-400 border-red-500/30'
-                  }`}>
+                  <button
+                    onClick={() => toggleStock(p)}
+                    title={p.inStock ? 'Mark out of stock' : 'Mark in stock'}
+                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] rounded-full border cursor-pointer transition-colors ${
+                      p.inStock
+                        ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30 hover:border-emerald-400'
+                        : 'bg-red-950/60 text-red-400 border-red-500/30 hover:border-red-400'
+                    }`}
+                  >
                     <span className={`w-1.5 h-1.5 rounded-full ${p.inStock ? 'bg-emerald-400' : 'bg-red-400'}`} />
                     {p.inStock ? 'In stock' : 'Out of stock'}
-                  </span>
+                  </button>
                 </td>
                 <td className="p-4">
                   <button
@@ -550,9 +650,20 @@ export const ProductsPage: React.FC = () => {
                       <button onClick={() => openEdit(p)} className="w-full px-4 py-2.5 text-left hover:bg-[#C5A059]/10 flex items-center gap-2 text-[#F5F2EE]">
                         <Edit2 className="w-3.5 h-3.5 text-[#DFC27C]" /> Edit
                       </button>
-                      <button onClick={() => handleDuplicate(p)} className="w-full px-4 py-2.5 text-left hover:bg-[#C5A059]/10 flex items-center gap-2 text-[#F5F2EE]">
-                        <Copy className="w-3.5 h-3.5 text-[#DFC27C]" /> Duplicate
-                      </button>
+                      {archived ? (
+                        <button onClick={() => handleArchive(p, true)} className="w-full px-4 py-2.5 text-left hover:bg-[#C5A059]/10 flex items-center gap-2 text-[#F5F2EE]">
+                          <ArchiveRestore className="w-3.5 h-3.5 text-[#DFC27C]" /> Restore
+                        </button>
+                      ) : (
+                        <>
+                          <button onClick={() => handleDuplicate(p)} className="w-full px-4 py-2.5 text-left hover:bg-[#C5A059]/10 flex items-center gap-2 text-[#F5F2EE]">
+                            <Copy className="w-3.5 h-3.5 text-[#DFC27C]" /> Duplicate
+                          </button>
+                          <button onClick={() => handleArchive(p, false)} className="w-full px-4 py-2.5 text-left hover:bg-[#C5A059]/10 flex items-center gap-2 text-[#F5F2EE]">
+                            <Archive className="w-3.5 h-3.5 text-[#DFC27C]" /> Archive
+                          </button>
+                        </>
+                      )}
                       <button onClick={() => handleDelete(p)} className="w-full px-4 py-2.5 text-left hover:bg-red-950/40 flex items-center gap-2 text-red-300 border-t border-[#2A2A2a]">
                         <Trash2 className="w-3.5 h-3.5" /> Delete
                       </button>

@@ -33,6 +33,8 @@ export function rowToProduct(r: any): Product {
     seoDescription: r.seo_description ?? null,
     seoKeywords: r.seo_keywords ?? null,
     createdAt: r.created_at ?? null,
+    archived: Boolean(r.archived),
+    archivedAt: r.archived_at ?? null,
   };
 }
 

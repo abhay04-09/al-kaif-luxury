@@ -89,17 +89,32 @@ app.get('/api/auth/me', optionalAuth, async c => {
 // ---------------------------------------------------------------- products
 
 app.get('/api/products', async c => {
-  const { category, subcategory, search, featured, newArrival } = c.req.query();
+  const { category, subcategory, search, featured, newArrival, archived } = c.req.query();
   const db = getDb(c.env);
-  let query = db.from('products').select('*').order('created_at', { ascending: false });
+  const wantArchived = archived === 'true';
 
-  if (category && category !== 'all') query = query.eq('category', category);
-  if (subcategory) query = query.eq('subcategory', subcategory);
-  if (featured === 'true') query = query.eq('featured', true);
-  if (newArrival === 'true') query = query.eq('is_new_arrival', true);
-  if (search) query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,subtitle.ilike.%${search}%`);
+  const build = (filterArchived: boolean) => {
+    let query = db.from('products').select('*').order('created_at', { ascending: false });
+    // Archived pieces are hidden everywhere unless they are what was asked for,
+    // so the storefront never has to know the flag exists.
+    if (filterArchived) query = query.eq('archived', wantArchived);
+    if (category && category !== 'all') query = query.eq('category', category);
+    if (subcategory) query = query.eq('subcategory', subcategory);
+    if (featured === 'true') query = query.eq('featured', true);
+    if (newArrival === 'true') query = query.eq('is_new_arrival', true);
+    if (search) query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,subtitle.ilike.%${search}%`);
+    return query;
+  };
 
-  const { data, error } = await query;
+  let { data, error } = await build(true);
+
+  // Migration 004 may not have run yet. Serving the catalogue unfiltered beats
+  // failing the request outright, so fall back rather than take the shop down.
+  if (error && /archived/i.test(error.message)) {
+    if (wantArchived) return c.json([]);
+    ({ data, error } = await build(false));
+  }
+
   if (error) throw new Error(error.message);
   return c.json((data ?? []).map(rowToProduct));
 });
@@ -107,7 +122,8 @@ app.get('/api/products', async c => {
 app.get('/api/products/:id', async c => {
   const db = getDb(c.env);
   const { data } = await db.from('products').select('*').eq('id', c.req.param('id')).maybeSingle();
-  if (!data) return c.json({ error: 'Product not found' }, 404);
+  // An archived piece stays gone even for someone holding an old link.
+  if (!data || data.archived) return c.json({ error: 'Product not found' }, 404);
   return c.json(rowToProduct(data));
 });
 
@@ -134,6 +150,24 @@ app.put('/api/products/:id', requireAdmin, async c => {
   // Clearing the SKU field hands the code back to us, same as on create.
   if (row.sku !== undefined && !row.sku) row.sku = `ALK-NEW-${Math.floor(1000 + Math.random() * 9000)}`;
   const { data, error } = await db.from('products').update(row).eq('id', c.req.param('id')).select('*').maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return c.json({ error: 'Product not found' }, 404);
+  return c.json(rowToProduct(data));
+});
+
+/** Archive or restore. Keeps the record and its order history intact. */
+app.put('/api/products/:id/archive', requireAdmin, async c => {
+  const { archived } = await c.req.json<{ archived?: boolean }>();
+  const isArchiving = archived !== false;
+  const db = getDb(c.env);
+
+  const { data, error } = await db
+    .from('products')
+    .update({ archived: isArchiving, archived_at: isArchiving ? new Date().toISOString() : null })
+    .eq('id', c.req.param('id'))
+    .select('*')
+    .maybeSingle();
+
   if (error) throw new Error(error.message);
   if (!data) return c.json({ error: 'Product not found' }, 404);
   return c.json(rowToProduct(data));
