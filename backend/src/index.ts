@@ -13,7 +13,10 @@ app.use('*', cors({ origin: '*', allowHeaders: ['Content-Type', 'Authorization']
 
 app.onError((err, c) => {
   console.error('API error:', err);
-  return c.json({ error: 'Something went wrong on the server' }, 500);
+  // Admin routes get the real reason — a generic message makes a broken save
+  // impossible to diagnose from the panel.
+  const detail = c.req.header('Authorization') ? err.message : undefined;
+  return c.json({ error: detail || 'Something went wrong on the server' }, 500);
 });
 
 // ---------------------------------------------------------------- health
@@ -114,6 +117,9 @@ app.post('/api/products', requireAdmin, async c => {
   const row = productToRow(body);
   row.id = body.id && String(body.id).startsWith('p-') ? body.id : `p-${Date.now()}`;
   if (!row.sku) row.sku = `ALK-NEW-${Math.floor(1000 + Math.random() * 9000)}`;
+  // The form no longer collects a dollar price, but the column is NOT NULL on
+  // databases created before migration 003.
+  if (row.price_usd === undefined) row.price_usd = 0;
 
   const { data, error } = await db.from('products').insert(row).select('*').single();
   if (error || !data) throw new Error(error?.message ?? 'Insert failed');
