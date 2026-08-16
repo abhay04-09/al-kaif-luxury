@@ -1,15 +1,20 @@
 # AL-KAIFF — Setup Guide
 
-The project is now two parts:
+The project is three parts:
 
 ```
 AL-KAIFF/
-├── frontend/   React + Vite customer storefront   → deploys to Cloudflare Pages
-├── admin/      Standalone admin panel app         → deploys to Cloudflare Pages (separate site)
+├── frontend/   Next.js customer storefront        → deploys to Vercel
+├── admin/      React + Vite admin panel           → deploys to Cloudflare Pages (separate site)
 └── backend/    Hono API on Cloudflare Workers     → talks to Supabase + R2 + Razorpay
 ```
 
-Everything below is on **free tiers**. You need three accounts: Cloudflare, Supabase, Razorpay.
+The Vercel project's **Root Directory** must be set to `frontend`. There is no
+package.json at the repo root, so if that setting is cleared every deploy fails
+in about 45 seconds even though `npm run build` passes locally.
+
+Everything below is on **free tiers**. You need four accounts: Vercel, Cloudflare,
+Supabase, Razorpay.
 
 ---
 
