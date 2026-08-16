@@ -4,7 +4,7 @@ import type { Env } from './env';
 import { getDb, rowToProduct, productToRow, rowToOrder, rowToCategory, buildCategoryTree } from './lib/db';
 import { hashPassword, verifyPassword } from './lib/passwords';
 import { createToken, requireAdmin, optionalAuth, currentUser } from './lib/auth';
-import { createRazorpayOrder, verifyRazorpaySignature } from './lib/razorpay';
+import { createRazorpayOrder, fetchRazorpayPayment, verifyRazorpaySignature } from './lib/razorpay';
 import { SEED_PRODUCTS } from './data/seedProducts';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -321,6 +321,44 @@ app.post('/api/orders', optionalAuth, async c => {
     }
     const valid = await verifyRazorpaySignature(c.env, razorpay_order_id, razorpay_payment_id, razorpay_signature);
     if (!valid) return c.json({ error: 'Payment verification failed' }, 400);
+
+    // A valid signature only proves a payment exists — not that it was for this
+    // cart, and not that it has not already been spent on another order. Both
+    // have to be checked against Razorpay and against our own orders table.
+    const payment = await fetchRazorpayPayment(c.env, razorpay_payment_id);
+    const expectedPaise = Math.round(priced.totalINR * 100);
+
+    const mismatch = !payment
+      ? 'no such payment at Razorpay'
+      : payment.order_id !== razorpay_order_id
+        ? `payment belongs to order ${payment.order_id}`
+        : payment.currency !== 'INR'
+          ? `currency ${payment.currency}`
+          : payment.status !== 'captured' && payment.status !== 'authorized'
+            ? `status ${payment.status}`
+            : payment.amount !== expectedPaise
+              ? `paid ${payment.amount} paise, cart is ${expectedPaise}`
+              : null;
+
+    if (mismatch) {
+      // Log loudly: a real customer may have been charged, and that money must
+      // not disappear silently just because we refused the order.
+      console.error(
+        `Rejected Razorpay payment ${razorpay_payment_id} (order ${razorpay_order_id}): ${mismatch}`
+      );
+      return c.json({ error: 'Payment does not match this order' }, 400);
+    }
+
+    const { data: replay } = await getDb(c.env)
+      .from('orders')
+      .select('id')
+      .eq('razorpay_payment_id', razorpay_payment_id)
+      .maybeSingle();
+    if (replay) {
+      console.error(`Replayed Razorpay payment ${razorpay_payment_id} (already on order ${replay.id})`);
+      return c.json({ error: 'This payment has already been used' }, 409);
+    }
+
     paymentStatus = 'Paid';
     razorpayOrderId = razorpay_order_id;
     razorpayPaymentId = razorpay_payment_id;
