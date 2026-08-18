@@ -1,4 +1,4 @@
-﻿import Image from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 import { Instagram, Mail, MapPin, Phone } from "lucide-react";
 import { primaryNavigation } from "@/lib/navigation";
@@ -97,16 +97,18 @@ export function Footer() {
               </a>
 
               <a
-                href="tel:+910000000000"
+                href="tel:+917096022333"
                 className="flex items-center gap-3 transition hover:text-gold-light"
               >
-                <Phone className="h-4 w-4" strokeWidth={1.5} />
-                +91 00000 00000
+                <Phone className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                +91 70960 22333
               </a>
 
-              <p className="flex items-center gap-3">
-                <MapPin className="h-4 w-4" strokeWidth={1.5} />
-                India
+              <p className="flex items-start gap-3 leading-snug">
+                <MapPin className="h-4 w-4 shrink-0 mt-0.5" strokeWidth={1.5} />
+                <span>
+                  SHOP NO. 08, 1st FLOOR, DARBAR HOTEL, CHAR RASTA, above JAY SWADISHT HOTEL, near HP PERTOL PUMP, Phase 2, GIDC Vapi, Gujarat 396191
+                </span>
               </p>
 
               <a

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -54,8 +54,8 @@ export function Navbar() {
           )}
         </button>
 
-        <Link className="group flex items-center gap-3 text-left" href="/">
-          <AlKaifMark className="h-9 w-9 shrink-0 drop-shadow-[0_0_8px_rgba(255,215,0,0.4)] transition-transform duration-500 group-hover:scale-105 md:h-11 md:w-11" />
+        <Link className="group flex items-center gap-3 text-left py-1" href="/">
+          <AlKaifMark className="h-12 w-auto shrink-0 drop-shadow-[0_0_12px_rgba(255,215,0,0.4)] transition-transform duration-500 group-hover:scale-105 sm:h-14" />
 
           <span className="leading-tight">
             <span className="gold-gradient-text block font-serif text-xl font-medium uppercase tracking-[0.25em] sm:text-2xl">

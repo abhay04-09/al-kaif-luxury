@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowUpRight, ChevronDown } from "lucide-react";
+import { ArrowUpRight, ChevronDown, Play, Pause, Volume2, VolumeX } from "lucide-react";
+import { useRef, useState } from "react";
 
 const editorialLinks = [
   { index: "01", label: "New Arrivals", href: "/products" },
@@ -11,12 +12,34 @@ const editorialLinks = [
 ];
 
 export function HeroSection() {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (isPlaying) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      videoRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const toggleMute = () => {
+    if (!videoRef.current) return;
+    videoRef.current.muted = !isMuted;
+    setIsMuted(!isMuted);
+  };
+
   return (
     <section className="relative flex min-h-[90vh] w-full select-none flex-col justify-between overflow-hidden border-b border-graphite/60 bg-onyx px-6 py-6 text-porcelain md:px-12 lg:h-[92vh] lg:py-10">
       <div className="editorial-grid-pattern pointer-events-none absolute inset-0 z-0 opacity-10" />
       <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
 
       <div className="relative z-10 my-auto grid flex-1 grid-cols-1 items-stretch gap-8 lg:grid-cols-12">
+        {/* Left Column */}
         <div className="hidden flex-col justify-between border-r border-graphite/40 pb-6 pr-8 lg:col-span-3 lg:flex">
           <div className="space-y-4 pt-4">
             <span className="block text-[10px] uppercase tracking-regal text-gold">
@@ -49,6 +72,7 @@ export function HeroSection() {
           </div>
         </div>
 
+        {/* Center Column - Text & Data */}
         <div className="flex flex-col items-center justify-center px-4 py-8 text-center md:px-8 lg:col-span-6">
           <motion.div
             className="relative mb-6"
@@ -114,8 +138,9 @@ export function HeroSection() {
           </motion.div>
         </div>
 
-        <div className="hidden flex-col justify-between border-l border-graphite/40 pb-6 pl-8 lg:col-span-3 lg:flex">
-          <div className="flex flex-col space-y-6 pt-4 text-right">
+        {/* Right Column - Navigation & Embedded Brand Video Beside Data */}
+        <div className="flex flex-col justify-between border-t border-graphite/40 pt-6 lg:border-t-0 lg:border-l lg:border-graphite/40 lg:pb-6 lg:pl-8 lg:pt-0 lg:col-span-3">
+          <div className="hidden flex-col space-y-6 pt-4 text-right lg:flex">
             {editorialLinks.map((item) => (
               <Link className="group" href={item.href} key={item.index}>
                 <p className="text-[10px] uppercase tracking-widest text-gold opacity-40 transition-opacity group-hover:opacity-100">
@@ -132,26 +157,61 @@ export function HeroSection() {
             ))}
           </div>
 
-          {/*
-           * The reference fills this card with a stock photo of a branded
-           * competitor bottle. Left as a gold-washed panel until AL-KAIF's own
-           * product photography is available.
-           */}
-          <Link
-            className="group relative h-44 w-full overflow-hidden border border-graphite bg-black/60 p-1 transition-colors hover:border-gold"
-            href="/products?category=perfumes"
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgb(var(--color-gold)/0.28),transparent_60%)] transition-transform duration-1000 group-hover:scale-110" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-            <div className="relative flex h-full flex-col justify-end p-4 text-left">
-              <span className="mb-0.5 block text-[8px] uppercase tracking-[0.2em] text-gold">
-                Maison Exclusive
+          {/* Embedded Video Card Beside Data */}
+          <div className="group relative mt-6 h-52 w-full overflow-hidden border border-gold/40 bg-black p-1 shadow-2xl transition-all duration-500 hover:border-gold hover:shadow-[0_0_25px_rgba(217,119,6,0.25)] lg:mt-0">
+            <video
+              ref={videoRef}
+              autoPlay
+              className="h-full w-full object-cover opacity-90 transition-opacity duration-500 group-hover:opacity-100"
+              loop
+              muted={isMuted}
+              playsInline
+              poster="/media/al-kaif-logo.png"
+            >
+              <source src="/media/al-kaif-splash.mp4" type="video/mp4" />
+            </video>
+
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
+
+            {/* Video Header Badge */}
+            <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-black/70 px-2.5 py-0.5 text-[8px] font-medium uppercase tracking-widest text-gold backdrop-blur-md">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                Maison Film
               </span>
-              <h3 className="font-serif text-sm text-gold-bright transition-colors group-hover:text-white">
-                Signature Oud No. 7
-              </h3>
             </div>
-          </Link>
+
+            {/* Video Footer Controls & Info */}
+            <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+              <div className="space-y-0.5 pointer-events-none">
+                <span className="block text-[8px] uppercase tracking-[0.2em] text-gold-light/80">
+                  AL-KAIF Luxury
+                </span>
+                <h3 className="font-serif text-xs text-white">
+                  Signature Archive
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  aria-label={isMuted ? "Unmute video" : "Mute video"}
+                  className="rounded-full border border-gold/40 bg-black/80 p-1.5 text-gold transition-colors hover:border-gold hover:bg-gold hover:text-black focus:outline-none"
+                  onClick={toggleMute}
+                  type="button"
+                >
+                  {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                </button>
+                <button
+                  aria-label={isPlaying ? "Pause video" : "Play video"}
+                  className="rounded-full border border-gold/40 bg-black/80 p-1.5 text-gold transition-colors hover:border-gold hover:bg-gold hover:text-black focus:outline-none"
+                  onClick={togglePlay}
+                  type="button"
+                >
+                  {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
