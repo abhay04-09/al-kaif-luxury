@@ -63,7 +63,12 @@ async function fetchOrders(token: string): Promise<Order[] | null> {
   }
 }
 
-export default async function OrdersPage() {
+export default async function OrdersPage({
+  searchParams
+}: {
+  searchParams: Promise<{ placed?: string }>;
+}) {
+  const { placed } = await searchParams;
   const user = await requireUser();
   const token = await getSessionToken();
   const orders = token ? await fetchOrders(token) : null;
@@ -82,6 +87,19 @@ export default async function OrdersPage() {
         <p className="mt-5 max-w-2xl text-sm leading-7 text-porcelain/70">
           Signed in as {user.name} · {user.email}
         </p>
+
+        {placed ? (
+          <div className="mt-8 border border-gold/40 bg-gold/10 px-6 py-5">
+            <p className="font-serif text-xl text-gold-light">
+              Thank you — your commission is placed
+            </p>
+            <p className="mt-2 text-sm text-porcelain/80">
+              {placed
+                ? `Order ${placed} is confirmed. A note is on its way to your inbox.`
+                : "Your order is confirmed."}
+            </p>
+          </div>
+        ) : null}
 
         {orders === null ? (
           <div className="mt-10 border border-red-500/30 bg-red-500/5 p-6">
