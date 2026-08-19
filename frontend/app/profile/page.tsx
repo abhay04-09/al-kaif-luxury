@@ -1,67 +1,57 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Navbar } from "@/components/layout/navbar";
-import { requireUser } from "@/lib/auth-helpers";
-import { prisma } from "@/lib/prisma";
+import { LogoutButton } from "@/components/auth/logout-button";
+import { requireUser } from "@/lib/session";
+
+export const metadata = {
+  title: "My Account | AL-KAIF"
+};
+
+export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
-  const session = await requireUser();
+  const user = await requireUser();
 
-  const user = await prisma.user.findUnique({
-    where: {
-      id: session.user.id
-    },
-    select: {
-      name: true,
-      email: true,
-      phone: true,
-      role: true,
-      createdAt: true
-    }
-  });
-
-  if (!user) {
-    redirect("/login");
-  }
+  const details = [
+    { label: "Name", value: user.name },
+    { label: "Email", value: user.email },
+    { label: "Mobile", value: user.phone || "Not provided" },
+    { label: "Membership", value: user.role === "admin" ? "Maison Admin" : "Private Client" }
+  ];
 
   return (
     <>
       <Navbar />
       <main className="mx-auto min-h-screen max-w-3xl px-5 pb-24 pt-16 sm:px-8">
-        <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light">Account</p>
-        <h1 className="mt-4 font-serif text-5xl text-porcelain">My Profile</h1>
+        <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light">
+          Client Profile
+        </p>
+        <h1 className="mt-4 font-serif text-5xl text-porcelain">My Account</h1>
 
-        <section className="mt-10 divide-y divide-white/10 border-y border-white/10">
-          <div className="grid gap-2 py-5 sm:grid-cols-[10rem_1fr]">
-            <p className="text-sm text-porcelain/60">Name</p>
-            <p className="text-porcelain">{user.name ?? "Not provided"}</p>
-          </div>
+        <dl className="mt-10 divide-y divide-graphite border-y border-graphite">
+          {details.map((detail) => (
+            <div
+              className="grid gap-2 py-5 sm:grid-cols-3 sm:items-center"
+              key={detail.label}
+            >
+              <dt className="text-[0.65rem] uppercase tracking-luxury text-gold-light">
+                {detail.label}
+              </dt>
+              <dd className="text-porcelain sm:col-span-2">{detail.value}</dd>
+            </div>
+          ))}
+        </dl>
 
-          <div className="grid gap-2 py-5 sm:grid-cols-[10rem_1fr]">
-            <p className="text-sm text-porcelain/60">Email</p>
-            <p className="text-porcelain">{user.email ?? "Not provided"}</p>
-          </div>
+        <div className="mt-10 flex flex-wrap gap-4">
+          <Link
+            className="inline-flex min-h-12 items-center border border-gold/70 px-6 py-3 text-[0.72rem] uppercase tracking-luxury text-porcelain transition hover:bg-gold hover:text-obsidian"
+            href="/orders"
+          >
+            View my orders
+          </Link>
 
-          <div className="grid gap-2 py-5 sm:grid-cols-[10rem_1fr]">
-            <p className="text-sm text-porcelain/60">Mobile</p>
-            <p className="text-porcelain">{user.phone ?? "Not provided"}</p>
-          </div>
-
-          <div className="grid gap-2 py-5 sm:grid-cols-[10rem_1fr]">
-            <p className="text-sm text-porcelain/60">Account type</p>
-            <p className="text-gold-light">{user.role}</p>
-          </div>
-
-          <div className="grid gap-2 py-5 sm:grid-cols-[10rem_1fr]">
-            <p className="text-sm text-porcelain/60">Member since</p>
-            <p className="text-porcelain">
-              {user.createdAt.toLocaleDateString("en-IN", {
-                day: "2-digit",
-                month: "long",
-                year: "numeric"
-              })}
-            </p>
-          </div>
-        </section>
+          <LogoutButton />
+        </div>
       </main>
     </>
   );

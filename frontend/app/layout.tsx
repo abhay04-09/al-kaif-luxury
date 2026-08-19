@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Cinzel, Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AnnouncementBar } from "@/components/layout/announcement-bar";
-import { AuthSessionProvider } from "@/components/auth/auth-session-provider";
+import { SessionProvider } from "@/components/auth/session-provider";
 import { WhatsAppButton } from "@/components/layout/whatsapp-button";
 import { SmoothScrollProvider } from "@/components/motion/smooth-scroll-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
@@ -48,13 +48,13 @@ export default function RootLayout({
       className={`${cinzel.variable} ${cormorant.variable} ${jakarta.variable}`}
     >
       <body>
-        <AuthSessionProvider>
+        <SessionProvider>
           <ThemeProvider>
             <AnnouncementBar />
             <SmoothScrollProvider>{children}</SmoothScrollProvider>
             <WhatsAppButton />
           </ThemeProvider>
-        </AuthSessionProvider>
+        </SessionProvider>
       </body>
     </html>
   );

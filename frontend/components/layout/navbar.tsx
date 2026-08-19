@@ -2,28 +2,28 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import { LogOut, Menu, Moon, Search, ShoppingBag, Sun, UserRound, X } from "lucide-react";
 import { primaryNavigation } from "@/lib/navigation";
 import { AlKaifMark } from "@/components/brand/al-kaif-mark";
+import { useSession } from "@/components/auth/session-provider";
 import { useTheme } from "@/components/theme/theme-provider";
 
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { data: session, status } = useSession();
+  const { user, status, logout } = useSession();
   const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   async function handleLogout() {
-    await signOut({ redirect: false });
+    await logout();
     router.replace("/");
     router.refresh();
   }
 
-  const isLoggedIn = status === "authenticated" && Boolean(session?.user);
-  const isAdmin = isLoggedIn && session?.user.role === "ADMIN";
+  const isLoggedIn = status === "authenticated" && Boolean(user);
+  const isAdmin = isLoggedIn && user?.role === "admin";
   // The admin panel is a separate application.
   const navigation = isAdmin
     ? [...primaryNavigation, { label: "Admin", href: "https://al-kaiff-admin.pages.dev" }]
