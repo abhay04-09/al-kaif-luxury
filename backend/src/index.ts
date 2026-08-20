@@ -74,6 +74,56 @@ app.post('/api/auth/login', async c => {
   return c.json({ user: safeUser, token });
 });
 
+app.post('/api/auth/google', async c => {
+  const { accessToken } = await c.req.json();
+  if (!accessToken) return c.json({ error: 'Missing Google sign-in token' }, 400);
+
+  // The browser could send us any email it likes, so the token is verified with
+  // Supabase before it is trusted. Only what Supabase returns is used.
+  const res = await fetch(`${c.env.SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      apikey: c.env.SUPABASE_SERVICE_ROLE_KEY,
+    },
+  });
+  if (!res.ok) return c.json({ error: 'Google sign-in could not be verified' }, 401);
+
+  const profile: any = await res.json();
+  const email = String(profile?.email ?? '').trim().toLowerCase();
+  if (!email) return c.json({ error: 'Google account has no email address' }, 400);
+
+  const meta = profile.user_metadata ?? {};
+  const db = getDb(c.env);
+
+  // An existing account keeps its row — and its role — so signing in with Google
+  // can never quietly hand someone a fresh customer account they already had, or
+  // strip an administrator of their access.
+  const { data: existing } = await db
+    .from('users')
+    .select('id, name, email, phone, role, avatar')
+    .eq('email', email)
+    .maybeSingle();
+
+  let user = existing;
+  if (!user) {
+    const { data: created, error } = await db
+      .from('users')
+      .insert({
+        name: String(meta.full_name ?? meta.name ?? email.split('@')[0]).trim(),
+        email,
+        avatar: meta.avatar_url ?? meta.picture ?? null,
+        role: 'customer',
+      })
+      .select('id, name, email, phone, role, avatar')
+      .single();
+    if (error || !created) throw new Error(error?.message ?? 'Could not create the account');
+    user = created;
+  }
+
+  const token = await createToken(user, c.env.JWT_SECRET);
+  return c.json({ user, token });
+});
+
 app.get('/api/auth/me', optionalAuth, async c => {
   const payload = currentUser(c);
   if (!payload) return c.json({ user: null });

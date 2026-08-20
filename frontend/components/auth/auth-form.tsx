@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
+import { GoogleButton } from "@/components/auth/google-button";
 import { useSession } from "@/components/auth/session-provider";
 
 const fieldClass =
@@ -150,6 +151,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         ) : null}
         {isRegister ? "Create account" : "Sign in"}
       </button>
+
+      <GoogleButton next={params.get("next") ?? undefined} />
 
       <p className="text-sm text-porcelain/70">
         {isRegister ? "Already a client? " : "New to AL-KAIF? "}
