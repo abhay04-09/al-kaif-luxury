@@ -35,3 +35,27 @@ export const isGoogleSignInConfigured = () =>
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
+
+/**
+ * Whether Supabase has an SMS provider connected.
+ *
+ * Asked at runtime rather than baked in at build time, so the mobile option
+ * appears by itself the day the gateway is switched on — nobody has to
+ * remember to redeploy the storefront to match a dashboard setting.
+ */
+let phoneSupport: Promise<boolean> | null = null;
+
+export function isPhoneSignInEnabled(): Promise<boolean> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) return Promise.resolve(false);
+
+  phoneSupport ??= fetch(`${url}/auth/v1/settings`, {
+    headers: { apikey: anonKey }
+  })
+    .then(res => (res.ok ? res.json() : null))
+    .then(settings => Boolean(settings?.external?.phone))
+    .catch(() => false);
+
+  return phoneSupport;
+}

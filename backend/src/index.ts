@@ -124,6 +124,64 @@ app.post('/api/auth/google', async c => {
   return c.json({ user, token });
 });
 
+app.post('/api/auth/phone', async c => {
+  const { accessToken, name } = await c.req.json();
+  if (!accessToken) return c.json({ error: 'Missing sign-in token' }, 400);
+
+  // The browser could claim any number it likes, so the token is verified with
+  // Supabase and only the number Supabase confirms is trusted.
+  const res = await fetch(`${c.env.SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      apikey: c.env.SUPABASE_SERVICE_ROLE_KEY,
+    },
+  });
+  if (!res.ok) return c.json({ error: 'Mobile sign-in could not be verified' }, 401);
+
+  const profile: any = await res.json();
+  const phone = String(profile?.phone ?? '').replace(/\D/g, '');
+  if (!phone) return c.json({ error: 'That sign-in carried no mobile number' }, 400);
+
+  const e164 = `+${phone}`;
+  const national = phone.slice(-10);
+  const db = getDb(c.env);
+
+  // Numbers already on file were typed by hand and may be stored without the
+  // country code, so an existing client is matched on the last ten digits
+  // rather than being handed a second, empty account.
+  const { data: candidates } = await db
+    .from('users')
+    .select('id, name, email, phone, role, avatar')
+    .ilike('phone', `%${national}`);
+
+  let user = (candidates ?? []).find(
+    row => String(row.phone ?? '').replace(/\D/g, '').slice(-10) === national
+  );
+
+  if (user) {
+    // Settle the number into a single canonical form now that it is verified.
+    if (user.phone !== e164) {
+      await db.from('users').update({ phone: e164 }).eq('id', user.id);
+      user = { ...user, phone: e164 };
+    }
+  } else {
+    const { data: created, error } = await db
+      .from('users')
+      .insert({
+        name: String(name ?? '').trim() || `Client ${national.slice(-4)}`,
+        phone: e164,
+        role: 'customer',
+      })
+      .select('id, name, email, phone, role, avatar')
+      .single();
+    if (error || !created) throw new Error(error?.message ?? 'Could not create the account');
+    user = created;
+  }
+
+  const token = await createToken(user, c.env.JWT_SECRET);
+  return c.json({ user, token });
+});
+
 app.get('/api/auth/me', optionalAuth, async c => {
   const payload = currentUser(c);
   if (!payload) return c.json({ user: null });
@@ -548,7 +606,8 @@ app.get('/api/users', requireAdmin, async c => {
       const theirs = (orders ?? []).filter(
         o =>
           (o.user_id && o.user_id === user.id) ||
-          String(o.customer_email ?? '').trim().toLowerCase() === user.email
+          (!!user.email &&
+            String(o.customer_email ?? '').trim().toLowerCase() === user.email)
       );
 
       return {

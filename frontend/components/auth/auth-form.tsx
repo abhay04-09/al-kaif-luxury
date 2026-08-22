@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { GoogleButton } from "@/components/auth/google-button";
+import { PhoneAuth } from "@/components/auth/phone-auth";
 import { useSession } from "@/components/auth/session-provider";
 
 const fieldClass =
@@ -68,91 +69,95 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   }
 
   return (
-    <form className="grid gap-5" onSubmit={handleSubmit}>
-      {isRegister ? (
-        <div>
-          <label className={labelClass} htmlFor="name">
-            Full name
-          </label>
-          <input
-            autoComplete="name"
-            className={fieldClass}
-            id="name"
-            name="name"
-            required
-            type="text"
-          />
-        </div>
-      ) : null}
-
-      <div>
-        <label className={labelClass} htmlFor="email">
-          Email address
-        </label>
-        <input
-          autoComplete="email"
-          className={fieldClass}
-          id="email"
-          name="email"
-          required
-          type="email"
-        />
-      </div>
-
-      {isRegister ? (
-        <div>
-          <label className={labelClass} htmlFor="phone">
-            Mobile number <span className="text-mist">(optional)</span>
-          </label>
-          <input
-            autoComplete="tel"
-            className={fieldClass}
-            id="phone"
-            name="phone"
-            type="tel"
-          />
-        </div>
-      ) : null}
-
-      <div>
-        <label className={labelClass} htmlFor="password">
-          Password
-        </label>
-        <input
-          autoComplete={isRegister ? "new-password" : "current-password"}
-          className={fieldClass}
-          id="password"
-          minLength={isRegister ? 8 : undefined}
-          name="password"
-          required
-          type="password"
-        />
+    <div className="grid gap-5">
+      <form className="grid gap-5" onSubmit={handleSubmit}>
         {isRegister ? (
-          <p className="mt-2 text-xs text-mist">At least 8 characters.</p>
+          <div>
+            <label className={labelClass} htmlFor="name">
+              Full name
+            </label>
+            <input
+              autoComplete="name"
+              className={fieldClass}
+              id="name"
+              name="name"
+              required
+              type="text"
+            />
+          </div>
         ) : null}
-      </div>
 
-      {error ? (
-        <p
-          className="border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200"
-          role="alert"
+        <div>
+          <label className={labelClass} htmlFor="email">
+            Email address
+          </label>
+          <input
+            autoComplete="email"
+            className={fieldClass}
+            id="email"
+            name="email"
+            required
+            type="email"
+          />
+        </div>
+
+        {isRegister ? (
+          <div>
+            <label className={labelClass} htmlFor="phone">
+              Mobile number <span className="text-mist">(optional)</span>
+            </label>
+            <input
+              autoComplete="tel"
+              className={fieldClass}
+              id="phone"
+              name="phone"
+              type="tel"
+            />
+          </div>
+        ) : null}
+
+        <div>
+          <label className={labelClass} htmlFor="password">
+            Password
+          </label>
+          <input
+            autoComplete={isRegister ? "new-password" : "current-password"}
+            className={fieldClass}
+            id="password"
+            minLength={isRegister ? 8 : undefined}
+            name="password"
+            required
+            type="password"
+          />
+          {isRegister ? (
+            <p className="mt-2 text-xs text-mist">At least 8 characters.</p>
+          ) : null}
+        </div>
+
+        {error ? (
+          <p
+            className="border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+            role="alert"
+          >
+            {error}
+          </p>
+        ) : null}
+
+        <button
+          className="inline-flex min-h-12 items-center justify-center gap-2 bg-gold px-6 py-3 text-[0.72rem] uppercase tracking-luxury text-obsidian transition hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={isSubmitting}
+          type="submit"
         >
-          {error}
-        </p>
-      ) : null}
-
-      <button
-        className="inline-flex min-h-12 items-center justify-center gap-2 bg-gold px-6 py-3 text-[0.72rem] uppercase tracking-luxury text-obsidian transition hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-60"
-        disabled={isSubmitting}
-        type="submit"
-      >
-        {isSubmitting ? (
-          <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-        ) : null}
-        {isRegister ? "Create account" : "Sign in"}
-      </button>
+          {isSubmitting ? (
+            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+          ) : null}
+          {isRegister ? "Create account" : "Sign in"}
+        </button>
+      </form>
 
       <GoogleButton next={params.get("next") ?? undefined} />
+
+      <PhoneAuth mode={mode} next={params.get("next") ?? undefined} />
 
       <p className="text-sm text-porcelain/70">
         {isRegister ? "Already a client? " : "New to AL-KAIF? "}
@@ -163,6 +168,6 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           {isRegister ? "Sign in" : "Create an account"}
         </Link>
       </p>
-    </form>
+    </div>
   );
 }
