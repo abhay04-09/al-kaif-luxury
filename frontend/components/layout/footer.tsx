@@ -6,10 +6,18 @@ import { primaryNavigation } from "@/lib/navigation";
 const instagramUrl =
   "https://www.instagram.com/alkaif.jewellery?igsh=OG5jYnNxdGI0dGlm";
 
+const legalLinks = [
+  { label: "Privacy", href: "/privacy" },
+  { label: "Terms", href: "/terms" },
+  { label: "Refunds", href: "/refund" },
+  { label: "Shipping", href: "/shipping" },
+  { label: "Contact", href: "/contact" }
+];
+
 const footerLinks = [
   { label: "Collections", href: "/products" },
   { label: "Cart", href: "/cart" },
-  { label: "Checkout", href: "/checkout" },
+  { label: "Contact", href: "/contact" },
   { label: "Account", href: "/login" }
 ];
 
@@ -127,13 +135,16 @@ export function Footer() {
         <div className="mt-16 flex flex-col gap-6 border-t border-graphite pt-8 text-xs text-mist sm:flex-row sm:items-center sm:justify-between">
           <p>© 2019 AL-KAIF. All rights reserved.</p>
 
-          <div className="flex gap-6">
-            <Link href="/" className="transition hover:text-gold-light">
-              Privacy
-            </Link>
-            <Link href="/" className="transition hover:text-gold-light">
-              Terms
-            </Link>
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
+            {legalLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="transition hover:text-gold-light"
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
         </div>
       </div>
