@@ -4,7 +4,12 @@ import type { Env } from './env';
 import { getDb, rowToProduct, productToRow, rowToOrder, rowToCategory, buildCategoryTree } from './lib/db';
 import { hashPassword, verifyPassword } from './lib/passwords';
 import { createToken, requireAdmin, optionalAuth, currentUser } from './lib/auth';
-import { createRazorpayOrder, fetchRazorpayPayment, verifyRazorpaySignature } from './lib/razorpay';
+import {
+  createRazorpayOrder,
+  fetchRazorpayPayment,
+  verifyRazorpaySignature,
+  verifyWebhookSignature,
+} from './lib/razorpay';
 import { SEED_PRODUCTS } from './data/seedProducts';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -407,6 +412,87 @@ app.get('/api/orders', optionalAuth, async c => {
   return c.json((data ?? []).map(rowToOrder));
 });
 
+type PricedCart = Awaited<ReturnType<typeof priceItems>>;
+
+interface OrderDraft {
+  priced: PricedCart;
+  userId: string | null;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  shippingAddress: unknown;
+  paymentMethod: string;
+  paymentStatus: 'Pending' | 'Paid';
+  razorpayOrderId: string | null;
+  razorpayPaymentId: string | null;
+  giftWrapped?: boolean;
+  notes?: string | null;
+}
+
+/**
+ * Writes an order and its lines.
+ *
+ * Shared by the browser's confirmation and by Razorpay's webhook, which race
+ * each other whenever a payment succeeds. The unique index on
+ * razorpay_payment_id decides which one wins; the loser is told 'duplicate'
+ * rather than raising, because a second attempt at the same payment is the
+ * system working, not a fault.
+ */
+async function writeOrder(env: Env, draft: OrderDraft) {
+  const db = getDb(env);
+  const id = `ord-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const orderNumber = `ALK-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  const { data: orderRow, error: orderErr } = await db
+    .from('orders')
+    .insert({
+      id,
+      order_number: orderNumber,
+      user_id: draft.userId,
+      customer_name: draft.customerName,
+      customer_email: draft.customerEmail,
+      customer_phone: draft.customerPhone,
+      shipping_address: draft.shippingAddress,
+      subtotal_inr: draft.priced.subtotalINR,
+      tax_inr: draft.priced.taxINR,
+      discount_inr: 0,
+      total_inr: draft.priced.totalINR,
+      total_usd: draft.priced.totalUSD,
+      payment_method: draft.paymentMethod,
+      payment_status: draft.paymentStatus,
+      order_status: 'Placed',
+      razorpay_order_id: draft.razorpayOrderId,
+      razorpay_payment_id: draft.razorpayPaymentId,
+      gift_wrapped: !!draft.giftWrapped,
+      notes: draft.notes ?? null,
+    })
+    .select('*')
+    .single();
+
+  // 23505: the unique index on razorpay_payment_id rejected a second order for
+  // the same payment.
+  if (orderErr?.code === '23505') return 'duplicate' as const;
+  if (orderErr || !orderRow) throw new Error(orderErr?.message ?? 'Order insert failed');
+
+  const { error: itemsErr } = await db.from('order_items').insert(
+    draft.priced.lines.map(l => ({
+      order_id: id,
+      product_id: l.product.id,
+      product_name: l.product.name,
+      quantity: l.quantity,
+      price_inr: l.product.priceINR,
+      price_usd: l.product.priceUSD,
+      image: l.product.image,
+      selected_metal: l.selectedMetal ?? null,
+      selected_size: l.selectedSize ?? null,
+    }))
+  );
+  if (itemsErr) throw new Error(itemsErr.message);
+
+  const { data: full } = await db.from('orders').select('*, order_items(*)').eq('id', id).single();
+  return rowToOrder(full);
+}
+
 app.post('/api/orders', optionalAuth, async c => {
   const body = await c.req.json();
   const { items, shippingAddress, customerName, customerEmail, customerPhone, paymentMethod, giftWrapped, notes } = body;
@@ -474,54 +560,33 @@ app.post('/api/orders', optionalAuth, async c => {
     return c.json({ error: 'Unsupported payment method' }, 400);
   }
 
-  const db = getDb(c.env);
-  const id = `ord-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  const orderNumber = `ALK-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const written = await writeOrder(c.env, {
+    priced,
+    userId: user?.sub ?? null,
+    customerName,
+    customerEmail: customerEmail ?? user?.email ?? '',
+    customerPhone,
+    shippingAddress,
+    paymentMethod,
+    paymentStatus,
+    razorpayOrderId,
+    razorpayPaymentId,
+    giftWrapped,
+    notes,
+  });
 
-  const { data: orderRow, error: orderErr } = await db
-    .from('orders')
-    .insert({
-      id,
-      order_number: orderNumber,
-      user_id: user?.sub ?? null,
-      customer_name: customerName,
-      customer_email: customerEmail ?? user?.email ?? '',
-      customer_phone: customerPhone,
-      shipping_address: shippingAddress,
-      subtotal_inr: priced.subtotalINR,
-      tax_inr: priced.taxINR,
-      discount_inr: 0,
-      total_inr: priced.totalINR,
-      total_usd: priced.totalUSD,
-      payment_method: paymentMethod,
-      payment_status: paymentStatus,
-      order_status: 'Placed',
-      razorpay_order_id: razorpayOrderId,
-      razorpay_payment_id: razorpayPaymentId,
-      gift_wrapped: !!giftWrapped,
-      notes: notes ?? null,
-    })
-    .select('*')
-    .single();
-  if (orderErr || !orderRow) throw new Error(orderErr?.message ?? 'Order insert failed');
+  if (written === 'duplicate') {
+    // The webhook got there first — the money is accounted for, so this is not
+    // an error the client needs to see as a failure.
+    console.error(`Order for payment ${razorpayPaymentId} already written by the webhook`);
+    return c.json({ error: 'This payment has already been used' }, 409);
+  }
 
-  const { error: itemsErr } = await db.from('order_items').insert(
-    priced.lines.map(l => ({
-      order_id: id,
-      product_id: l.product.id,
-      product_name: l.product.name,
-      quantity: l.quantity,
-      price_inr: l.product.priceINR,
-      price_usd: l.product.priceUSD,
-      image: l.product.image,
-      selected_metal: l.selectedMetal ?? null,
-      selected_size: l.selectedSize ?? null,
-    }))
-  );
-  if (itemsErr) throw new Error(itemsErr.message);
+  if (razorpayOrderId) {
+    await getDb(c.env).from('pending_checkouts').delete().eq('razorpay_order_id', razorpayOrderId);
+  }
 
-  const { data: full } = await db.from('orders').select('*, order_items(*)').eq('id', id).single();
-  return c.json(rowToOrder(full), 201);
+  return c.json(written, 201);
 });
 
 app.put('/api/orders/:id/status', requireAdmin, async c => {
@@ -543,10 +608,33 @@ app.put('/api/orders/:id/status', requireAdmin, async c => {
 
 // ---------------------------------------------------------------- payments (Razorpay)
 
-app.post('/api/payments/razorpay/order', async c => {
-  const { items } = await c.req.json();
+app.post('/api/payments/razorpay/order', optionalAuth, async c => {
+  const body = await c.req.json();
+  const { items, shippingAddress, customerName, customerEmail, customerPhone, giftWrapped, notes } = body;
   const priced = await priceItems(c.env, items);
   const rzpOrder = await createRazorpayOrder(c.env, priced.totalINR, `rcpt_${Date.now()}`);
+  const user = currentUser(c);
+
+  // Park the basket before the payment window opens. If the client pays and
+  // their browser never makes it back, the webhook has everything it needs to
+  // finish the order without them.
+  if (shippingAddress && customerName && customerPhone) {
+    const { error } = await getDb(c.env).from('pending_checkouts').insert({
+      razorpay_order_id: rzpOrder.id,
+      user_id: user?.sub ?? null,
+      customer_name: customerName,
+      customer_email: customerEmail ?? user?.email ?? '',
+      customer_phone: customerPhone,
+      shipping_address: shippingAddress,
+      items,
+      gift_wrapped: !!giftWrapped,
+      notes: notes ?? null,
+    });
+    // Never block the payment over this — losing recovery is far better than
+    // refusing a client who is ready to pay.
+    if (error) console.error(`Could not park checkout ${rzpOrder.id}: ${error.message}`);
+  }
+
   return c.json({
     razorpayOrderId: rzpOrder.id,
     amount: rzpOrder.amount, // paise
@@ -554,6 +642,89 @@ app.post('/api/payments/razorpay/order', async c => {
     keyId: c.env.RAZORPAY_KEY_ID, // public key id — safe to expose
     totalINR: priced.totalINR,
   });
+});
+
+/**
+ * Razorpay's own account of what happened.
+ *
+ * This is the safety net for a payment that succeeded while the client's
+ * browser did not come back — a closed tab, a flat battery, a train tunnel.
+ * Razorpay retries a delivery it cannot get a 2xx for, so anything that a
+ * retry cannot fix answers 200 and shouts in the log instead.
+ */
+app.post('/api/payments/razorpay/webhook', async c => {
+  const secret = c.env.RAZORPAY_WEBHOOK_SECRET;
+  // Without a secret nothing can be trusted, and accepting unsigned events
+  // would let anyone mark orders paid.
+  if (!secret) {
+    console.error('Razorpay webhook arrived but RAZORPAY_WEBHOOK_SECRET is not set');
+    return c.json({ error: 'Webhooks are not configured' }, 503);
+  }
+
+  const signature = c.req.header('X-Razorpay-Signature');
+  const raw = await c.req.text();
+  if (!signature || !(await verifyWebhookSignature(secret, raw, signature))) {
+    return c.json({ error: 'Invalid signature' }, 400);
+  }
+
+  const event = JSON.parse(raw);
+  const payment = event?.payload?.payment?.entity;
+  if (event?.event !== 'payment.captured' || !payment?.id) {
+    return c.json({ status: 'ignored' });
+  }
+
+  const db = getDb(c.env);
+  const { data: already } = await db
+    .from('orders')
+    .select('id')
+    .eq('razorpay_payment_id', payment.id)
+    .maybeSingle();
+  // The usual case: the browser came back and wrote the order itself.
+  if (already) return c.json({ status: 'already recorded' });
+
+  const { data: parked } = await db
+    .from('pending_checkouts')
+    .select('*')
+    .eq('razorpay_order_id', payment.order_id)
+    .maybeSingle();
+
+  if (!parked) {
+    console.error(
+      `Captured payment ${payment.id} (order ${payment.order_id}) has no order and no parked checkout — needs manual reconciliation`
+    );
+    return c.json({ status: 'unmatched' });
+  }
+
+  const priced = await priceItems(c.env, parked.items);
+  const expectedPaise = Math.round(priced.totalINR * 100);
+  if (payment.amount !== expectedPaise || payment.currency !== 'INR') {
+    console.error(
+      `Captured payment ${payment.id} is ${payment.amount} ${payment.currency}, parked basket is ${expectedPaise} INR — not recording`
+    );
+    return c.json({ status: 'mismatched' });
+  }
+
+  const written = await writeOrder(c.env, {
+    priced,
+    userId: parked.user_id,
+    customerName: parked.customer_name,
+    customerEmail: parked.customer_email,
+    customerPhone: parked.customer_phone,
+    shippingAddress: parked.shipping_address,
+    paymentMethod: 'Razorpay',
+    paymentStatus: 'Paid',
+    razorpayOrderId: payment.order_id,
+    razorpayPaymentId: payment.id,
+    giftWrapped: parked.gift_wrapped,
+    notes: parked.notes,
+  });
+
+  await db.from('pending_checkouts').delete().eq('razorpay_order_id', payment.order_id);
+
+  if (written === 'duplicate') return c.json({ status: 'already recorded' });
+
+  console.log(`Recovered order ${written.orderNumber} from webhook for payment ${payment.id}`);
+  return c.json({ status: 'recorded', orderNumber: written.orderNumber });
 });
 
 // ---------------------------------------------------------------- currency rates

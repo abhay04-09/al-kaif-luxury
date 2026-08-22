@@ -5,6 +5,8 @@ export interface Env {
   JWT_SECRET: string;
   RAZORPAY_KEY_ID: string;
   RAZORPAY_KEY_SECRET: string;
+  /** Set in the Razorpay dashboard when creating the webhook; not the API key. */
+  RAZORPAY_WEBHOOK_SECRET: string;
   ADMIN_EMAIL: string;
   ADMIN_PASSWORD: string;
 }

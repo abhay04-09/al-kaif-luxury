@@ -137,7 +137,9 @@ export function CheckoutView() {
       const res = await fetch("/api/checkout/razorpay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: orderItems })
+        // The details go up with the basket so the maison can complete the
+        // order from Razorpay's webhook if this browser never comes back.
+        body: JSON.stringify({ ...details, items: orderItems })
       });
       const order = (await res.json()) as {
         razorpayOrderId?: string;
