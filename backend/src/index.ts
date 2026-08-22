@@ -527,6 +527,48 @@ app.get('/api/rates', async c => {
   }
 });
 
+// ---------------------------------------------------------------- customers
+
+app.get('/api/users', requireAdmin, async c => {
+  const db = getDb(c.env);
+  const { data: users, error } = await db
+    .from('users')
+    .select('id, name, email, phone, role, avatar, created_at, password_hash')
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+
+  const { data: orders } = await db
+    .from('orders')
+    .select('user_id, customer_email, total_inr, payment_status, created_at');
+
+  return c.json(
+    (users ?? []).map(({ password_hash, created_at, ...user }) => {
+      // Orders are matched on email as well as id, so a purchase made as a
+      // guest still shows against the account that later used that address.
+      const theirs = (orders ?? []).filter(
+        o =>
+          (o.user_id && o.user_id === user.id) ||
+          String(o.customer_email ?? '').trim().toLowerCase() === user.email
+      );
+
+      return {
+        ...user,
+        createdAt: created_at,
+        // A row carrying no password was created by Google sign-in.
+        signUpMethod: password_hash ? 'Email' : 'Google',
+        orderCount: theirs.length,
+        totalSpentINR: theirs
+          .filter(o => o.payment_status === 'Paid')
+          .reduce((sum, o) => sum + Number(o.total_inr ?? 0), 0),
+        lastOrderAt: theirs.reduce<string | null>(
+          (latest, o) => (!latest || String(o.created_at) > latest ? String(o.created_at) : latest),
+          null
+        ),
+      };
+    })
+  );
+});
+
 // ---------------------------------------------------------------- newsletter
 
 app.get('/api/newsletter', requireAdmin, async c => {
