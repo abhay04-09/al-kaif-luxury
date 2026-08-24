@@ -8,6 +8,7 @@ import { primaryNavigation } from "@/lib/navigation";
 import { AlKaifMark } from "@/components/brand/al-kaif-mark";
 import { useSession } from "@/components/auth/session-provider";
 import { useTheme } from "@/components/theme/theme-provider";
+import { useCartCount } from "@/lib/use-cart-count";
 
 export function Navbar() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export function Navbar() {
   const { user, status, logout } = useSession();
   const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const cartCount = useCartCount();
 
   async function handleLogout() {
     await logout();
@@ -134,11 +136,23 @@ export function Navbar() {
           )}
 
           <Link
-            aria-label="Open shopping bag"
-            className="inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
+            aria-label={
+              cartCount > 0
+                ? `Open shopping bag, ${cartCount} ${cartCount === 1 ? "piece" : "pieces"}`
+                : "Open shopping bag"
+            }
+            className="relative inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
             href="/cart"
           >
             <ShoppingBag aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
+            {cartCount > 0 ? (
+              <span
+                aria-hidden="true"
+                className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold px-1 text-[0.6rem] font-medium leading-none text-obsidian"
+              >
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            ) : null}
           </Link>
         </div>
       </nav>

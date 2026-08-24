@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -82,7 +83,22 @@ export function CartView() {
           <h1 className="mt-4 font-serif text-5xl text-porcelain">Selected Pieces</h1>
           <div className="mt-10 divide-y divide-white/10 border-y border-white/10">
             {summary.lines.map(({ product, quantity, size, lineTotal }) => (
-              <div className="grid gap-5 py-6 sm:grid-cols-[1fr_auto]" key={`${product.id}-${size ?? ""}`}>
+              <div
+                className="grid gap-5 py-6 sm:grid-cols-[6rem_1fr_auto] sm:items-start"
+                key={`${product.id}-${size ?? ""}`}
+              >
+                <Link
+                  className="relative block aspect-[4/5] w-24 shrink-0 overflow-hidden border border-white/10 bg-onyx"
+                  href={`/products/${product.slug}`}
+                >
+                  <Image
+                    alt={product.name}
+                    className="object-cover"
+                    fill
+                    sizes="96px"
+                    src={product.image}
+                  />
+                </Link>
                 <div>
                   <p className="text-xs uppercase tracking-luxury text-gold-light">
                     {product.collection}
