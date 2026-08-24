@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LogOut, Menu, Moon, Search, ShoppingBag, Sun, UserRound, X } from "lucide-react";
+import { Menu, Moon, Search, ShoppingBag, Sun, UserRound, X } from "lucide-react";
 import { primaryNavigation } from "@/lib/navigation";
 import { AlKaifMark } from "@/components/brand/al-kaif-mark";
 import { useSession } from "@/components/auth/session-provider";
@@ -11,18 +11,11 @@ import { useTheme } from "@/components/theme/theme-provider";
 import { useCartCount } from "@/lib/use-cart-count";
 
 export function Navbar() {
-  const router = useRouter();
   const pathname = usePathname();
-  const { user, status, logout } = useSession();
+  const { user, status } = useSession();
   const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const cartCount = useCartCount();
-
-  async function handleLogout() {
-    await logout();
-    router.replace("/");
-    router.refresh();
-  }
 
   const isLoggedIn = status === "authenticated" && Boolean(user);
   const isAdmin = isLoggedIn && user?.role === "admin";
@@ -103,37 +96,15 @@ export function Navbar() {
             )}
           </button>
 
-          {isLoggedIn ? (
-            <>
-              <Link
-                aria-label="View my orders"
-                className="inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
-                href="/profile"
-              >
-                <UserRound aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
-              </Link>
-
-              <button
-                aria-label="Log out"
-                className="inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light lg:w-auto lg:gap-2 lg:border lg:border-white/10 lg:px-3"
-                onClick={handleLogout}
-                type="button"
-              >
-                <LogOut aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
-                <span className="hidden text-[0.68rem] uppercase tracking-luxury lg:inline">
-                  Logout
-                </span>
-              </button>
-            </>
-          ) : (
-            <Link
-              aria-label="Open account"
-              className="inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
-              href="/login"
-            >
-              <UserRound aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
-            </Link>
-          )}
+          {/* Signing out belongs on the account page, as it does on any shop —
+              a logout button in the header is one slip from losing a bag. */}
+          <Link
+            aria-label={isLoggedIn ? "My account" : "Sign in"}
+            className="inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
+            href={isLoggedIn ? "/profile" : "/login"}
+          >
+            <UserRound aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
+          </Link>
 
           <Link
             aria-label={
