@@ -12,6 +12,7 @@ import {
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { AccountDetailsForm } from "@/components/account/account-details-form";
 import { API_BASE } from "@/lib/api";
 import { getSessionToken, requireUser } from "@/lib/session";
 
@@ -223,57 +224,44 @@ export default async function ProfilePage() {
           )}
         </section>
 
-        {/* Details */}
+        {/* Details — editable, because a client's address changes */}
         <section className="mt-12 grid gap-4 sm:grid-cols-2">
-          <div className="border border-graphite bg-onyx p-6">
-            <h2 className="font-serif text-xl text-porcelain">Account details</h2>
-            <dl className="mt-5 space-y-4 text-sm">
-              <div>
-                <dt className="text-[0.6rem] uppercase tracking-luxury text-mist">
-                  Name
-                </dt>
-                <dd className="mt-1 text-porcelain">{user.name}</dd>
-              </div>
-              <div>
-                <dt className="text-[0.6rem] uppercase tracking-luxury text-mist">
-                  Email
-                </dt>
-                <dd className="mt-1 break-words text-porcelain">
-                  {user.email ?? "Not provided"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[0.6rem] uppercase tracking-luxury text-mist">
-                  Mobile
-                </dt>
-                <dd className="mt-1 text-porcelain">
-                  {user.phone || "Not provided"}
-                </dd>
-              </div>
-            </dl>
-          </div>
+          <AccountDetailsForm
+            address={user.address ?? ""}
+            name={user.name}
+            phone={user.phone ?? ""}
+          />
 
           <div className="border border-graphite bg-onyx p-6">
             <h2 className="flex items-center gap-2 font-serif text-xl text-porcelain">
               <MapPin aria-hidden="true" className="h-4 w-4 text-gold" strokeWidth={1.5} />
-              Delivery address
+              Last delivered to
             </h2>
             {lastAddress ? (
               <>
-                <p className="mt-5 text-sm leading-7 text-porcelain/72">
+                <p className="mt-5 whitespace-pre-line text-sm leading-7 text-porcelain/72">
                   {lastAddress}
                 </p>
                 <p className="mt-4 text-xs leading-6 text-mist">
-                  Taken from your most recent order. You can change it at
-                  checkout whenever you order again.
+                  Where your most recent order went. Your saved address is what
+                  checkout fills in next time.
                 </p>
               </>
             ) : (
               <p className="mt-5 text-sm leading-7 text-porcelain/65">
-                No address on file yet. The address you enter at checkout will
-                appear here.
+                Nothing delivered yet. Once an order arrives, where it went will
+                be shown here.
               </p>
             )}
+
+            <h2 className="mt-8 font-serif text-xl text-porcelain">Sign-in</h2>
+            <p className="mt-4 text-sm leading-7 text-porcelain/72">
+              {user.email ?? "No email on this account"}
+            </p>
+            <p className="mt-2 text-xs leading-6 text-mist">
+              Your email address identifies the account and cannot be changed
+              here. Write to us if it needs correcting.
+            </p>
           </div>
         </section>
 

@@ -10,6 +10,8 @@ export type SessionUser = {
   name: string;
   email: string;
   phone?: string | null;
+  /** The client's saved delivery address, used to prefill checkout. */
+  address?: string | null;
   role: "customer" | "admin";
   avatar?: string | null;
 };

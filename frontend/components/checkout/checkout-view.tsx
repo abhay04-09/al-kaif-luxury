@@ -320,6 +320,7 @@ export function CheckoutView() {
             <textarea
               autoComplete="street-address"
               className={`${fieldClass} min-h-32 resize-y py-3`}
+              defaultValue={user?.address ?? ""}
               id="shippingAddress"
               name="shippingAddress"
               placeholder="Flat, building, street, city, state, PIN"

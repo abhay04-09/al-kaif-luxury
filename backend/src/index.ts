@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import type { Env } from './env';
 import { getDb, rowToProduct, productToRow, rowToOrder, rowToCategory, buildCategoryTree } from './lib/db';
 import { hashPassword, verifyPassword } from './lib/passwords';
-import { createToken, requireAdmin, optionalAuth, currentUser } from './lib/auth';
+import { createToken, requireAdmin, requireAuth, optionalAuth, currentUser } from './lib/auth';
 import {
   createRazorpayOrder,
   fetchRazorpayPayment,
@@ -51,7 +51,7 @@ app.post('/api/auth/register', async c => {
       password_hash: await hashPassword(String(password)),
       role: 'customer',
     })
-    .select('id, name, email, phone, role, avatar')
+    .select('id, name, email, phone, role, avatar, address')
     .single();
   if (error || !user) throw new Error(error?.message ?? 'Insert failed');
 
@@ -66,7 +66,7 @@ app.post('/api/auth/login', async c => {
   const db = getDb(c.env);
   const { data: user } = await db
     .from('users')
-    .select('id, name, email, phone, role, avatar, password_hash')
+    .select('id, name, email, phone, role, avatar, address, password_hash')
     .eq('email', String(email).trim().toLowerCase())
     .maybeSingle();
 
@@ -105,7 +105,7 @@ app.post('/api/auth/google', async c => {
   // strip an administrator of their access.
   const { data: existing } = await db
     .from('users')
-    .select('id, name, email, phone, role, avatar')
+    .select('id, name, email, phone, role, avatar, address')
     .eq('email', email)
     .maybeSingle();
 
@@ -119,7 +119,7 @@ app.post('/api/auth/google', async c => {
         avatar: meta.avatar_url ?? meta.picture ?? null,
         role: 'customer',
       })
-      .select('id, name, email, phone, role, avatar')
+      .select('id, name, email, phone, role, avatar, address')
       .single();
     if (error || !created) throw new Error(error?.message ?? 'Could not create the account');
     user = created;
@@ -156,7 +156,7 @@ app.post('/api/auth/phone', async c => {
   // rather than being handed a second, empty account.
   const { data: candidates } = await db
     .from('users')
-    .select('id, name, email, phone, role, avatar')
+    .select('id, name, email, phone, role, avatar, address')
     .ilike('phone', `%${national}`);
 
   let user = (candidates ?? []).find(
@@ -177,7 +177,7 @@ app.post('/api/auth/phone', async c => {
         phone: e164,
         role: 'customer',
       })
-      .select('id, name, email, phone, role, avatar')
+      .select('id, name, email, phone, role, avatar, address')
       .single();
     if (error || !created) throw new Error(error?.message ?? 'Could not create the account');
     user = created;
@@ -187,13 +187,76 @@ app.post('/api/auth/phone', async c => {
   return c.json({ user, token });
 });
 
+app.put('/api/auth/me', requireAuth, async c => {
+  const payload = currentUser(c)!;
+  const { name, phone, address } = await c.req.json();
+
+  const patch: Record<string, unknown> = {};
+  if (name !== undefined) {
+    const trimmed = String(name).trim();
+    if (!trimmed) return c.json({ error: 'A name is required' }, 400);
+    patch.name = trimmed;
+  }
+  if (address !== undefined) patch.address = String(address).trim() || null;
+  if (phone !== undefined) {
+    const digits = String(phone).replace(/\D/g, '');
+    if (!digits) {
+      patch.phone = null;
+    } else if (digits.length < 10) {
+      return c.json({ error: 'That mobile number looks too short' }, 400);
+    } else {
+      // Numbers verified by OTP are stored in E.164; keeping one shape means a
+      // client cannot end up with two accounts for the same number.
+      patch.phone = `+${digits.length === 10 ? `91${digits}` : digits}`;
+    }
+  }
+
+  if (Object.keys(patch).length === 0) return c.json({ error: 'Nothing to update' }, 400);
+
+  const db = getDb(c.env);
+
+  // The unique index compares stored text, and a number written '8347016843'
+  // by hand is the same number as '+918347016843' from an OTP. Matching on the
+  // last ten digits is what actually stops one person holding two accounts.
+  if (typeof patch.phone === 'string') {
+    const national = patch.phone.replace(/\D/g, '').slice(-10);
+    const { data: clashes } = await db
+      .from('users')
+      .select('id, phone')
+      .ilike('phone', `%${national}`);
+    const taken = (clashes ?? []).some(
+      row =>
+        row.id !== payload.sub &&
+        String(row.phone ?? '').replace(/\D/g, '').slice(-10) === national
+    );
+    if (taken) {
+      return c.json({ error: 'That mobile number is already on another account' }, 409);
+    }
+  }
+
+  const { data: user, error } = await db
+    .from('users')
+    .update(patch)
+    .eq('id', payload.sub)
+    .select('id, name, email, phone, role, avatar, address')
+    .single();
+
+  // 23505: the unique index on phone — that number is already on another account.
+  if (error?.code === '23505') {
+    return c.json({ error: 'That mobile number is already on another account' }, 409);
+  }
+  if (error || !user) throw new Error(error?.message ?? 'Could not save your details');
+
+  return c.json({ user });
+});
+
 app.get('/api/auth/me', optionalAuth, async c => {
   const payload = currentUser(c);
   if (!payload) return c.json({ user: null });
   const db = getDb(c.env);
   const { data: user } = await db
     .from('users')
-    .select('id, name, email, phone, role, avatar')
+    .select('id, name, email, phone, role, avatar, address')
     .eq('id', payload.sub)
     .maybeSingle();
   return c.json({ user: user ?? null });
