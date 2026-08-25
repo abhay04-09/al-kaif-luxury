@@ -160,7 +160,12 @@ export function CartView() {
               <span>Complimentary</span>
             </div>
             <div className="flex justify-between border-t border-white/10 pt-4 text-base text-porcelain">
-              <span>Total</span>
+              <span>
+                Total
+                <span className="mt-1 block text-xs text-mist">
+                  GST included
+                </span>
+              </span>
               <span>{formatPrice(summary.total)}</span>
             </div>
           </div>

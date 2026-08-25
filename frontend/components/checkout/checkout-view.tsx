@@ -20,10 +20,10 @@ import type { CartItem } from "@/types/product";
 const CART_KEY = "al-kaif-cart";
 const RAZORPAY_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
 
-// The Worker applies 3% tax when it prices the order. Mirroring the rate here
-// keeps the summary honest — the figure the client agrees to is the figure the
-// maison charges.
-const TAX_RATE = 0.03;
+// Catalogue prices already include GST, so the listed sum is what is charged.
+// The rate is mirrored here only to show the client how much of that sum is
+// tax; it is never added on top. The Worker prices the order either way.
+const GST_RATE = 0.03;
 
 type PaymentMethod = "Razorpay" | "COD";
 
@@ -91,8 +91,8 @@ export function CheckoutView() {
   );
 
   const payableLines = summary.lines.filter((line) => line.product.inStock);
-  const tax = Math.round(summary.subtotal * TAX_RATE);
-  const total = summary.subtotal + tax;
+  const total = summary.subtotal;
+  const tax = total - Math.round(total / (1 + GST_RATE));
 
   async function placeOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -463,10 +463,10 @@ export function CheckoutView() {
           <dl className="space-y-3 border-t border-graphite px-6 py-5 text-sm">
             <div className="flex justify-between text-porcelain/70">
               <dt>Subtotal</dt>
-              <dd>{inr(summary.subtotal)}</dd>
+              <dd>{inr(total)}</dd>
             </div>
             <div className="flex justify-between text-porcelain/70">
-              <dt>Tax</dt>
+              <dt>GST ({Math.round(GST_RATE * 100)}%, included)</dt>
               <dd>{inr(tax)}</dd>
             </div>
             <div className="flex justify-between text-porcelain/70">

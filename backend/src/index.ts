@@ -435,6 +435,14 @@ interface IncomingItem {
 }
 
 /** Recomputes all money amounts from DB prices so the client can't tamper with totals. */
+/**
+ * GST already contained in every catalogue price.
+ *
+ * 3% is the rate for jewellery. Perfume is taxed at 18%, so this becomes a
+ * per-category rate the moment a perfume is listed for sale.
+ */
+const GST_RATE = 0.03;
+
 async function priceItems(env: Env, items: IncomingItem[]) {
   if (!Array.isArray(items) || items.length === 0) throw new Error('Cart is empty');
   const db = getDb(env);
@@ -457,9 +465,19 @@ async function priceItems(env: Env, items: IncomingItem[]) {
     return { product, quantity, selectedMetal: i.selectedMetal, selectedSize: i.selectedSize };
   });
 
-  const taxINR = Math.round(subtotalINR * 0.03);
-  const taxUSD = Math.round(subtotalUSD * 0.03);
-  return { lines, subtotalINR, taxINR, totalINR: subtotalINR + taxINR, totalUSD: subtotalUSD + taxUSD };
+  // Catalogue prices already include GST, so the listed sum is what the client
+  // pays — tax is backed out of it for the invoice rather than added on top.
+  // Charging 3% over a tax-inclusive price would overcharge every order.
+  const taxINR = subtotalINR - Math.round(subtotalINR / (1 + GST_RATE));
+  const taxUSD = subtotalUSD - Math.round(subtotalUSD / (1 + GST_RATE));
+  return {
+    lines,
+    // The taxable value: what the maison earns, once GST is set aside.
+    subtotalINR: subtotalINR - taxINR,
+    taxINR,
+    totalINR: subtotalINR,
+    totalUSD: subtotalUSD,
+  };
 }
 
 app.get('/api/orders', optionalAuth, async c => {
