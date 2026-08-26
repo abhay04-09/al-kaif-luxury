@@ -78,8 +78,8 @@ export default function TermsPage() {
       <Section title="Payment">
         <p>
           Payments are handled by Razorpay, which accepts UPI, cards, net
-          banking, wallets and EMI. Cash on delivery is offered where available.
-          The amount charged is calculated by us from the current catalogue price
+          banking, wallets and EMI. All orders are paid for at the time of
+          ordering. The amount charged is calculated by us from the current catalogue price
           of the items in your bag — never from a figure supplied by your
           browser — and is verified against Razorpay&rsquo;s own record before an
           order is marked paid.
