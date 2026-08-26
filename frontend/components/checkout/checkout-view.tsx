@@ -213,7 +213,11 @@ export function CheckoutView() {
 
     window.localStorage.removeItem(CART_KEY);
     window.dispatchEvent(new Event("al-kaif-cart-updated"));
-    router.replace(`/orders?placed=${data.orderNumber ?? ""}`);
+    // Straight to the order itself, which doubles as the receipt — a banner on
+    // a list is a thin thing to land on after parting with money.
+    router.replace(
+      data.orderNumber ? `/orders/${data.orderNumber}?placed=1` : "/orders"
+    );
     router.refresh();
   }
 

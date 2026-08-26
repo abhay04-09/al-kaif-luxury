@@ -493,6 +493,27 @@ app.get('/api/orders', optionalAuth, async c => {
   return c.json((data ?? []).map(rowToOrder));
 });
 
+app.get('/api/orders/:orderNumber', requireAuth, async c => {
+  const user = currentUser(c)!;
+  const db = getDb(c.env);
+
+  const { data, error } = await db
+    .from('orders')
+    .select('*, order_items(*)')
+    .eq('order_number', c.req.param('orderNumber'))
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+
+  // An order number is guessable, so it is never enough on its own. Anyone but
+  // an administrator is told the same thing whether the order is missing or
+  // simply is not theirs — confirming it exists would be a leak in itself.
+  if (!data || (user.role !== 'admin' && data.user_id !== user.sub)) {
+    return c.json({ error: 'Order not found' }, 404);
+  }
+
+  return c.json(rowToOrder(data));
+});
+
 type PricedCart = Awaited<ReturnType<typeof priceItems>>;
 
 interface OrderDraft {
