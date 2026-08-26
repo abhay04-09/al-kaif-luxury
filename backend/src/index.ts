@@ -10,6 +10,7 @@ import {
   verifyRazorpaySignature,
   verifyWebhookSignature,
 } from './lib/razorpay';
+import { sendOrderEmails } from './lib/email';
 import { SEED_PRODUCTS } from './data/seedProducts';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -592,7 +593,18 @@ async function writeOrder(env: Env, draft: OrderDraft) {
   if (itemsErr) throw new Error(itemsErr.message);
 
   const { data: full } = await db.from('orders').select('*, order_items(*)').eq('id', id).single();
-  return rowToOrder(full);
+  const order = rowToOrder(full);
+
+  // Both the browser's confirmation and the webhook's recovery come through
+  // here, so a client whose browser died is still written to. A mail failure
+  // is never allowed to undo an order that has already been paid for.
+  try {
+    await sendOrderEmails(env, order);
+  } catch (err) {
+    console.error(`Order emails failed for ${order.orderNumber}:`, err);
+  }
+
+  return order;
 }
 
 app.post('/api/orders', optionalAuth, async c => {
