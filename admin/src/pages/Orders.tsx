@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Search, ShoppingBag, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { apiJson } from '../api';
+import { ExportButton } from '../components/ExportButton';
+import { itemColumns, itemRows, orderColumns } from '../exports';
 import { Order } from '../types';
 
 const STATUSES = ['Placed', 'In Artisan Crafting', 'Quality Assured', 'Shipped via Express', 'Delivered', 'Cancelled'];
@@ -63,11 +65,27 @@ export const OrdersPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-2xl text-gold-gradient uppercase">Orders</h1>
-        <p className="text-[11px] text-[#A7A7A7] mt-1">
-          {loading ? 'Loading…' : `${filtered.length} of ${orders.length} orders`}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-2xl text-gold-gradient uppercase">Orders</h1>
+          <p className="text-[11px] text-[#A7A7A7] mt-1">
+            {loading ? 'Loading…' : `${filtered.length} of ${orders.length} orders`}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <ExportButton
+            rows={filtered}
+            columns={orderColumns}
+            filename="al-kaif-orders"
+            label="Export orders"
+          />
+          <ExportButton
+            rows={itemRows(filtered)}
+            columns={itemColumns}
+            filename="al-kaif-order-items"
+            label="Export pieces sold"
+          />
+        </div>
       </div>
 
       {/* Toolbar */}

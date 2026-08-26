@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, Loader2, Search, Shield, ShoppingBag, UserRound } from 'lucide-react';
 import { apiJson } from '../api';
 import { Customer, Order } from '../types';
+import { ExportButton } from '../components/ExportButton';
+import { customerColumns, orderColumns } from '../exports';
 
 const inr = (value: number) => `₹${Math.round(value).toLocaleString('en-IN')}`;
 
@@ -99,6 +101,19 @@ export const CustomersPage: React.FC = () => {
           Customers ({customers.length})
         </h1>
 
+        <div className="flex flex-wrap items-center gap-2">
+          <ExportButton
+            rows={visible}
+            columns={customerColumns}
+            filename="al-kaif-customers"
+            label="Export customers"
+          />
+          <ExportButton
+            rows={orders}
+            columns={orderColumns}
+            filename="al-kaif-orders"
+            label="Export all orders"
+          />
         <div className="relative">
           <Search className="w-3.5 h-3.5 text-[#A7A7A7] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -107,6 +122,7 @@ export const CustomersPage: React.FC = () => {
             placeholder="Search name, email or phone"
             className="w-72 bg-[#000e07] border border-[#2A2A2a] rounded-xs pl-9 pr-3 py-2 text-xs text-[#F5F2EE] placeholder:text-[#A7A7A7]/60 focus:border-[#C5A059] outline-none"
           />
+        </div>
         </div>
       </div>
 
