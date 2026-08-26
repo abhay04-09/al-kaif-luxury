@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2, Search, Shield, ShoppingBag, UserRound } from 'lucide-react';
+import { ChevronDown, Loader2, Search, Shield, ShoppingBag, UserRound } from 'lucide-react';
 import { apiJson } from '../api';
-import { Customer } from '../types';
+import { Customer, Order } from '../types';
 
 const inr = (value: number) => `₹${Math.round(value).toLocaleString('en-IN')}`;
 
@@ -26,13 +26,42 @@ export const CustomersPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
-    apiJson<Customer[]>('/api/users')
-      .then(setCustomers)
+    Promise.all([apiJson<Customer[]>('/api/users'), apiJson<Order[]>('/api/orders')])
+      .then(([people, allOrders]) => {
+        setCustomers(people);
+        setOrders(allOrders);
+      })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  // Orders placed before someone signed in carry no user id, so they are
+  // matched on the email address they were placed with as well.
+  const ordersByCustomer = useMemo(() => {
+    const grouped = new Map<string, Order[]>();
+    const byEmail = new Map<string, string>();
+    customers.forEach(person => {
+      if (person.email) byEmail.set(person.email.trim().toLowerCase(), person.id);
+    });
+
+    orders.forEach(order => {
+      const id =
+        order.userId ?? byEmail.get((order.customerEmail ?? '').trim().toLowerCase());
+      if (!id) return;
+      const list = grouped.get(id) ?? [];
+      list.push(order);
+      grouped.set(id, list);
+    });
+
+    grouped.forEach(list =>
+      list.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+    );
+    return grouped;
+  }, [customers, orders]);
 
   const visible = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -107,8 +136,17 @@ export const CustomersPage: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#2A2A2a]">
-            {visible.map(person => (
-              <tr key={person.id} className="hover:bg-white/[0.02]">
+            {visible.map(person => {
+              const theirOrders = ordersByCustomer.get(person.id) ?? [];
+              const isOpen = expanded === person.id;
+              return (
+              <React.Fragment key={person.id}>
+              <tr
+                className={`hover:bg-white/[0.02] ${theirOrders.length ? 'cursor-pointer' : ''}`}
+                onClick={() =>
+                  theirOrders.length && setExpanded(isOpen ? null : person.id)
+                }
+              >
                 <td className="p-4">
                   <div className="flex items-center gap-3">
                     {person.avatar ? (
@@ -167,6 +205,13 @@ export const CustomersPage: React.FC = () => {
                     <span className="inline-flex items-center gap-1.5 text-[#F5F2EE]">
                       <ShoppingBag className="w-3 h-3 text-[#C5A059]" />
                       {person.orderCount}
+                      {theirOrders.length > 0 && (
+                        <ChevronDown
+                          className={`w-3 h-3 text-[#A7A7A7] transition-transform ${
+                            isOpen ? 'rotate-180' : ''
+                          }`}
+                        />
+                      )}
                     </span>
                   ) : (
                     <span className="text-[#A7A7A7]">—</span>
@@ -177,7 +222,57 @@ export const CustomersPage: React.FC = () => {
                 </td>
                 <td className="p-4 text-[#A7A7A7]">{formatDate(person.lastOrderAt)}</td>
               </tr>
-            ))}
+
+              {isOpen && (
+                <tr className="bg-black/30">
+                  <td colSpan={7} className="p-0">
+                    <div className="px-4 py-4 border-l-2 border-[#C5A059]">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-[#A7A7A7] mb-3">
+                        {person.name}&rsquo;s orders
+                      </p>
+                      <div className="space-y-2">
+                        {theirOrders.map(order => (
+                          <div
+                            key={order.id}
+                            className="flex flex-wrap items-center gap-x-6 gap-y-2 border border-[#2A2A2a] bg-[#000e07] px-4 py-3"
+                          >
+                            <span className="font-serif text-sm text-[#DFC27C] w-32">
+                              {order.orderNumber}
+                            </span>
+                            <span className="text-[10px] text-[#A7A7A7] w-24">
+                              {formatDate(order.createdAt)}
+                            </span>
+                            <span className="text-[11px] text-[#F5F2EE] flex-1 min-w-[12rem]">
+                              {(order.items ?? [])
+                                .map(item => `${item.product?.name ?? 'Piece'} x${item.quantity}`)
+                                .join(', ') || '—'}
+                            </span>
+                            <span
+                              className={`text-[9px] uppercase tracking-wider px-2 py-1 border ${
+                                order.paymentStatus === 'Paid'
+                                  ? 'border-emerald-500/40 text-emerald-300'
+                                  : order.paymentStatus === 'Failed'
+                                    ? 'border-red-500/40 text-red-300'
+                                    : 'border-[#C5A059]/40 text-[#DFC27C]'
+                              }`}
+                            >
+                              {order.paymentStatus}
+                            </span>
+                            <span className="text-[9px] uppercase tracking-wider px-2 py-1 border border-[#2A2A2a] text-[#A7A7A7]">
+                              {order.orderStatus}
+                            </span>
+                            <span className="text-sm text-[#F5F2EE] w-20 text-right">
+                              {inr(order.totalINR)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              </React.Fragment>
+            );})}
           </tbody>
         </table>
 
