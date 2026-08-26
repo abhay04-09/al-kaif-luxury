@@ -645,14 +645,20 @@ app.post('/api/orders', optionalAuth, async c => {
       return c.json({ error: 'Payment does not match this order' }, 400);
     }
 
-    const { data: replay } = await getDb(c.env)
+    // The webhook may have written this order already — it usually reaches us
+    // before the client's browser does. By this point the payment has been
+    // verified against Razorpay and against this cart's total, so the order it
+    // produced is this client's own: hand it back rather than refusing. A
+    // stranger cannot get here, since the signature cannot be forged without
+    // the key secret.
+    const { data: settled } = await getDb(c.env)
       .from('orders')
-      .select('id')
+      .select('*, order_items(*)')
       .eq('razorpay_payment_id', razorpay_payment_id)
       .maybeSingle();
-    if (replay) {
-      console.error(`Replayed Razorpay payment ${razorpay_payment_id} (already on order ${replay.id})`);
-      return c.json({ error: 'This payment has already been used' }, 409);
+    if (settled) {
+      console.log(`Payment ${razorpay_payment_id} already settled as ${settled.order_number}`);
+      return c.json(rowToOrder(settled), 200);
     }
 
     paymentStatus = 'Paid';
@@ -681,9 +687,15 @@ app.post('/api/orders', optionalAuth, async c => {
   });
 
   if (written === 'duplicate') {
-    // The webhook got there first — the money is accounted for, so this is not
-    // an error the client needs to see as a failure.
-    console.error(`Order for payment ${razorpayPaymentId} already written by the webhook`);
+    // The webhook got there in the moment between the check above and this
+    // insert. The money is accounted for either way, so the client is shown
+    // the order rather than an error.
+    const { data: settled } = await getDb(c.env)
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('razorpay_payment_id', razorpayPaymentId)
+      .maybeSingle();
+    if (settled) return c.json(rowToOrder(settled), 200);
     return c.json({ error: 'This payment has already been used' }, 409);
   }
 
@@ -719,6 +731,11 @@ app.post('/api/payments/razorpay/order', optionalAuth, async c => {
   const priced = await priceItems(c.env, items);
   const rzpOrder = await createRazorpayOrder(c.env, priced.totalINR, `rcpt_${Date.now()}`);
   const user = currentUser(c);
+
+  // A checkout that was opened and abandoned leaves its basket parked forever.
+  // Razorpay orders expire long before this, so anything older is dead weight.
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  await getDb(c.env).from('pending_checkouts').delete().lt('created_at', cutoff);
 
   // Park the basket before the payment window opens. If the client pays and
   // their browser never makes it back, the webhook has everything it needs to
