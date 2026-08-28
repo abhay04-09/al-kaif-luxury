@@ -3,17 +3,13 @@ import { Navbar } from "@/components/layout/navbar";
 import { LuxuryPreloader } from "@/components/motion/luxury-preloader";
 import { BrandStorySection } from "@/components/sections/brand-story-section";
 import { CollectionsSection } from "@/components/sections/collections-section";
-import { FeaturedProductsSection } from "@/components/sections/featured-products-section";
 import { HeroSection } from "@/components/sections/hero-section";
 import { TabbedCatalogSection } from "@/components/sections/tabbed-catalog-section";
 import { NewsletterSection } from "@/components/sections/newsletter-section";
-import { getFeaturedStoreProducts, getStoreProducts } from "@/lib/product-service";
+import { getStoreProducts } from "@/lib/product-service";
 
 export default async function Home() {
-  const [featuredProducts, allProducts] = await Promise.all([
-    getFeaturedStoreProducts(),
-    getStoreProducts()
-  ]);
+  const allProducts = await getStoreProducts();
 
   return (
     <>
@@ -24,7 +20,6 @@ export default async function Home() {
         <BrandStorySection />
         <CollectionsSection />
         <TabbedCatalogSection allProducts={allProducts} />
-        <FeaturedProductsSection products={featuredProducts} />
         <NewsletterSection />
       </main>
       <Footer />
