@@ -3,37 +3,37 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
 const collectionsList = [
   {
-    id: "bridal",
-    title: "BRIDAL JEWELRY",
+    id: "bridal-kundan",
+    title: "BRIDAL KUNDAN",
     subtitle: "Heritage Kundan & Meenakari Masterpieces",
     image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=90",
-    link: "/products?category=jewellery"
+    link: "/products?category=jewellery&search=kundan"
   },
   {
-    id: "oud",
-    title: "SIGNATURE OUD",
-    subtitle: "Rare Botanical Perfume Oils & Attars",
-    image: "https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=1200&q=90",
-    link: "/products?category=perfumes"
-  },
-  {
-    id: "everyday",
-    title: "EVERYDAY GLAM",
-    subtitle: "Minimalist Anti-Tarnish Daily Wear",
-    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=90",
-    link: "/products?category=jewellery"
-  },
-  {
-    id: "royal",
-    title: "ROYAL KUNDAN",
-    subtitle: "Jaipur Heritage Artisan Chokers & Jhumkas",
+    id: "royal-bangles",
+    title: "ROYAL BANGLES & KADAS",
+    subtitle: "Artisanal Gold Polish Traditional Bangles",
     image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1200&q=90",
-    link: "/products?category=jewellery"
+    link: "/products?category=jewellery&search=bangle"
+  },
+  {
+    id: "jhumkas-chandbalis",
+    title: "CHANDBALIS & JHUMKAS",
+    subtitle: "Jaipur Artisanal Statement Drop Earrings",
+    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=90",
+    link: "/products?category=jewellery&search=earring"
+  },
+  {
+    id: "necklace-sets",
+    title: "NECKLACE & PENDANT SETS",
+    subtitle: "Fine Jewellery Composed for Legacy",
+    image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=1200&q=90",
+    link: "/products?category=jewellery&search=necklace"
   }
 ];
 
@@ -54,14 +54,14 @@ export function CollectionsSection() {
         {/* Section Header */}
         <div className="mb-10 flex flex-row items-center justify-between border-b border-white/10 pb-6">
           <div>
-            <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light mb-1">Curated Catalogue</p>
+            <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light mb-1">JEWELLERY CATEGORIES</p>
             <h2 className="font-serif text-2xl sm:text-4xl font-bold uppercase tracking-wider text-porcelain">
-              COLLECTIONS
+              JEWELLERY COLLECTIONS
             </h2>
           </div>
 
           <Link
-            href="/products"
+            href="/products?category=jewellery"
             className="group flex items-center gap-2 text-xs uppercase tracking-luxury text-gold-light hover:text-white transition"
           >
             <span>VIEW ALL</span>

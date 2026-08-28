@@ -24,10 +24,10 @@ import { useTheme } from "@/components/theme/theme-provider";
 import { useCartCount } from "@/lib/use-cart-count";
 
 const searchPlaceholders = [
-  "Search for necklaces, rings, oud, perfumes...",
-  "Search for bridal kundan jewellery...",
-  "Search for long-lasting royal oud oil...",
-  "Search for 100% skin-friendly gold polish..."
+  "Search for necklaces, earrings, bangles, rings...",
+  "Search for bridal kundan chokers...",
+  "Search for meenakari jhumkas & chandbalis...",
+  "Search for 100% skin-friendly gold polish jewellery..."
 ];
 
 export function Navbar() {

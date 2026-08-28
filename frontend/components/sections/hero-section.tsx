@@ -20,28 +20,28 @@ const campaignSlides = [
     id: 1,
     tagline: "THE MAISON",
     headline: "CRAFTED FOR THE RAREST MOMENTS IN TIME.",
-    description: "Designed with silence, proportion, and enduring craft. Every jewel, every fragrance, and every surface is considered with patience, precision, and restraint.",
+    description: "Designed with silence, proportion, and enduring craft. Every jewel and surface is considered with patience, precision, and restraint.",
     usps: ["100% Skin-Friendly Polish", "Artisanal Heritage Craft"],
     image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1920&q=90",
-    ctaLink: "/products"
+    ctaLink: "/products?category=jewellery"
   },
   {
     id: 2,
-    tagline: "ROYAL PERFUMERY",
-    headline: "SIGNATURE OUD & ATTARS",
-    description: "Formulated with rare botanical fragrance oils providing an average longevity of 6 to 10 hours.",
-    usps: ["Natural Botanical Extracts", "10+ Hours Scent Projection"],
-    image: "https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=1920&q=90",
-    ctaLink: "/products?category=perfumes"
+    tagline: "ROYAL KUNDAN & MEENAKARI",
+    headline: "JAIPUR HERITAGE ARTISAN JEWELLERY",
+    description: "Handcrafted Kundan chokers, Meenakari jhumkas, and traditional bridal sets.",
+    usps: ["Antique Gold Polish Finish", "Certificates of Authenticity"],
+    image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1920&q=90",
+    ctaLink: "/products?category=jewellery&search=kundan"
   },
   {
     id: 3,
-    tagline: "HERITAGE ATELIER",
-    headline: "KUNDAN & MEENAKARI JEWELRY",
-    description: "Individually handcrafted Jaipur heritage creations, certified for authenticity.",
-    usps: ["Handcrafted Artisanal Finish", "Certificate of Authenticity"],
+    tagline: "ROYAL BANGLES & CHANDBALIS",
+    headline: "STATEMENT BANGLES & DROP EARRINGS",
+    description: "Traditional and contemporary gold-plated brass creations designed for enduring beauty.",
+    usps: ["Handcrafted Artisanal Detail", "Premium Anti-Tarnish Coating"],
     image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1920&q=90",
-    ctaLink: "/products?category=jewellery"
+    ctaLink: "/products?category=jewellery&search=bangle"
   }
 ];
 
@@ -89,7 +89,7 @@ export function HeroSection() {
           <div className="relative z-10 p-6 flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-black/70 px-3.5 py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gold-light backdrop-blur-md">
               <Sparkles className="h-3 w-3 text-gold-light animate-spin" />
-              AL-KAIF COLLECTION 2026
+              AL-KAIF JEWELLERY COLLECTION 2026
             </span>
 
             {/* Slider Arrow Controls */}
@@ -122,12 +122,12 @@ export function HeroSection() {
                 transition={{ duration: 0.6 }}
                 className="space-y-4 sm:space-y-6 text-center flex flex-col items-center"
               >
-                {/* Sub-brand / Tagline Badge: e.g. THE MAISON */}
+                {/* Sub-brand / Tagline Badge */}
                 <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.5em] text-gold-light">
                   {slide.tagline}
                 </p>
 
-                {/* Main Headline: Bold Uppercase Serif Typography (CRAFTED FOR THE RAREST MOMENTS IN TIME) */}
+                {/* Main Headline */}
                 <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold uppercase tracking-tight text-white leading-none drop-shadow-md">
                   {slide.headline}
                 </h1>
@@ -156,7 +156,7 @@ export function HeroSection() {
                     href={slide.ctaLink}
                     className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 text-xs font-extrabold uppercase tracking-luxury text-black shadow-2xl hover:bg-gold-light hover:text-black transition-all transform hover:scale-105 active:scale-95"
                   >
-                    <span>EXPLORE NOW</span>
+                    <span>EXPLORE JEWELLERY</span>
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
