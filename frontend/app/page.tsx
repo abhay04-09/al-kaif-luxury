@@ -5,11 +5,15 @@ import { BrandStorySection } from "@/components/sections/brand-story-section";
 import { CollectionsSection } from "@/components/sections/collections-section";
 import { FeaturedProductsSection } from "@/components/sections/featured-products-section";
 import { HeroSection } from "@/components/sections/hero-section";
+import { TabbedCatalogSection } from "@/components/sections/tabbed-catalog-section";
 import { NewsletterSection } from "@/components/sections/newsletter-section";
-import { getFeaturedStoreProducts } from "@/lib/product-service";
+import { getFeaturedStoreProducts, getStoreProducts } from "@/lib/product-service";
 
 export default async function Home() {
-  const featuredProducts = await getFeaturedStoreProducts();
+  const [featuredProducts, allProducts] = await Promise.all([
+    getFeaturedStoreProducts(),
+    getStoreProducts()
+  ]);
 
   return (
     <>
@@ -19,6 +23,7 @@ export default async function Home() {
         <HeroSection />
         <BrandStorySection />
         <CollectionsSection />
+        <TabbedCatalogSection allProducts={allProducts} />
         <FeaturedProductsSection products={featuredProducts} />
         <NewsletterSection />
       </main>
