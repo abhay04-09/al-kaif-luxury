@@ -10,7 +10,15 @@ const footerLinks = [
   { label: "Collections", href: "/products" },
   { label: "Cart", href: "/cart" },
   { label: "Checkout", href: "/checkout" },
-  { label: "Account", href: "/login" }
+  { label: "Account", href: "/login" },
+  { label: "Raise a Query", href: "/query" }
+];
+
+const policyLinks = [
+  { label: "Terms & Conditions", href: "/terms" },
+  { label: "Privacy Policy", href: "/privacy-policy" },
+  { label: "Delivery Policy", href: "/delivery-policy" },
+  { label: "Return & Refund Policy", href: "/refund-policy" }
 ];
 
 export function Footer() {
@@ -65,11 +73,11 @@ export function Footer() {
 
           <div>
             <h2 className="text-[0.7rem] uppercase tracking-luxury text-gold-light">
-              Maison
+              Policies
             </h2>
 
             <ul className="mt-6 space-y-4">
-              {primaryNavigation.map((link) => (
+              {policyLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
@@ -89,11 +97,11 @@ export function Footer() {
 
             <div className="mt-6 space-y-4 text-sm text-porcelain/70">
               <a
-                href="mailto:info@alkaif.com"
+                href="mailto:info@alkaif.in"
                 className="flex items-center gap-3 transition hover:text-gold-light"
               >
                 <Mail className="h-4 w-4" strokeWidth={1.5} />
-                info@alkaif.com
+                info@alkaif.in
               </a>
 
               <a
@@ -127,12 +135,18 @@ export function Footer() {
         <div className="mt-16 flex flex-col gap-6 border-t border-graphite pt-8 text-xs text-mist sm:flex-row sm:items-center sm:justify-between">
           <p>© 2019 AL-KAIF. All rights reserved.</p>
 
-          <div className="flex gap-6">
-            <Link href="/" className="transition hover:text-gold-light">
-              Privacy
+          <div className="flex flex-wrap gap-6">
+            <Link href="/privacy-policy" className="transition hover:text-gold-light">
+              Privacy Policy
             </Link>
-            <Link href="/" className="transition hover:text-gold-light">
-              Terms
+            <Link href="/terms" className="transition hover:text-gold-light">
+              Terms & Conditions
+            </Link>
+            <Link href="/delivery-policy" className="transition hover:text-gold-light">
+              Delivery Policy
+            </Link>
+            <Link href="/refund-policy" className="transition hover:text-gold-light">
+              Return & Refund Policy
             </Link>
           </div>
         </div>
