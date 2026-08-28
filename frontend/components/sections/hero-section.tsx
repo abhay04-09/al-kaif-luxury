@@ -1,235 +1,196 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { ArrowUpRight, ChevronDown, Play, Pause, Volume2, VolumeX } from "lucide-react";
-import { useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Sparkles, 
+  RefreshCw, 
+  PackageCheck, 
+  Truck, 
+  ChevronLeft, 
+  ChevronRight, 
+  ShieldCheck, 
+  Award,
+  ArrowRight
+} from "lucide-react";
 
-const editorialLinks = [
-  { index: "01", label: "New Arrivals", href: "/products" },
-  { index: "02", label: "The Atelier", href: "#story" },
-  { index: "03", label: "Rare Fragrances", href: "/products?category=perfumes" }
+const campaignSlides = [
+  {
+    id: 1,
+    tagline: "LUXURY CRAFTSMANSHIP",
+    headline: "ELEGANCE IN EVERY DETAIL",
+    usps: ["100% Skin-Friendly Polish", "Long-Lasting Fragrance Oils"],
+    image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1920&q=90",
+    ctaLink: "/products"
+  },
+  {
+    id: 2,
+    tagline: "ROYAL PERFUMERY",
+    headline: "SIGNATURE OUD & ATTARS",
+    usps: ["Natural Botanical Extracts", "10+ Hours Scent Projection"],
+    image: "https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=1920&q=90",
+    ctaLink: "/products?category=perfumes"
+  },
+  {
+    id: 3,
+    tagline: "HERITAGE ATELIER",
+    headline: "KUNDAN & MEENAKARI JEWELRY",
+    usps: ["Handcrafted Artisanal Finish", "Certificates of Authenticity"],
+    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1920&q=90",
+    ctaLink: "/products?category=jewellery"
+  }
 ];
 
 export function HeroSection() {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-  const togglePlay = () => {
-    if (!videoRef.current) return;
-    if (isPlaying) {
-      videoRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      videoRef.current.play();
-      setIsPlaying(true);
-    }
-  };
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % campaignSlides.length);
+    }, 5500);
+    return () => clearInterval(timer);
+  }, []);
 
-  const toggleMute = () => {
-    if (!videoRef.current) return;
-    videoRef.current.muted = !isMuted;
-    setIsMuted(!isMuted);
-  };
+  const slide = campaignSlides[currentSlide];
 
   return (
-    <section className="relative flex min-h-[90vh] w-full select-none flex-col justify-between overflow-hidden border-b border-graphite/60 bg-onyx px-6 py-6 text-porcelain md:px-12 lg:h-[92vh] lg:py-10">
-      <div className="editorial-grid-pattern pointer-events-none absolute inset-0 z-0 opacity-10" />
-      <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
+    <section className="relative w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div className="mx-auto max-w-7xl">
+        {/* Elevated Campaign Banner Card */}
+        <div className="relative overflow-hidden rounded-2xl lg:rounded-[24px] border border-gray-200 dark:border-white/10 shadow-2xl bg-black min-h-[480px] sm:min-h-[540px] lg:min-h-[580px] flex flex-col justify-between">
+          {/* High-Res Background Image & Gradient Scrim */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={slide.id}
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.9 }}
+              className="absolute inset-0 z-0"
+            >
+              <Image
+                src={slide.image}
+                alt={slide.headline}
+                fill
+                priority
+                className="object-cover opacity-80"
+                sizes="(min-width: 1280px) 100vw, 100vw"
+              />
+              {/* Dark Linear Gradient Overlay at Bottom */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-black/30" />
+            </motion.div>
+          </AnimatePresence>
 
-      <div className="relative z-10 my-auto grid flex-1 grid-cols-1 items-stretch gap-8 lg:grid-cols-12">
-        {/* Left Column */}
-        <div className="hidden flex-col justify-between border-r border-graphite/40 pb-6 pr-8 lg:col-span-3 lg:flex">
-          <div className="space-y-4 pt-4">
-            <span className="block text-[10px] uppercase tracking-regal text-gold">
-              Haute Editions
+          {/* Top Controls Overlay */}
+          <div className="relative z-10 p-6 flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/60 px-3.5 py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gold-light backdrop-blur-md">
+              <Sparkles className="h-3 w-3 text-gold-light animate-spin" />
+              AL-KAIF Collection 2026
             </span>
-            <p className="text-xs font-light leading-relaxed text-mist">
-              Fine Jewellery &amp; Rare Fragrances formulated with Jaipur
-              heritage gems and Grasse natural oils.
-            </p>
+
+            {/* Slider Arrow Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentSlide((prev) => (prev - 1 + campaignSlides.length) % campaignSlides.length)}
+                className="grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-black/50 text-white backdrop-blur-sm transition hover:bg-white hover:text-black"
+                aria-label="Previous Slide"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setCurrentSlide((prev) => (prev + 1) % campaignSlides.length)}
+                className="grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-black/50 text-white backdrop-blur-sm transition hover:bg-white hover:text-black"
+                aria-label="Next Slide"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="space-y-1">
-              <p className="text-[9px] uppercase tracking-[0.2em] text-gold">
-                Founded
-              </p>
-              <p className="font-accent text-lg italic text-gold-light">
-                MCMXCVII
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-[9px] uppercase tracking-[0.2em] text-gold">
-                Location
-              </p>
-              <p className="font-accent text-lg italic text-porcelain">
-                Global Atelier
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Center Column - Text & Data */}
-        <div className="flex flex-col items-center justify-center px-4 py-8 text-center md:px-8 lg:col-span-6">
-          <motion.div
-            className="relative mb-6"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8 }}
-          >
-            <div className="pointer-events-none absolute -inset-4 animate-pulse rounded-full border border-gold/20" />
-            <span className="rounded-full border border-gold/30 bg-obsidian/80 px-4 py-1.5 text-[10px] uppercase tracking-[0.6em] text-gold backdrop-blur-md sm:text-[11px] md:tracking-[0.8em]">
-              The 2026 Archive Collection
-            </span>
-          </motion.div>
-
-          <motion.h1
-            className="mb-8 font-serif text-5xl leading-[0.95] tracking-tight sm:text-7xl md:text-8xl xl:text-9xl"
-            initial={{ opacity: 0, y: 25 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.2 }}
-          >
-            Timeless
-            <br />
-            <span className="gold-gradient-text pl-2 font-accent font-normal italic md:pl-10">
-              Elegance
-            </span>
-          </motion.h1>
-
-          <motion.p
-            className="mb-10 max-w-md text-xs font-light leading-relaxed tracking-wide text-mist md:text-sm"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 0.9, y: 0 }}
-            transition={{ duration: 1, delay: 0.4 }}
-          >
-            Discover the intersection of heritage craftsmanship and modern
-            sophistication. A curated journey through the world&apos;s most
-            exquisite gold, diamonds &amp; rare oud.
-          </motion.p>
-
-          <motion.div
-            className="flex w-full flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-          >
-            <Link
-              className="group relative w-full overflow-hidden border border-gold/50 bg-black/40 px-8 py-4 sm:w-auto"
-              href="/products?category=jewellery"
-            >
-              <div className="absolute inset-0 translate-y-full bg-gold transition-transform duration-500 group-hover:translate-y-0" />
-              <span className="relative z-10 text-[10px] font-semibold uppercase tracking-imperial text-porcelain transition-colors group-hover:text-onyx md:text-xs">
-                Discover Jewellery
-              </span>
-            </Link>
-
-            <Link
-              className="group relative w-full overflow-hidden border border-gold/50 bg-gold/10 px-8 py-4 sm:w-auto"
-              href="/products?category=perfumes"
-            >
-              <div className="absolute inset-0 translate-y-full bg-gold transition-transform duration-500 group-hover:translate-y-0" />
-              <span className="relative z-10 text-[10px] font-semibold uppercase tracking-imperial text-gold-light transition-colors group-hover:text-onyx md:text-xs">
-                Exotic Perfumes
-              </span>
-            </Link>
-          </motion.div>
-        </div>
-
-        {/* Right Column - Navigation & Embedded Brand Video Beside Data */}
-        <div className="flex flex-col justify-between border-t border-graphite/40 pt-6 lg:border-t-0 lg:border-l lg:border-graphite/40 lg:pb-6 lg:pl-8 lg:pt-0 lg:col-span-3">
-          <div className="hidden flex-col space-y-6 pt-4 text-right lg:flex">
-            {editorialLinks.map((item) => (
-              <Link className="group" href={item.href} key={item.index}>
-                <p className="text-[10px] uppercase tracking-widest text-gold opacity-40 transition-opacity group-hover:opacity-100">
-                  {item.index}
+          {/* Card Content Stack (Top to Bottom) */}
+          <div className="relative z-10 px-6 sm:px-12 pb-8 pt-12 text-center flex flex-col items-center justify-end max-w-4xl mx-auto">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={slide.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.6 }}
+                className="space-y-4 sm:space-y-6 text-center flex flex-col items-center"
+              >
+                {/* Sub-brand / Tagline Badge */}
+                <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.4em] text-gold-light">
+                  {slide.tagline}
                 </p>
-                <h2 className="flex items-center justify-end gap-1 font-serif text-lg transition-colors group-hover:text-gold">
-                  <span>{item.label}</span>
-                  <ArrowUpRight
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100"
-                  />
-                </h2>
-              </Link>
-            ))}
+
+                {/* Main Headline */}
+                <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold uppercase tracking-tight text-white leading-tight">
+                  {slide.headline}
+                </h1>
+
+                {/* Feature Highlights: 2-Column Pill Box Container */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4 max-w-xl w-full my-2">
+                  {slide.usps.map((usp) => (
+                    <div
+                      key={usp}
+                      className="rounded-full border border-white/20 bg-black/60 px-4 py-2 text-[11px] sm:text-xs font-medium text-porcelain/90 backdrop-blur-md flex items-center justify-center gap-2"
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5 text-gold-light shrink-0" />
+                      <span>{usp}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Primary CTA: Centered Solid White Pill Button */}
+                <div className="pt-2">
+                  <Link
+                    href={slide.ctaLink}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 text-xs font-extrabold uppercase tracking-luxury text-black shadow-xl hover:bg-gold-light hover:text-black transition-all transform hover:scale-105 active:scale-95"
+                  >
+                    <span>EXPLORE NOW</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
 
-          {/* Embedded Video Card Beside Data */}
-          <div className="group relative mt-6 h-52 w-full overflow-hidden border border-gold/40 bg-black p-1 shadow-2xl transition-all duration-500 hover:border-gold hover:shadow-[0_0_25px_rgba(217,119,6,0.25)] lg:mt-0">
-            <video
-              ref={videoRef}
-              autoPlay
-              className="h-full w-full object-cover opacity-90 transition-opacity duration-500 group-hover:opacity-100"
-              loop
-              muted={isMuted}
-              playsInline
-              poster="/media/al-kaif-logo.png"
-            >
-              <source src="/media/al-kaif-splash.mp4" type="video/mp4" />
-            </video>
-
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
-
-            {/* Video Header Badge */}
-            <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-black/70 px-2.5 py-0.5 text-[8px] font-medium uppercase tracking-widest text-gold backdrop-blur-md">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-                Maison Film
+          {/* Bottom USP Ticker Strip inside Card */}
+          <div className="relative z-10 border-t border-white/10 bg-black/80 backdrop-blur-md px-4 py-3 text-white">
+            <div className="flex flex-wrap items-center justify-around gap-4 text-center text-[10px] sm:text-xs uppercase tracking-wider text-porcelain/80">
+              <span className="flex items-center gap-2">
+                <RefreshCw className="h-3.5 w-3.5 text-gold-light shrink-0" />
+                Easy 48h Exchanges
               </span>
-            </div>
-
-            {/* Video Footer Controls & Info */}
-            <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
-              <div className="space-y-0.5 pointer-events-none">
-                <span className="block text-[8px] uppercase tracking-[0.2em] text-gold-light/80">
-                  AL-KAIF Luxury
-                </span>
-                <h3 className="font-serif text-xs text-white">
-                  Signature Archive
-                </h3>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  aria-label={isMuted ? "Unmute video" : "Mute video"}
-                  className="rounded-full border border-gold/40 bg-black/80 p-1.5 text-gold transition-colors hover:border-gold hover:bg-gold hover:text-black focus:outline-none"
-                  onClick={toggleMute}
-                  type="button"
-                >
-                  {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
-                </button>
-                <button
-                  aria-label={isPlaying ? "Pause video" : "Play video"}
-                  className="rounded-full border border-gold/40 bg-black/80 p-1.5 text-gold transition-colors hover:border-gold hover:bg-gold hover:text-black focus:outline-none"
-                  onClick={togglePlay}
-                  type="button"
-                >
-                  {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-                </button>
-              </div>
+              <span className="flex items-center gap-2">
+                <PackageCheck className="h-3.5 w-3.5 text-gold-light shrink-0" />
+                Tamper-Proof Premium Packaging
+              </span>
+              <span className="flex items-center gap-2">
+                <Truck className="h-3.5 w-3.5 text-gold-light shrink-0" />
+                Express Insured Delivery Across India
+              </span>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="relative z-10 flex items-center justify-between border-t border-graphite/40 pt-4 text-[10px] uppercase tracking-imperial text-mist/70">
-        <span className="hidden sm:inline">AL-KAIF Heritage Archive</span>
-
-        <a
-          className="mx-auto flex items-center gap-2 text-gold-light transition-colors hover:text-gold-bright"
-          href="#story"
-        >
-          <span>Scroll To Explore</span>
-          <ChevronDown
-            aria-hidden="true"
-            className="h-3.5 w-3.5 animate-bounce"
-          />
-        </a>
-
-        <span className="hidden sm:inline">Est. 1988 Jaipur</span>
+        {/* Carousel Diamond / Pill Pagination Indicators */}
+        <div className="mt-4 flex items-center justify-center gap-2">
+          {campaignSlides.map((s, index) => (
+            <button
+              key={s.id}
+              onClick={() => setCurrentSlide(index)}
+              aria-label={`Go to slide ${index + 1}`}
+              className={`h-2.5 transition-all duration-300 ${
+                currentSlide === index
+                  ? "w-8 rounded-full bg-amber-600 dark:bg-gold-light"
+                  : "w-2.5 rounded-full bg-gray-300 dark:bg-gray-700 hover:bg-gray-400"
+              }`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );

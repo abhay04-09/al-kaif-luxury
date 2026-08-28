@@ -2,136 +2,227 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { Menu, Moon, Search, ShoppingBag, Sun, UserRound, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { 
+  Menu, 
+  Moon, 
+  Search, 
+  ShoppingBag, 
+  Sun, 
+  UserRound, 
+  X, 
+  Heart, 
+  MapPin, 
+  Camera, 
+  Mic, 
+  Sparkles 
+} from "lucide-react";
 import { primaryNavigation } from "@/lib/navigation";
 import { AlKaifMark } from "@/components/brand/al-kaif-mark";
 import { useSession } from "@/components/auth/session-provider";
 import { useTheme } from "@/components/theme/theme-provider";
 import { useCartCount } from "@/lib/use-cart-count";
 
+const searchPlaceholders = [
+  "Search for necklaces, rings, oud, perfumes...",
+  "Search for bridal kundan jewellery...",
+  "Search for long-lasting royal oud oil...",
+  "Search for 100% skin-friendly gold polish..."
+];
+
 export function Navbar() {
   const pathname = usePathname();
   const { user, status } = useSession();
   const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
   const cartCount = useCartCount();
 
   const isLoggedIn = status === "authenticated" && Boolean(user);
   const isAdmin = isLoggedIn && user?.role === "admin";
-  // The admin panel is a separate application.
   const navigation = isAdmin
     ? [...primaryNavigation, { label: "Admin", href: "https://al-kaiff-admin.pages.dev" }]
     : primaryNavigation;
+
+  // Cycle search placeholders smoothly
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % searchPlaceholders.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, []);
 
   function closeMenu() {
     setIsMenuOpen(false);
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gold/30 bg-obsidian/90 shadow-2xl backdrop-blur-md">
+    <header className="sticky top-0 z-50 bg-white/95 dark:bg-obsidian/95 shadow-sm border-b border-gray-200 dark:border-white/10 backdrop-blur-md transition-colors duration-300">
+      {/* Top Main Navigation Bar */}
       <nav
         aria-label="Primary navigation"
-        className="mx-auto flex h-20 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10"
+        className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"
       >
-        <button
-          aria-controls="mobile-navigation"
-          aria-expanded={isMenuOpen}
-          aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-          className="inline-flex h-10 w-10 items-center justify-center text-porcelain transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light lg:hidden"
-          onClick={() => setIsMenuOpen((current) => !current)}
-          type="button"
-        >
-          {isMenuOpen ? (
-            <X aria-hidden="true" className="h-5 w-5" strokeWidth={1.4} />
-          ) : (
-            <Menu aria-hidden="true" className="h-5 w-5" strokeWidth={1.4} />
-          )}
-        </button>
+        {/* Left: Mobile Drawer Hamburger Button */}
+        <div className="flex items-center gap-3">
+          <button
+            aria-controls="mobile-navigation"
+            aria-expanded={isMenuOpen}
+            aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-700 dark:text-porcelain transition hover:bg-gray-100 dark:hover:bg-white/10 focus:outline-none"
+            onClick={() => setIsMenuOpen((current) => !current)}
+            type="button"
+          >
+            {isMenuOpen ? (
+              <X aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
+            ) : (
+              <Menu aria-hidden="true" className="h-5 w-5" strokeWidth={1.8} />
+            )}
+          </button>
 
-        <Link className="group flex items-center gap-3 text-left py-1" href="/">
-          <AlKaifMark className="h-12 w-auto shrink-0 drop-shadow-[0_0_12px_rgba(255,215,0,0.4)] transition-transform duration-500 group-hover:scale-105 sm:h-14" />
+          {/* Desktop Navigation Links */}
+          <div className="hidden items-center gap-6 lg:flex">
+            {navigation.map((item) => (
+              <Link
+                className="text-xs uppercase tracking-luxury text-gray-700 dark:text-porcelain/80 transition hover:text-amber-600 dark:hover:text-gold-light"
+                href={item.href}
+                key={item.href}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
 
-          <span className="leading-tight">
-            <span className="gold-gradient-text block font-serif text-xl font-medium uppercase tracking-[0.25em] sm:text-2xl">
+        {/* Center: Brand Typography & Logo */}
+        <Link className="flex items-center gap-2 text-center" href="/">
+          <AlKaifMark className="h-8 w-auto shrink-0 drop-shadow-sm transition-transform duration-300 hover:scale-105 sm:h-9" />
+          <span className="leading-tight text-left">
+            <span className="font-serif text-xl sm:text-2xl font-bold uppercase tracking-[0.2em] text-gray-900 dark:text-gold-light">
               AL-KAIF
             </span>
-            <span className="block text-[9px] font-light uppercase tracking-imperial text-gold-light opacity-85">
-              Fine Jewellery &amp; Perfumes
+            <span className="block text-[8px] font-medium uppercase tracking-widest text-amber-700 dark:text-gold-light/80">
+              Jewellery &amp; Perfumes
             </span>
           </span>
         </Link>
 
-        <div className="hidden items-center gap-10 lg:flex">
-          {navigation.map((item) => (
-            <Link
-              className="text-[0.68rem] uppercase tracking-luxury text-porcelain/80 transition duration-300 hover:text-gold-light"
-              href={item.href}
-              key={item.href}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-
+        {/* Right Icons Row */}
         <div className="flex items-center gap-1 sm:gap-2">
-          <button
-            aria-label="Search AL-KAIF"
-            className="hidden h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light sm:inline-flex"
-            type="button"
+          {/* Store Locator Icon */}
+          <Link
+            href="/query"
+            aria-label="Store locator / Atelier Location"
+            className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-700 dark:text-porcelain/80 transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-amber-600 dark:hover:text-gold-light"
+            title="AL-KAIF Atelier & Support"
           >
-            <Search aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
-          </button>
+            <MapPin className="h-4 w-4" strokeWidth={1.8} />
+          </Link>
 
+          {/* Wishlist Heart Icon */}
+          <Link
+            href="/products"
+            aria-label="Wishlist"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-700 dark:text-porcelain/80 transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-rose-500"
+            title="Wishlist"
+          >
+            <Heart className="h-4 w-4" strokeWidth={1.8} />
+          </Link>
+
+          {/* Account Icon */}
+          <Link
+            aria-label={isLoggedIn ? "My account" : "Sign in"}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-700 dark:text-porcelain/80 transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-amber-600 dark:hover:text-gold-light"
+            href={isLoggedIn ? "/profile" : "/login"}
+          >
+            <UserRound className="h-4 w-4" strokeWidth={1.8} />
+          </Link>
+
+          {/* Theme Toggle Button */}
           <button
             aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-            className="inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
+            className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-700 dark:text-porcelain/80 transition hover:bg-gray-100 dark:hover:bg-white/10"
             onClick={toggleTheme}
             type="button"
           >
             {theme === "dark" ? (
-              <Sun aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
+              <Sun className="h-4 w-4 text-amber-400" strokeWidth={1.8} />
             ) : (
-              <Moon aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
+              <Moon className="h-4 w-4 text-gray-700" strokeWidth={1.8} />
             )}
           </button>
 
-          {/* Signing out belongs on the account page, as it does on any shop —
-              a logout button in the header is one slip from losing a bag. */}
-          <Link
-            aria-label={isLoggedIn ? "My account" : "Sign in"}
-            className="inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
-            href={isLoggedIn ? "/profile" : "/login"}
-          >
-            <UserRound aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
-          </Link>
-
+          {/* Shopping Cart Bag Icon with Active Circular Count Badge */}
           <Link
             aria-label={
               cartCount > 0
-                ? `Open shopping bag, ${cartCount} ${cartCount === 1 ? "piece" : "pieces"}`
+                ? `Open shopping bag, ${cartCount} ${cartCount === 1 ? "item" : "items"}`
                 : "Open shopping bag"
             }
-            className="relative inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-800 dark:text-porcelain transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-amber-600 dark:hover:text-gold-light"
             href="/cart"
           >
-            <ShoppingBag aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
-            {cartCount > 0 ? (
-              <span
-                aria-hidden="true"
-                className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold px-1 text-[0.6rem] font-medium leading-none text-obsidian"
-              >
-                {cartCount > 99 ? "99+" : cartCount}
-              </span>
-            ) : null}
+            <ShoppingBag className="h-5 w-5" strokeWidth={1.8} />
+            <span
+              className={`absolute -right-0.5 -top-0.5 grid h-5 min-w-[20px] place-items-center rounded-full px-1 text-[0.65rem] font-bold text-white transition-all shadow-sm ${
+                cartCount > 0 ? "bg-amber-600 dark:bg-gold dark:text-obsidian" : "bg-gray-400 dark:bg-gray-700"
+              }`}
+            >
+              {cartCount > 99 ? "99+" : cartCount}
+            </span>
           </Link>
         </div>
       </nav>
 
+      {/* Global Full-Width Search Bar */}
+      <div className="mx-auto max-w-7xl px-4 pb-3 pt-1">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (searchQuery.trim()) {
+              window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`;
+            }
+          }}
+          className="relative flex items-center"
+        >
+          <Search className="absolute left-4 h-4 w-4 text-gray-400 dark:text-porcelain/50 pointer-events-none" strokeWidth={1.8} />
+          
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={searchPlaceholders[placeholderIndex]}
+            className="w-full rounded-full border border-gray-200 dark:border-white/20 bg-gray-50 dark:bg-onyx/80 pl-11 pr-20 py-2.5 text-xs sm:text-sm text-gray-900 dark:text-porcelain placeholder:text-gray-400 dark:placeholder:text-porcelain/50 focus:border-amber-500 dark:focus:border-gold-light focus:bg-white dark:focus:bg-onyx focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-gold-light/20 transition-all shadow-inner"
+          />
+
+          {/* Trailing Camera & Voice Search Icons */}
+          <div className="absolute right-3 flex items-center gap-1.5 text-gray-400 dark:text-porcelain/60">
+            <button
+              type="button"
+              title="Visual / Camera Search"
+              onClick={() => alert("Visual / Camera search enabled!")}
+              className="p-1 hover:text-amber-600 dark:hover:text-gold-light transition"
+            >
+              <Camera className="h-4 w-4" strokeWidth={1.8} />
+            </button>
+            <button
+              type="button"
+              title="Voice Search"
+              onClick={() => alert("Voice search listening...")}
+              className="p-1 hover:text-amber-600 dark:hover:text-gold-light transition"
+            >
+              <Mic className="h-4 w-4" strokeWidth={1.8} />
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Mobile Menu Drawer */}
       {isMenuOpen ? (
         <nav
           aria-label="Mobile navigation"
-          className="border-t border-white/10 bg-obsidian px-5 py-5 lg:hidden"
+          className="border-t border-gray-200 dark:border-white/10 bg-white dark:bg-obsidian px-5 py-5 lg:hidden animate-in slide-in-from-top-2 duration-200"
           id="mobile-navigation"
         >
           <div className="mx-auto grid max-w-7xl gap-1">
@@ -141,7 +232,7 @@ export function Navbar() {
               return (
                 <Link
                   aria-current={isCurrent ? "page" : undefined}
-                  className="flex min-h-12 items-center border-b border-white/10 py-3 text-sm uppercase tracking-luxury text-porcelain/85 transition hover:border-gold-light hover:text-gold-light"
+                  className="flex min-h-12 items-center border-b border-gray-100 dark:border-white/10 py-3 text-xs uppercase tracking-luxury font-medium text-gray-800 dark:text-porcelain/85 transition hover:text-amber-600 dark:hover:text-gold-light"
                   href={item.href}
                   key={item.href}
                   onClick={closeMenu}
@@ -150,6 +241,16 @@ export function Navbar() {
                 </Link>
               );
             })}
+
+            <div className="pt-4 flex items-center justify-between text-xs text-gray-500 dark:text-porcelain/60">
+              <Link href="/query" onClick={closeMenu} className="flex items-center gap-2 hover:text-amber-600">
+                <MapPin className="h-4 w-4" /> Vapi Atelier Hub
+              </Link>
+              <button onClick={toggleTheme} className="flex items-center gap-1.5 hover:text-amber-600">
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                {theme === "dark" ? "Light Mode" : "Dark Mode"}
+              </button>
+            </div>
           </div>
         </nav>
       ) : null}
