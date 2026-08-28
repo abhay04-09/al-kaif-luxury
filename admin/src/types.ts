@@ -127,3 +127,19 @@ export interface DatabaseSchemaTable {
   }[];
   rowCount: number;
 }
+
+/** A registered account as the admin panel sees it, with their order history rolled up. */
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  role: 'customer' | 'admin';
+  avatar?: string | null;
+  createdAt: string | null;
+  /** 'Email' for a password account, 'Google' for one created by Google sign-in. */
+  signUpMethod: 'Email' | 'Google';
+  orderCount: number;
+  totalSpentINR: number;
+  lastOrderAt: string | null;
+}

@@ -1,6 +1,6 @@
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { ShieldCheck, Mail, Phone, Scale, Tag, CreditCard, Sparkles } from "lucide-react";
+import { ShieldCheck, Mail, Phone } from "lucide-react";
 
 export const metadata = {
   title: "Terms & Conditions | AL-KAIF Artificial Jewellery & Perfumes",

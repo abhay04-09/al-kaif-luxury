@@ -7,6 +7,8 @@ import {
 import { toast } from 'react-hot-toast';
 import { apiFetch, apiJson } from '../api';
 import { Product, Category } from '../types';
+import { ExportButton } from '../components/ExportButton';
+import { productColumns } from '../exports';
 
 const EMPTY_FORM: Partial<Product> = {
   name: '',
@@ -431,6 +433,13 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                 : `${filtered.length} of ${products.length} pieces`}
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+        <ExportButton
+          rows={filtered}
+          columns={productColumns}
+          filename={archived ? 'al-kaif-archived-products' : 'al-kaif-products'}
+          label="Export"
+        />
         {!archived && (
           <button
             onClick={openAdd}
@@ -440,6 +449,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
             <span>Add Product</span>
           </button>
         )}
+        </div>
       </div>
 
       {/* Stock status tabs */}

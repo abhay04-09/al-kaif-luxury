@@ -3,8 +3,14 @@ import { cors } from 'hono/cors';
 import type { Env } from './env';
 import { getDb, rowToProduct, productToRow, rowToOrder, rowToCategory, buildCategoryTree } from './lib/db';
 import { hashPassword, verifyPassword } from './lib/passwords';
-import { createToken, requireAdmin, optionalAuth, currentUser } from './lib/auth';
-import { createRazorpayOrder, fetchRazorpayPayment, verifyRazorpaySignature } from './lib/razorpay';
+import { createToken, requireAdmin, requireAuth, optionalAuth, currentUser } from './lib/auth';
+import {
+  createRazorpayOrder,
+  fetchRazorpayPayment,
+  verifyRazorpaySignature,
+  verifyWebhookSignature,
+} from './lib/razorpay';
+import { sendOrderEmails } from './lib/email';
 import { SEED_PRODUCTS } from './data/seedProducts';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -46,7 +52,7 @@ app.post('/api/auth/register', async c => {
       password_hash: await hashPassword(String(password)),
       role: 'customer',
     })
-    .select('id, name, email, phone, role, avatar')
+    .select('id, name, email, phone, role, avatar, address')
     .single();
   if (error || !user) throw new Error(error?.message ?? 'Insert failed');
 
@@ -61,7 +67,7 @@ app.post('/api/auth/login', async c => {
   const db = getDb(c.env);
   const { data: user } = await db
     .from('users')
-    .select('id, name, email, phone, role, avatar, password_hash')
+    .select('id, name, email, phone, role, avatar, address, password_hash')
     .eq('email', String(email).trim().toLowerCase())
     .maybeSingle();
 
@@ -74,13 +80,184 @@ app.post('/api/auth/login', async c => {
   return c.json({ user: safeUser, token });
 });
 
+app.post('/api/auth/google', async c => {
+  const { accessToken } = await c.req.json();
+  if (!accessToken) return c.json({ error: 'Missing Google sign-in token' }, 400);
+
+  // The browser could send us any email it likes, so the token is verified with
+  // Supabase before it is trusted. Only what Supabase returns is used.
+  const res = await fetch(`${c.env.SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      apikey: c.env.SUPABASE_SERVICE_ROLE_KEY,
+    },
+  });
+  if (!res.ok) return c.json({ error: 'Google sign-in could not be verified' }, 401);
+
+  const profile: any = await res.json();
+  const email = String(profile?.email ?? '').trim().toLowerCase();
+  if (!email) return c.json({ error: 'Google account has no email address' }, 400);
+
+  const meta = profile.user_metadata ?? {};
+  const db = getDb(c.env);
+
+  // An existing account keeps its row — and its role — so signing in with Google
+  // can never quietly hand someone a fresh customer account they already had, or
+  // strip an administrator of their access.
+  const { data: existing } = await db
+    .from('users')
+    .select('id, name, email, phone, role, avatar, address')
+    .eq('email', email)
+    .maybeSingle();
+
+  let user = existing;
+  if (!user) {
+    const { data: created, error } = await db
+      .from('users')
+      .insert({
+        name: String(meta.full_name ?? meta.name ?? email.split('@')[0]).trim(),
+        email,
+        avatar: meta.avatar_url ?? meta.picture ?? null,
+        role: 'customer',
+      })
+      .select('id, name, email, phone, role, avatar, address')
+      .single();
+    if (error || !created) throw new Error(error?.message ?? 'Could not create the account');
+    user = created;
+  }
+
+  const token = await createToken(user, c.env.JWT_SECRET);
+  return c.json({ user, token });
+});
+
+app.post('/api/auth/phone', async c => {
+  const { accessToken, name } = await c.req.json();
+  if (!accessToken) return c.json({ error: 'Missing sign-in token' }, 400);
+
+  // The browser could claim any number it likes, so the token is verified with
+  // Supabase and only the number Supabase confirms is trusted.
+  const res = await fetch(`${c.env.SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      apikey: c.env.SUPABASE_SERVICE_ROLE_KEY,
+    },
+  });
+  if (!res.ok) return c.json({ error: 'Mobile sign-in could not be verified' }, 401);
+
+  const profile: any = await res.json();
+  const phone = String(profile?.phone ?? '').replace(/\D/g, '');
+  if (!phone) return c.json({ error: 'That sign-in carried no mobile number' }, 400);
+
+  const e164 = `+${phone}`;
+  const national = phone.slice(-10);
+  const db = getDb(c.env);
+
+  // Numbers already on file were typed by hand and may be stored without the
+  // country code, so an existing client is matched on the last ten digits
+  // rather than being handed a second, empty account.
+  const { data: candidates } = await db
+    .from('users')
+    .select('id, name, email, phone, role, avatar, address')
+    .ilike('phone', `%${national}`);
+
+  let user = (candidates ?? []).find(
+    row => String(row.phone ?? '').replace(/\D/g, '').slice(-10) === national
+  );
+
+  if (user) {
+    // Settle the number into a single canonical form now that it is verified.
+    if (user.phone !== e164) {
+      await db.from('users').update({ phone: e164 }).eq('id', user.id);
+      user = { ...user, phone: e164 };
+    }
+  } else {
+    const { data: created, error } = await db
+      .from('users')
+      .insert({
+        name: String(name ?? '').trim() || `Client ${national.slice(-4)}`,
+        phone: e164,
+        role: 'customer',
+      })
+      .select('id, name, email, phone, role, avatar, address')
+      .single();
+    if (error || !created) throw new Error(error?.message ?? 'Could not create the account');
+    user = created;
+  }
+
+  const token = await createToken(user, c.env.JWT_SECRET);
+  return c.json({ user, token });
+});
+
+app.put('/api/auth/me', requireAuth, async c => {
+  const payload = currentUser(c)!;
+  const { name, phone, address } = await c.req.json();
+
+  const patch: Record<string, unknown> = {};
+  if (name !== undefined) {
+    const trimmed = String(name).trim();
+    if (!trimmed) return c.json({ error: 'A name is required' }, 400);
+    patch.name = trimmed;
+  }
+  if (address !== undefined) patch.address = String(address).trim() || null;
+  if (phone !== undefined) {
+    const digits = String(phone).replace(/\D/g, '');
+    if (!digits) {
+      patch.phone = null;
+    } else if (digits.length < 10) {
+      return c.json({ error: 'That mobile number looks too short' }, 400);
+    } else {
+      // Numbers verified by OTP are stored in E.164; keeping one shape means a
+      // client cannot end up with two accounts for the same number.
+      patch.phone = `+${digits.length === 10 ? `91${digits}` : digits}`;
+    }
+  }
+
+  if (Object.keys(patch).length === 0) return c.json({ error: 'Nothing to update' }, 400);
+
+  const db = getDb(c.env);
+
+  // The unique index compares stored text, and a number written '8347016843'
+  // by hand is the same number as '+918347016843' from an OTP. Matching on the
+  // last ten digits is what actually stops one person holding two accounts.
+  if (typeof patch.phone === 'string') {
+    const national = patch.phone.replace(/\D/g, '').slice(-10);
+    const { data: clashes } = await db
+      .from('users')
+      .select('id, phone')
+      .ilike('phone', `%${national}`);
+    const taken = (clashes ?? []).some(
+      row =>
+        row.id !== payload.sub &&
+        String(row.phone ?? '').replace(/\D/g, '').slice(-10) === national
+    );
+    if (taken) {
+      return c.json({ error: 'That mobile number is already on another account' }, 409);
+    }
+  }
+
+  const { data: user, error } = await db
+    .from('users')
+    .update(patch)
+    .eq('id', payload.sub)
+    .select('id, name, email, phone, role, avatar, address')
+    .single();
+
+  // 23505: the unique index on phone — that number is already on another account.
+  if (error?.code === '23505') {
+    return c.json({ error: 'That mobile number is already on another account' }, 409);
+  }
+  if (error || !user) throw new Error(error?.message ?? 'Could not save your details');
+
+  return c.json({ user });
+});
+
 app.get('/api/auth/me', optionalAuth, async c => {
   const payload = currentUser(c);
   if (!payload) return c.json({ user: null });
   const db = getDb(c.env);
   const { data: user } = await db
     .from('users')
-    .select('id, name, email, phone, role, avatar')
+    .select('id, name, email, phone, role, avatar, address')
     .eq('id', payload.sub)
     .maybeSingle();
   return c.json({ user: user ?? null });
@@ -259,6 +436,14 @@ interface IncomingItem {
 }
 
 /** Recomputes all money amounts from DB prices so the client can't tamper with totals. */
+/**
+ * GST already contained in every catalogue price.
+ *
+ * 3% is the rate for jewellery. Perfume is taxed at 18%, so this becomes a
+ * per-category rate the moment a perfume is listed for sale.
+ */
+const GST_RATE = 0.03;
+
 async function priceItems(env: Env, items: IncomingItem[]) {
   if (!Array.isArray(items) || items.length === 0) throw new Error('Cart is empty');
   const db = getDb(env);
@@ -281,9 +466,19 @@ async function priceItems(env: Env, items: IncomingItem[]) {
     return { product, quantity, selectedMetal: i.selectedMetal, selectedSize: i.selectedSize };
   });
 
-  const taxINR = Math.round(subtotalINR * 0.03);
-  const taxUSD = Math.round(subtotalUSD * 0.03);
-  return { lines, subtotalINR, taxINR, totalINR: subtotalINR + taxINR, totalUSD: subtotalUSD + taxUSD };
+  // Catalogue prices already include GST, so the listed sum is what the client
+  // pays — tax is backed out of it for the invoice rather than added on top.
+  // Charging 3% over a tax-inclusive price would overcharge every order.
+  const taxINR = subtotalINR - Math.round(subtotalINR / (1 + GST_RATE));
+  const taxUSD = subtotalUSD - Math.round(subtotalUSD / (1 + GST_RATE));
+  return {
+    lines,
+    // The taxable value: what the maison earns, once GST is set aside.
+    subtotalINR: subtotalINR - taxINR,
+    taxINR,
+    totalINR: subtotalINR,
+    totalUSD: subtotalUSD,
+  };
 }
 
 app.get('/api/orders', optionalAuth, async c => {
@@ -298,6 +493,119 @@ app.get('/api/orders', optionalAuth, async c => {
   if (error) throw new Error(error.message);
   return c.json((data ?? []).map(rowToOrder));
 });
+
+app.get('/api/orders/:orderNumber', requireAuth, async c => {
+  const user = currentUser(c)!;
+  const db = getDb(c.env);
+
+  const { data, error } = await db
+    .from('orders')
+    .select('*, order_items(*)')
+    .eq('order_number', c.req.param('orderNumber'))
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+
+  // An order number is guessable, so it is never enough on its own. Anyone but
+  // an administrator is told the same thing whether the order is missing or
+  // simply is not theirs — confirming it exists would be a leak in itself.
+  if (!data || (user.role !== 'admin' && data.user_id !== user.sub)) {
+    return c.json({ error: 'Order not found' }, 404);
+  }
+
+  return c.json(rowToOrder(data));
+});
+
+type PricedCart = Awaited<ReturnType<typeof priceItems>>;
+
+interface OrderDraft {
+  priced: PricedCart;
+  userId: string | null;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  shippingAddress: unknown;
+  paymentMethod: string;
+  paymentStatus: 'Pending' | 'Paid';
+  razorpayOrderId: string | null;
+  razorpayPaymentId: string | null;
+  giftWrapped?: boolean;
+  notes?: string | null;
+}
+
+/**
+ * Writes an order and its lines.
+ *
+ * Shared by the browser's confirmation and by Razorpay's webhook, which race
+ * each other whenever a payment succeeds. The unique index on
+ * razorpay_payment_id decides which one wins; the loser is told 'duplicate'
+ * rather than raising, because a second attempt at the same payment is the
+ * system working, not a fault.
+ */
+async function writeOrder(env: Env, draft: OrderDraft) {
+  const db = getDb(env);
+  const id = `ord-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const orderNumber = `ALK-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  const { data: orderRow, error: orderErr } = await db
+    .from('orders')
+    .insert({
+      id,
+      order_number: orderNumber,
+      user_id: draft.userId,
+      customer_name: draft.customerName,
+      customer_email: draft.customerEmail,
+      customer_phone: draft.customerPhone,
+      shipping_address: draft.shippingAddress,
+      subtotal_inr: draft.priced.subtotalINR,
+      tax_inr: draft.priced.taxINR,
+      discount_inr: 0,
+      total_inr: draft.priced.totalINR,
+      total_usd: draft.priced.totalUSD,
+      payment_method: draft.paymentMethod,
+      payment_status: draft.paymentStatus,
+      order_status: 'Placed',
+      razorpay_order_id: draft.razorpayOrderId,
+      razorpay_payment_id: draft.razorpayPaymentId,
+      gift_wrapped: !!draft.giftWrapped,
+      notes: draft.notes ?? null,
+    })
+    .select('*')
+    .single();
+
+  // 23505: the unique index on razorpay_payment_id rejected a second order for
+  // the same payment.
+  if (orderErr?.code === '23505') return 'duplicate' as const;
+  if (orderErr || !orderRow) throw new Error(orderErr?.message ?? 'Order insert failed');
+
+  const { error: itemsErr } = await db.from('order_items').insert(
+    draft.priced.lines.map(l => ({
+      order_id: id,
+      product_id: l.product.id,
+      product_name: l.product.name,
+      quantity: l.quantity,
+      price_inr: l.product.priceINR,
+      price_usd: l.product.priceUSD,
+      image: l.product.image,
+      selected_metal: l.selectedMetal ?? null,
+      selected_size: l.selectedSize ?? null,
+    }))
+  );
+  if (itemsErr) throw new Error(itemsErr.message);
+
+  const { data: full } = await db.from('orders').select('*, order_items(*)').eq('id', id).single();
+  const order = rowToOrder(full);
+
+  // Both the browser's confirmation and the webhook's recovery come through
+  // here, so a client whose browser died is still written to. A mail failure
+  // is never allowed to undo an order that has already been paid for.
+  try {
+    await sendOrderEmails(env, order);
+  } catch (err) {
+    console.error(`Order emails failed for ${order.orderNumber}:`, err);
+  }
+
+  return order;
+}
 
 app.post('/api/orders', optionalAuth, async c => {
   const body = await c.req.json();
@@ -349,71 +657,65 @@ app.post('/api/orders', optionalAuth, async c => {
       return c.json({ error: 'Payment does not match this order' }, 400);
     }
 
-    const { data: replay } = await getDb(c.env)
+    // The webhook may have written this order already — it usually reaches us
+    // before the client's browser does. By this point the payment has been
+    // verified against Razorpay and against this cart's total, so the order it
+    // produced is this client's own: hand it back rather than refusing. A
+    // stranger cannot get here, since the signature cannot be forged without
+    // the key secret.
+    const { data: settled } = await getDb(c.env)
       .from('orders')
-      .select('id')
+      .select('*, order_items(*)')
       .eq('razorpay_payment_id', razorpay_payment_id)
       .maybeSingle();
-    if (replay) {
-      console.error(`Replayed Razorpay payment ${razorpay_payment_id} (already on order ${replay.id})`);
-      return c.json({ error: 'This payment has already been used' }, 409);
+    if (settled) {
+      console.log(`Payment ${razorpay_payment_id} already settled as ${settled.order_number}`);
+      return c.json(rowToOrder(settled), 200);
     }
 
     paymentStatus = 'Paid';
     razorpayOrderId = razorpay_order_id;
     razorpayPaymentId = razorpay_payment_id;
-  } else if (paymentMethod !== 'COD') {
+  } else {
+    // Cash on delivery is not offered yet. Removing it from the checkout is not
+    // enough on its own — without this, an order could still be placed unpaid
+    // by calling the API directly.
     return c.json({ error: 'Unsupported payment method' }, 400);
   }
 
-  const db = getDb(c.env);
-  const id = `ord-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  const orderNumber = `ALK-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const written = await writeOrder(c.env, {
+    priced,
+    userId: user?.sub ?? null,
+    customerName,
+    customerEmail: customerEmail ?? user?.email ?? '',
+    customerPhone,
+    shippingAddress,
+    paymentMethod,
+    paymentStatus,
+    razorpayOrderId,
+    razorpayPaymentId,
+    giftWrapped,
+    notes,
+  });
 
-  const { data: orderRow, error: orderErr } = await db
-    .from('orders')
-    .insert({
-      id,
-      order_number: orderNumber,
-      user_id: user?.sub ?? null,
-      customer_name: customerName,
-      customer_email: customerEmail ?? user?.email ?? '',
-      customer_phone: customerPhone,
-      shipping_address: shippingAddress,
-      subtotal_inr: priced.subtotalINR,
-      tax_inr: priced.taxINR,
-      discount_inr: 0,
-      total_inr: priced.totalINR,
-      total_usd: priced.totalUSD,
-      payment_method: paymentMethod,
-      payment_status: paymentStatus,
-      order_status: 'Placed',
-      razorpay_order_id: razorpayOrderId,
-      razorpay_payment_id: razorpayPaymentId,
-      gift_wrapped: !!giftWrapped,
-      notes: notes ?? null,
-    })
-    .select('*')
-    .single();
-  if (orderErr || !orderRow) throw new Error(orderErr?.message ?? 'Order insert failed');
+  if (written === 'duplicate') {
+    // The webhook got there in the moment between the check above and this
+    // insert. The money is accounted for either way, so the client is shown
+    // the order rather than an error.
+    const { data: settled } = await getDb(c.env)
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('razorpay_payment_id', razorpayPaymentId)
+      .maybeSingle();
+    if (settled) return c.json(rowToOrder(settled), 200);
+    return c.json({ error: 'This payment has already been used' }, 409);
+  }
 
-  const { error: itemsErr } = await db.from('order_items').insert(
-    priced.lines.map(l => ({
-      order_id: id,
-      product_id: l.product.id,
-      product_name: l.product.name,
-      quantity: l.quantity,
-      price_inr: l.product.priceINR,
-      price_usd: l.product.priceUSD,
-      image: l.product.image,
-      selected_metal: l.selectedMetal ?? null,
-      selected_size: l.selectedSize ?? null,
-    }))
-  );
-  if (itemsErr) throw new Error(itemsErr.message);
+  if (razorpayOrderId) {
+    await getDb(c.env).from('pending_checkouts').delete().eq('razorpay_order_id', razorpayOrderId);
+  }
 
-  const { data: full } = await db.from('orders').select('*, order_items(*)').eq('id', id).single();
-  return c.json(rowToOrder(full), 201);
+  return c.json(written, 201);
 });
 
 app.put('/api/orders/:id/status', requireAdmin, async c => {
@@ -435,10 +737,38 @@ app.put('/api/orders/:id/status', requireAdmin, async c => {
 
 // ---------------------------------------------------------------- payments (Razorpay)
 
-app.post('/api/payments/razorpay/order', async c => {
-  const { items } = await c.req.json();
+app.post('/api/payments/razorpay/order', optionalAuth, async c => {
+  const body = await c.req.json();
+  const { items, shippingAddress, customerName, customerEmail, customerPhone, giftWrapped, notes } = body;
   const priced = await priceItems(c.env, items);
   const rzpOrder = await createRazorpayOrder(c.env, priced.totalINR, `rcpt_${Date.now()}`);
+  const user = currentUser(c);
+
+  // A checkout that was opened and abandoned leaves its basket parked forever.
+  // Razorpay orders expire long before this, so anything older is dead weight.
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  await getDb(c.env).from('pending_checkouts').delete().lt('created_at', cutoff);
+
+  // Park the basket before the payment window opens. If the client pays and
+  // their browser never makes it back, the webhook has everything it needs to
+  // finish the order without them.
+  if (shippingAddress && customerName && customerPhone) {
+    const { error } = await getDb(c.env).from('pending_checkouts').insert({
+      razorpay_order_id: rzpOrder.id,
+      user_id: user?.sub ?? null,
+      customer_name: customerName,
+      customer_email: customerEmail ?? user?.email ?? '',
+      customer_phone: customerPhone,
+      shipping_address: shippingAddress,
+      items,
+      gift_wrapped: !!giftWrapped,
+      notes: notes ?? null,
+    });
+    // Never block the payment over this — losing recovery is far better than
+    // refusing a client who is ready to pay.
+    if (error) console.error(`Could not park checkout ${rzpOrder.id}: ${error.message}`);
+  }
+
   return c.json({
     razorpayOrderId: rzpOrder.id,
     amount: rzpOrder.amount, // paise
@@ -446,6 +776,89 @@ app.post('/api/payments/razorpay/order', async c => {
     keyId: c.env.RAZORPAY_KEY_ID, // public key id — safe to expose
     totalINR: priced.totalINR,
   });
+});
+
+/**
+ * Razorpay's own account of what happened.
+ *
+ * This is the safety net for a payment that succeeded while the client's
+ * browser did not come back — a closed tab, a flat battery, a train tunnel.
+ * Razorpay retries a delivery it cannot get a 2xx for, so anything that a
+ * retry cannot fix answers 200 and shouts in the log instead.
+ */
+app.post('/api/payments/razorpay/webhook', async c => {
+  const secret = c.env.RAZORPAY_WEBHOOK_SECRET;
+  // Without a secret nothing can be trusted, and accepting unsigned events
+  // would let anyone mark orders paid.
+  if (!secret) {
+    console.error('Razorpay webhook arrived but RAZORPAY_WEBHOOK_SECRET is not set');
+    return c.json({ error: 'Webhooks are not configured' }, 503);
+  }
+
+  const signature = c.req.header('X-Razorpay-Signature');
+  const raw = await c.req.text();
+  if (!signature || !(await verifyWebhookSignature(secret, raw, signature))) {
+    return c.json({ error: 'Invalid signature' }, 400);
+  }
+
+  const event = JSON.parse(raw);
+  const payment = event?.payload?.payment?.entity;
+  if (event?.event !== 'payment.captured' || !payment?.id) {
+    return c.json({ status: 'ignored' });
+  }
+
+  const db = getDb(c.env);
+  const { data: already } = await db
+    .from('orders')
+    .select('id')
+    .eq('razorpay_payment_id', payment.id)
+    .maybeSingle();
+  // The usual case: the browser came back and wrote the order itself.
+  if (already) return c.json({ status: 'already recorded' });
+
+  const { data: parked } = await db
+    .from('pending_checkouts')
+    .select('*')
+    .eq('razorpay_order_id', payment.order_id)
+    .maybeSingle();
+
+  if (!parked) {
+    console.error(
+      `Captured payment ${payment.id} (order ${payment.order_id}) has no order and no parked checkout — needs manual reconciliation`
+    );
+    return c.json({ status: 'unmatched' });
+  }
+
+  const priced = await priceItems(c.env, parked.items);
+  const expectedPaise = Math.round(priced.totalINR * 100);
+  if (payment.amount !== expectedPaise || payment.currency !== 'INR') {
+    console.error(
+      `Captured payment ${payment.id} is ${payment.amount} ${payment.currency}, parked basket is ${expectedPaise} INR — not recording`
+    );
+    return c.json({ status: 'mismatched' });
+  }
+
+  const written = await writeOrder(c.env, {
+    priced,
+    userId: parked.user_id,
+    customerName: parked.customer_name,
+    customerEmail: parked.customer_email,
+    customerPhone: parked.customer_phone,
+    shippingAddress: parked.shipping_address,
+    paymentMethod: 'Razorpay',
+    paymentStatus: 'Paid',
+    razorpayOrderId: payment.order_id,
+    razorpayPaymentId: payment.id,
+    giftWrapped: parked.gift_wrapped,
+    notes: parked.notes,
+  });
+
+  await db.from('pending_checkouts').delete().eq('razorpay_order_id', payment.order_id);
+
+  if (written === 'duplicate') return c.json({ status: 'already recorded' });
+
+  console.log(`Recovered order ${written.orderNumber} from webhook for payment ${payment.id}`);
+  return c.json({ status: 'recorded', orderNumber: written.orderNumber });
 });
 
 // ---------------------------------------------------------------- currency rates
@@ -475,6 +888,49 @@ app.get('/api/rates', async c => {
       fallback: true,
     });
   }
+});
+
+// ---------------------------------------------------------------- customers
+
+app.get('/api/users', requireAdmin, async c => {
+  const db = getDb(c.env);
+  const { data: users, error } = await db
+    .from('users')
+    .select('id, name, email, phone, role, avatar, created_at, password_hash')
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+
+  const { data: orders } = await db
+    .from('orders')
+    .select('user_id, customer_email, total_inr, payment_status, created_at');
+
+  return c.json(
+    (users ?? []).map(({ password_hash, created_at, ...user }) => {
+      // Orders are matched on email as well as id, so a purchase made as a
+      // guest still shows against the account that later used that address.
+      const theirs = (orders ?? []).filter(
+        o =>
+          (o.user_id && o.user_id === user.id) ||
+          (!!user.email &&
+            String(o.customer_email ?? '').trim().toLowerCase() === user.email)
+      );
+
+      return {
+        ...user,
+        createdAt: created_at,
+        // A row carrying no password was created by Google sign-in.
+        signUpMethod: password_hash ? 'Email' : 'Google',
+        orderCount: theirs.length,
+        totalSpentINR: theirs
+          .filter(o => o.payment_status === 'Paid')
+          .reduce((sum, o) => sum + Number(o.total_inr ?? 0), 0),
+        lastOrderAt: theirs.reduce<string | null>(
+          (latest, o) => (!latest || String(o.created_at) > latest ? String(o.created_at) : latest),
+          null
+        ),
+      };
+    })
+  );
 });
 
 // ---------------------------------------------------------------- newsletter

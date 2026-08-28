@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Instagram, Mail, MapPin, Phone } from "lucide-react";
-import { primaryNavigation } from "@/lib/navigation";
 
 const instagramUrl =
   "https://www.instagram.com/alkaif.jewellery?igsh=OG5jYnNxdGI0dGlm";
@@ -37,11 +36,6 @@ export function Footer() {
                 alt="AL-KAIF"
                 fill
                 sizes="176px"
-                /*
-                 * The PNG has an opaque near-black background baked in, which
-                 * reads as a dark rectangle on the green ground. Screen blending
-                 * drops the black to the page colour and keeps the gold artwork.
-                 */
                 className="object-contain object-left mix-blend-screen"
               />
             </Link>
@@ -147,6 +141,9 @@ export function Footer() {
             </Link>
             <Link href="/refund-policy" className="transition hover:text-gold-light">
               Return & Refund Policy
+            </Link>
+            <Link href="/query" className="transition hover:text-gold-light">
+              Raise a Query
             </Link>
           </div>
         </div>

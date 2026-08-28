@@ -91,3 +91,30 @@ export async function verifyRazorpaySignature(
   for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ signature.charCodeAt(i);
   return diff === 0;
 }
+
+/**
+ * Verifies a webhook delivery: HMAC-SHA256 of the raw request body, keyed with
+ * the webhook secret — which is a different secret from the API key.
+ *
+ * The raw body must be passed exactly as received. Re-serialising the parsed
+ * JSON changes the bytes and the signature will never match.
+ */
+export async function verifyWebhookSignature(
+  secret: string,
+  rawBody: string,
+  signature: string
+): Promise<boolean> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(rawBody));
+  const expected = [...new Uint8Array(mac)].map(b => b.toString(16).padStart(2, '0')).join('');
+  if (expected.length !== signature.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ signature.charCodeAt(i);
+  return diff === 0;
+}

@@ -1,29 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { LogOut, Menu, Moon, Search, ShoppingBag, Sun, UserRound, X } from "lucide-react";
+import { Menu, Moon, Search, ShoppingBag, Sun, UserRound, X } from "lucide-react";
 import { primaryNavigation } from "@/lib/navigation";
 import { AlKaifMark } from "@/components/brand/al-kaif-mark";
+import { useSession } from "@/components/auth/session-provider";
 import { useTheme } from "@/components/theme/theme-provider";
+import { useCartCount } from "@/lib/use-cart-count";
 
 export function Navbar() {
-  const router = useRouter();
   const pathname = usePathname();
-  const { data: session, status } = useSession();
+  const { user, status } = useSession();
   const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const cartCount = useCartCount();
 
-  async function handleLogout() {
-    await signOut({ redirect: false });
-    router.replace("/");
-    router.refresh();
-  }
-
-  const isLoggedIn = status === "authenticated" && Boolean(session?.user);
-  const isAdmin = isLoggedIn && session?.user.role === "ADMIN";
+  const isLoggedIn = status === "authenticated" && Boolean(user);
+  const isAdmin = isLoggedIn && user?.role === "admin";
   // The admin panel is a separate application.
   const navigation = isAdmin
     ? [...primaryNavigation, { label: "Admin", href: "https://al-kaiff-admin.pages.dev" }]
@@ -101,44 +96,34 @@ export function Navbar() {
             )}
           </button>
 
-          {isLoggedIn ? (
-            <>
-              <Link
-                aria-label="View my orders"
-                className="inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
-                href="/profile"
-              >
-                <UserRound aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
-              </Link>
-
-              <button
-                aria-label="Log out"
-                className="inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light lg:w-auto lg:gap-2 lg:border lg:border-white/10 lg:px-3"
-                onClick={handleLogout}
-                type="button"
-              >
-                <LogOut aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
-                <span className="hidden text-[0.68rem] uppercase tracking-luxury lg:inline">
-                  Logout
-                </span>
-              </button>
-            </>
-          ) : (
-            <Link
-              aria-label="Open account"
-              className="inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
-              href="/login"
-            >
-              <UserRound aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
-            </Link>
-          )}
+          {/* Signing out belongs on the account page, as it does on any shop —
+              a logout button in the header is one slip from losing a bag. */}
+          <Link
+            aria-label={isLoggedIn ? "My account" : "Sign in"}
+            className="inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
+            href={isLoggedIn ? "/profile" : "/login"}
+          >
+            <UserRound aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
+          </Link>
 
           <Link
-            aria-label="Open shopping bag"
-            className="inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
+            aria-label={
+              cartCount > 0
+                ? `Open shopping bag, ${cartCount} ${cartCount === 1 ? "piece" : "pieces"}`
+                : "Open shopping bag"
+            }
+            className="relative inline-flex h-10 w-10 items-center justify-center text-porcelain/80 transition hover:text-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light"
             href="/cart"
           >
             <ShoppingBag aria-hidden="true" className="h-4 w-4" strokeWidth={1.4} />
+            {cartCount > 0 ? (
+              <span
+                aria-hidden="true"
+                className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gold px-1 text-[0.6rem] font-medium leading-none text-obsidian"
+              >
+                {cartCount > 99 ? "99+" : cartCount}
+              </span>
+            ) : null}
           </Link>
         </div>
       </nav>

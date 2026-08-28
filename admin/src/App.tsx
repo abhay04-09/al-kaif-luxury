@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { Shield, LayoutDashboard, Package, ShoppingBag, Mail, LogOut, Loader2, FolderTree, Archive } from 'lucide-react';
+import { Shield, LayoutDashboard, Package, ShoppingBag, Mail, LogOut, Loader2, FolderTree, Archive, Users } from 'lucide-react';
 import { apiJson, getToken, setToken } from './api';
 import { User } from './types';
 import { LoginPage } from './pages/Login';
@@ -9,8 +9,9 @@ import { ProductsPage } from './pages/Products';
 import { OrdersPage } from './pages/Orders';
 import { SubscribersPage } from './pages/Subscribers';
 import { CategoriesPage } from './pages/Categories';
+import { CustomersPage } from './pages/Customers';
 
-type Tab = 'dashboard' | 'products' | 'archived' | 'categories' | 'orders' | 'subscribers';
+type Tab = 'dashboard' | 'products' | 'archived' | 'categories' | 'orders' | 'customers' | 'subscribers';
 
 const NAV: { id: Tab; label: string; icon: React.FC<any> }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -18,6 +19,7 @@ const NAV: { id: Tab; label: string; icon: React.FC<any> }[] = [
   { id: 'archived', label: 'Archived', icon: Archive },
   { id: 'categories', label: 'Categories', icon: FolderTree },
   { id: 'orders', label: 'Orders', icon: ShoppingBag },
+  { id: 'customers', label: 'Customers', icon: Users },
   { id: 'subscribers', label: 'Subscribers', icon: Mail },
 ];
 
@@ -118,6 +120,7 @@ export const App: React.FC = () => {
         {tab === 'archived' && <ProductsPage key="archived" archived />}
         {tab === 'categories' && <CategoriesPage />}
         {tab === 'orders' && <OrdersPage />}
+        {tab === 'customers' && <CustomersPage />}
         {tab === 'subscribers' && <SubscribersPage />}
       </main>
     </div>

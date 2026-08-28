@@ -4,7 +4,8 @@ import type { Env } from '../env';
 
 export interface TokenPayload {
   sub: string;
-  email: string;
+  /** Null for an account created from a mobile number, which carries no email. */
+  email: string | null;
   name: string;
   role: 'customer' | 'admin';
   exp: number;
@@ -14,12 +15,12 @@ export interface TokenPayload {
 const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 export async function createToken(
-  user: { id: string; email: string; name: string; role: 'customer' | 'admin' },
+  user: { id: string; email: string | null; name: string; role: 'customer' | 'admin' },
   secret: string
 ): Promise<string> {
   const payload: TokenPayload = {
     sub: user.id,
-    email: user.email,
+    email: user.email ?? null,
     name: user.name,
     role: user.role,
     exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS,
