@@ -10,7 +10,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Semantic Theme Variables
+        // Brand Semantic Object Mapping
+        brand: {
+          bg: "var(--bg-main)",
+          surface: "var(--bg-surface)",
+          card: "var(--bg-card)",
+          text: "var(--text-main)",
+          muted: "var(--text-muted)",
+          gold: "var(--gold-accent)",
+          "gold-hover": "var(--gold-hover)",
+          ruby: "var(--ruby-accent)",
+          border: "var(--border-subtle)"
+        },
+
+        // Flat Semantic Theme Variables
         "bg-main": "var(--bg-main)",
         "bg-surface": "var(--bg-surface)",
         "bg-card": "var(--bg-card)",
