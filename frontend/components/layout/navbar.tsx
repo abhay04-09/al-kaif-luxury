@@ -115,10 +115,10 @@ export function Navbar() {
           <Link
             href="/products"
             aria-label="Wishlist"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-brand-text transition hover:bg-brand-bg hover:text-brand-ruby"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-brand-text transition hover:bg-brand-bg hover:text-[#8B0000]"
             title="Wishlist"
           >
-            <Heart className="h-4 w-4" strokeWidth={1.8} />
+            <Heart className="h-4 w-4 hover:fill-[#8B0000]" strokeWidth={1.8} />
           </Link>
 
           {/* Account Icon */}
@@ -144,7 +144,7 @@ export function Navbar() {
             )}
           </button>
 
-          {/* Shopping Cart Bag Icon with Active Circular Count Badge: bg-brand-ruby text-white */}
+          {/* Shopping Cart Bag Icon with Active Circular Count Badge: bg-[#8B0000] text-white font-bold rounded-full */}
           <Link
             aria-label={
               cartCount > 0
@@ -157,7 +157,7 @@ export function Navbar() {
             <ShoppingBag className="h-5 w-5" strokeWidth={1.8} />
             <span
               className={`absolute -right-0.5 -top-0.5 grid h-5 min-w-[20px] place-items-center rounded-full px-1 text-[0.65rem] font-bold text-white transition-all shadow-sm ${
-                cartCount > 0 ? "bg-brand-ruby text-white" : "bg-brand-muted text-white"
+                cartCount > 0 ? "bg-[#8B0000] text-white font-bold rounded-full" : "bg-brand-muted text-white rounded-full"
               }`}
             >
               {cartCount > 99 ? "99+" : cartCount}

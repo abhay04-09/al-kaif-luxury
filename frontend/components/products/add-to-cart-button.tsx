@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingBag, Zap } from "lucide-react";
+import { ShoppingBag, Zap, Heart, Tag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { CartItem, Product } from "@/types/product";
@@ -17,9 +17,8 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
   const [selectedSize, setSelectedSize] = useState<string | null>(sizes.length === 1 ? sizes[0] : null);
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
-  // Returns false when the piece could not be placed in the bag, so "Buy Now"
-  // knows not to send anyone to a checkout that would not have it.
   const commitToCart = (): boolean => {
     if (!product.inStock) {
       return false;
@@ -33,7 +32,6 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
     setError(null);
     const existing = window.localStorage.getItem(cartStorageKey);
     const cart: CartItem[] = existing ? JSON.parse(existing) : [];
-    // The same piece in two sizes is two separate lines in the bag.
     const line = cart.find(
       (item) => item.productId === product.id && (item.size ?? null) === (selectedSize ?? null)
     );
@@ -74,10 +72,16 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-5">
+      {/* Requirement 4: "Offer / Coupon Applied" chip: border border-[#8B0000] text-[#8B0000] bg-[#8B0000]/10 */}
+      <div className="inline-flex items-center gap-2 rounded-full border border-[#8B0000] text-[#8B0000] bg-[#8B0000]/10 px-3.5 py-1.5 text-xs font-bold w-fit shadow-xs">
+        <Tag className="h-3.5 w-3.5" />
+        <span>FESTIVE25 Offer Applied: Extra 25% OFF at Checkout</span>
+      </div>
+
       {sizes.length > 0 && (
         <div>
-          <p className="text-[0.65rem] uppercase tracking-luxury text-porcelain/60">
+          <p className="text-[0.65rem] uppercase tracking-luxury text-brand-muted">
             Size{selectedSize ? `: ${selectedSize}` : ""}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -90,10 +94,10 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
                   setError(null);
                 }}
                 aria-pressed={selectedSize === size}
-                className={`min-h-11 min-w-14 border px-4 text-[0.72rem] uppercase tracking-luxury transition ${
+                className={`min-h-11 min-w-14 border px-4 text-[0.72rem] uppercase tracking-luxury transition rounded-lg ${
                   selectedSize === size
-                    ? "border-gold-light bg-gold-light/15 text-gold-light"
-                    : "border-white/15 text-porcelain/80 hover:border-gold-light hover:text-porcelain"
+                    ? "border-brand-gold bg-brand-gold/15 text-brand-gold font-bold"
+                    : "border-brand-border text-brand-text hover:border-brand-gold"
                 }`}
               >
                 {size}
@@ -103,25 +107,44 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
         </div>
       )}
 
-      {error && <p className="text-[0.72rem] text-red-400">{error}</p>}
+      {error && <p className="text-[0.72rem] text-[#8B0000] font-bold">{error}</p>}
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
-          className="inline-flex min-h-12 items-center justify-center gap-3 border border-gold/70 bg-gold px-6 py-3 text-[0.72rem] uppercase tracking-luxury text-obsidian transition duration-300 hover:bg-gold-light focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian"
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-brand-gold px-7 py-3 text-xs font-bold uppercase tracking-luxury text-black transition duration-300 hover:bg-brand-gold-hover shadow-lg"
           onClick={addToCart}
           type="button"
         >
-          <ShoppingBag aria-hidden="true" className="h-4 w-4" strokeWidth={1.5} />
+          <ShoppingBag aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
           {added ? "Added to Bag" : "Add to Bag"}
         </button>
 
         <button
-          className="inline-flex min-h-12 items-center justify-center gap-3 border border-gold/70 px-6 py-3 text-[0.72rem] uppercase tracking-luxury text-gold-light transition duration-300 hover:bg-gold hover:text-obsidian focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-light focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian"
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-brand-gold px-7 py-3 text-xs font-bold uppercase tracking-luxury text-brand-gold transition duration-300 hover:bg-brand-gold hover:text-black shadow-lg"
           onClick={buyNow}
           type="button"
         >
-          <Zap aria-hidden="true" className="h-4 w-4" strokeWidth={1.5} />
+          <Zap aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
           Buy Now
+        </button>
+
+        {/* Requirement 4: "Add to Wishlist" heart button active state: fill-[#8B0000] text-[#8B0000] */}
+        <button
+          onClick={() => setIsWishlisted(!isWishlisted)}
+          aria-label="Add to Wishlist"
+          className={`grid h-12 w-12 place-items-center rounded-full border border-brand-border transition-all ${
+            isWishlisted
+              ? "border-[#8B0000] bg-[#8B0000]/10 shadow-md"
+              : "hover:border-[#8B0000] hover:bg-brand-bg"
+          }`}
+          type="button"
+        >
+          <Heart
+            className={`h-5 w-5 transition-colors ${
+              isWishlisted ? "fill-[#8B0000] text-[#8B0000]" : "text-brand-text hover:text-[#8B0000]"
+            }`}
+            strokeWidth={1.8}
+          />
         </button>
       </div>
     </div>

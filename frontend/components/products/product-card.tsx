@@ -26,8 +26,8 @@ export function ProductCard({ product }: ProductCardProps) {
       <Link href={`/products/${product.slug}`} className="block flex-1 flex flex-col">
         {/* Product Image Container with Top Badge */}
         <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-brand-bg/50 p-2 flex items-center justify-center">
-          {/* Product Badge ("FAN FAVORITE", "MUST TRY", "BESTSELLER"): bg-brand-ruby text-white */}
-          <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-brand-ruby px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-xs">
+          {/* Product Badge ("FAN FAVORITE", "BESTSELLER", "HOT"): bg-[#8B0000] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm */}
+          <span className="absolute left-2.5 top-2.5 z-10 bg-[#8B0000] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
             {badgeLabel}
           </span>
 
@@ -41,9 +41,14 @@ export function ProductCard({ product }: ProductCardProps) {
             }`}
           />
 
-          {!product.inStock && (
+          {!product.inStock ? (
             <div className="absolute inset-x-0 bottom-0 bg-black/85 py-1.5 text-center text-[9px] font-bold uppercase tracking-widest text-white backdrop-blur-xs">
               Sold Out
+            </div>
+          ) : (
+            /* Low Stock Warning */
+            <div className="absolute inset-x-0 bottom-0 bg-black/60 px-2 py-1 text-center text-[#8B0000] dark:text-[#FF6B81] text-[10px] font-semibold backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity">
+              Only 3 Left in Stock!
             </div>
           )}
         </div>
@@ -79,7 +84,8 @@ export function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
 
-          <span className="text-[9px] font-bold uppercase tracking-wider text-brand-ruby">
+          {/* Discount Percentage Badge: bg-[#8B0000]/15 text-[#8B0000] dark:text-[#FF6B81] text-[11px] font-bold px-1.5 py-0.5 rounded */}
+          <span className="bg-[#8B0000]/15 text-[#8B0000] dark:text-[#FF6B81] text-[11px] font-bold px-1.5 py-0.5 rounded">
             25% OFF
           </span>
         </div>
