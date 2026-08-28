@@ -31,10 +31,17 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "AL-KAIF | Luxury Jewellery & Perfumes",
+  title: "AL-KAIF | Artificial Jewellery & Luxury Craftsmanship",
   description:
-    "A cinematic luxury digital experience for AL-KAIF fine jewellery and perfumes.",
-  metadataBase: new URL("https://al-kaif.example")
+    "Official AL-KAIF e-commerce store. Handcrafted Kundan, Meenakari, Bangles, Earrings, and Fine Jewellery.",
+  icons: {
+    icon: [
+      { url: "/icon.png" },
+      { url: "/brand/al-kaif-logo.png" }
+    ],
+    shortcut: "/brand/al-kaif-logo.png",
+    apple: "/apple-icon.png"
+  }
 };
 
 export default function RootLayout({
