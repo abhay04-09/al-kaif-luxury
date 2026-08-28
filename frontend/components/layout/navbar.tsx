@@ -14,8 +14,7 @@ import {
   Heart, 
   MapPin, 
   Camera, 
-  Mic, 
-  Sparkles 
+  Mic 
 } from "lucide-react";
 import { primaryNavigation } from "@/lib/navigation";
 import { AlKaifMark } from "@/components/brand/al-kaif-mark";
@@ -58,7 +57,7 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 dark:bg-obsidian/95 shadow-sm border-b border-gray-200 dark:border-white/10 backdrop-blur-md transition-colors duration-300">
+    <header className="sticky top-0 z-50 bg-brand-surface border-b border-brand-border backdrop-blur-md transition-colors duration-300">
       {/* Top Main Navigation Bar */}
       <nav
         aria-label="Primary navigation"
@@ -70,7 +69,7 @@ export function Navbar() {
             aria-controls="mobile-navigation"
             aria-expanded={isMenuOpen}
             aria-label={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-700 dark:text-porcelain transition hover:bg-gray-100 dark:hover:bg-white/10 focus:outline-none"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-brand-text transition hover:bg-brand-bg focus:outline-none"
             onClick={() => setIsMenuOpen((current) => !current)}
             type="button"
           >
@@ -85,7 +84,7 @@ export function Navbar() {
           <div className="hidden items-center gap-6 lg:flex">
             {navigation.map((item) => (
               <Link
-                className="text-xs uppercase tracking-luxury text-gray-700 dark:text-porcelain/80 transition hover:text-amber-600 dark:hover:text-gold-light"
+                className="text-xs uppercase tracking-luxury text-brand-text transition hover:text-brand-gold font-medium"
                 href={item.href}
                 key={item.href}
               >
@@ -95,8 +94,8 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Center: Brand Logo Image (Red Bird + Al-Kaif Script) */}
-        <Link className="flex items-center justify-center py-1" href="/" aria-label="AL-KAIF Home">
+        {/* Center: Brand Logo Image + Typography */}
+        <Link className="flex items-center justify-center py-1 gap-2 text-brand-gold font-serif" href="/" aria-label="AL-KAIF Home">
           <AlKaifMark className="h-10 sm:h-12 w-auto shrink-0 drop-shadow-sm" />
         </Link>
 
@@ -106,7 +105,7 @@ export function Navbar() {
           <Link
             href="/query"
             aria-label="Store locator / Atelier Location"
-            className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-700 dark:text-porcelain/80 transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-amber-600 dark:hover:text-gold-light"
+            className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full text-brand-text transition hover:bg-brand-bg hover:text-brand-gold"
             title="AL-KAIF Atelier & Support"
           >
             <MapPin className="h-4 w-4" strokeWidth={1.8} />
@@ -116,7 +115,7 @@ export function Navbar() {
           <Link
             href="/products"
             aria-label="Wishlist"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-700 dark:text-porcelain/80 transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-rose-500"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-brand-text transition hover:bg-brand-bg hover:text-brand-ruby"
             title="Wishlist"
           >
             <Heart className="h-4 w-4" strokeWidth={1.8} />
@@ -125,7 +124,7 @@ export function Navbar() {
           {/* Account Icon */}
           <Link
             aria-label={isLoggedIn ? "My account" : "Sign in"}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-700 dark:text-porcelain/80 transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-amber-600 dark:hover:text-gold-light"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-brand-text transition hover:bg-brand-bg hover:text-brand-gold"
             href={isLoggedIn ? "/profile" : "/login"}
           >
             <UserRound className="h-4 w-4" strokeWidth={1.8} />
@@ -134,31 +133,31 @@ export function Navbar() {
           {/* Theme Toggle Button */}
           <button
             aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-            className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-700 dark:text-porcelain/80 transition hover:bg-gray-100 dark:hover:bg-white/10"
+            className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full text-brand-text transition hover:bg-brand-bg hover:text-brand-gold"
             onClick={toggleTheme}
             type="button"
           >
             {theme === "dark" ? (
-              <Sun className="h-4 w-4 text-amber-400" strokeWidth={1.8} />
+              <Sun className="h-4 w-4 text-brand-gold" strokeWidth={1.8} />
             ) : (
-              <Moon className="h-4 w-4 text-gray-700" strokeWidth={1.8} />
+              <Moon className="h-4 w-4 text-brand-text" strokeWidth={1.8} />
             )}
           </button>
 
-          {/* Shopping Cart Bag Icon with Active Circular Count Badge */}
+          {/* Shopping Cart Bag Icon with Active Circular Count Badge: bg-brand-ruby text-white */}
           <Link
             aria-label={
               cartCount > 0
                 ? `Open shopping bag, ${cartCount} ${cartCount === 1 ? "item" : "items"}`
                 : "Open shopping bag"
             }
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-800 dark:text-porcelain transition hover:bg-gray-100 dark:hover:bg-white/10 hover:text-amber-600 dark:hover:text-gold-light"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-brand-text transition hover:bg-brand-bg hover:text-brand-gold"
             href="/cart"
           >
             <ShoppingBag className="h-5 w-5" strokeWidth={1.8} />
             <span
               className={`absolute -right-0.5 -top-0.5 grid h-5 min-w-[20px] place-items-center rounded-full px-1 text-[0.65rem] font-bold text-white transition-all shadow-sm ${
-                cartCount > 0 ? "bg-amber-600 dark:bg-gold dark:text-obsidian" : "bg-gray-400 dark:bg-gray-700"
+                cartCount > 0 ? "bg-brand-ruby text-white" : "bg-brand-muted text-white"
               }`}
             >
               {cartCount > 99 ? "99+" : cartCount}
@@ -178,23 +177,23 @@ export function Navbar() {
           }}
           className="relative flex items-center"
         >
-          <Search className="absolute left-4 h-4 w-4 text-gray-400 dark:text-porcelain/50 pointer-events-none" strokeWidth={1.8} />
+          <Search className="absolute left-4 h-4 w-4 text-brand-muted pointer-events-none" strokeWidth={1.8} />
           
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={searchPlaceholders[placeholderIndex]}
-            className="w-full rounded-full border border-gray-200 dark:border-white/20 bg-gray-50 dark:bg-onyx/80 pl-11 pr-20 py-2.5 text-xs sm:text-sm text-gray-900 dark:text-porcelain placeholder:text-gray-400 dark:placeholder:text-porcelain/50 focus:border-amber-500 dark:focus:border-gold-light focus:bg-white dark:focus:bg-onyx focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-gold-light/20 transition-all shadow-inner"
+            className="w-full rounded-full border border-brand-border bg-brand-bg pl-11 pr-20 py-2.5 text-xs sm:text-sm text-brand-text placeholder:text-brand-muted focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/20 transition-all shadow-inner"
           />
 
           {/* Trailing Camera & Voice Search Icons */}
-          <div className="absolute right-3 flex items-center gap-1.5 text-gray-400 dark:text-porcelain/60">
+          <div className="absolute right-3 flex items-center gap-1.5 text-brand-muted">
             <button
               type="button"
               title="Visual / Camera Search"
               onClick={() => alert("Visual / Camera search enabled!")}
-              className="p-1 hover:text-amber-600 dark:hover:text-gold-light transition"
+              className="p-1 hover:text-brand-gold transition"
             >
               <Camera className="h-4 w-4" strokeWidth={1.8} />
             </button>
@@ -202,7 +201,7 @@ export function Navbar() {
               type="button"
               title="Voice Search"
               onClick={() => alert("Voice search listening...")}
-              className="p-1 hover:text-amber-600 dark:hover:text-gold-light transition"
+              className="p-1 hover:text-brand-gold transition"
             >
               <Mic className="h-4 w-4" strokeWidth={1.8} />
             </button>
@@ -214,7 +213,7 @@ export function Navbar() {
       {isMenuOpen ? (
         <nav
           aria-label="Mobile navigation"
-          className="border-t border-gray-200 dark:border-white/10 bg-white dark:bg-obsidian px-5 py-5 lg:hidden animate-in slide-in-from-top-2 duration-200"
+          className="border-t border-brand-border bg-brand-surface px-5 py-5 lg:hidden animate-in slide-in-from-top-2 duration-200"
           id="mobile-navigation"
         >
           <div className="mx-auto grid max-w-7xl gap-1">
@@ -224,7 +223,7 @@ export function Navbar() {
               return (
                 <Link
                   aria-current={isCurrent ? "page" : undefined}
-                  className="flex min-h-12 items-center border-b border-gray-100 dark:border-white/10 py-3 text-xs uppercase tracking-luxury font-medium text-gray-800 dark:text-porcelain/85 transition hover:text-amber-600 dark:hover:text-gold-light"
+                  className="flex min-h-12 items-center border-b border-brand-border py-3 text-xs uppercase tracking-luxury font-medium text-brand-text transition hover:text-brand-gold"
                   href={item.href}
                   key={item.href}
                   onClick={closeMenu}
@@ -234,12 +233,12 @@ export function Navbar() {
               );
             })}
 
-            <div className="pt-4 flex items-center justify-between text-xs text-gray-500 dark:text-porcelain/60">
-              <Link href="/query" onClick={closeMenu} className="flex items-center gap-2 hover:text-amber-600">
+            <div className="pt-4 flex items-center justify-between text-xs text-brand-muted">
+              <Link href="/query" onClick={closeMenu} className="flex items-center gap-2 hover:text-brand-gold">
                 <MapPin className="h-4 w-4" /> Vapi Atelier Hub
               </Link>
-              <button onClick={toggleTheme} className="flex items-center gap-1.5 hover:text-amber-600">
-                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              <button onClick={toggleTheme} className="flex items-center gap-1.5 hover:text-brand-gold">
+                {theme === "dark" ? <Sun className="h-4 w-4 text-brand-gold" /> : <Moon className="h-4 w-4" />}
                 {theme === "dark" ? "Light Mode" : "Dark Mode"}
               </button>
             </div>
