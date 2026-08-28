@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: ["class", '[data-theme="dark"]'],
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,16 +10,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Semantic Theme Variables
+        "bg-main": "var(--bg-main)",
+        "bg-surface": "var(--bg-surface)",
+        "bg-card": "var(--bg-card)",
+        "text-main": "var(--text-main)",
+        "text-muted": "var(--text-muted)",
+        "gold-accent": "var(--gold-accent)",
+        "gold-hover": "var(--gold-hover)",
+        "ruby-accent": "var(--ruby-accent)",
+        "border-subtle": "var(--border-subtle)",
+        ruby: "var(--ruby-accent)",
+
+        // Brand Palette Mappings
         obsidian: "rgb(var(--color-obsidian) / <alpha-value>)",
         onyx: "rgb(var(--color-onyx) / <alpha-value>)",
         verdant: "rgb(var(--color-verdant) / <alpha-value>)",
         abyss: "rgb(var(--color-abyss) / <alpha-value>)",
-        gold: "rgb(var(--color-gold) / <alpha-value>)",
-        "gold-light": "rgb(var(--color-gold-light) / <alpha-value>)",
-        "gold-bright": "rgb(var(--color-gold-bright) / <alpha-value>)",
-        porcelain: "rgb(var(--color-porcelain) / <alpha-value>)",
-        mist: "rgb(var(--color-mist) / <alpha-value>)",
-        graphite: "rgb(var(--color-graphite) / <alpha-value>)"
+        gold: "var(--gold-accent)",
+        "gold-light": "var(--gold-hover)",
+        "gold-bright": "#FFD700",
+        porcelain: "var(--text-main)",
+        mist: "var(--text-muted)",
+        graphite: "var(--border-subtle)"
       },
       fontFamily: {
         serif: ["var(--font-display)", "Cinzel", "Georgia", "serif"],

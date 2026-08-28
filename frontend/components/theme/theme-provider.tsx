@@ -37,6 +37,7 @@ export function ThemeProvider({
 
     setTheme(preferredTheme);
     document.documentElement.dataset.theme = preferredTheme;
+    document.documentElement.classList.toggle("dark", preferredTheme === "dark");
   }, []);
 
   const value = useMemo(
@@ -47,6 +48,7 @@ export function ThemeProvider({
           const nextTheme = currentTheme === "dark" ? "light" : "dark";
 
           document.documentElement.dataset.theme = nextTheme;
+          document.documentElement.classList.toggle("dark", nextTheme === "dark");
           window.localStorage.setItem("al-kaif-theme", nextTheme);
 
           return nextTheme;
