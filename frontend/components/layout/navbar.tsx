@@ -95,17 +95,9 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Center: Brand Typography & Logo */}
-        <Link className="flex items-center gap-2 text-center" href="/">
-          <AlKaifMark className="h-8 w-auto shrink-0 drop-shadow-sm transition-transform duration-300 hover:scale-105 sm:h-9" />
-          <span className="leading-tight text-left">
-            <span className="font-serif text-xl sm:text-2xl font-bold uppercase tracking-[0.2em] text-gray-900 dark:text-gold-light">
-              AL-KAIF
-            </span>
-            <span className="block text-[8px] font-medium uppercase tracking-widest text-amber-700 dark:text-gold-light/80">
-              Jewellery &amp; Perfumes
-            </span>
-          </span>
+        {/* Center: Brand Logo Image (Red Bird + Al-Kaif Script) */}
+        <Link className="flex items-center justify-center py-1" href="/" aria-label="AL-KAIF Home">
+          <AlKaifMark className="h-10 sm:h-12 w-auto shrink-0 drop-shadow-sm" />
         </Link>
 
         {/* Right Icons Row */}
