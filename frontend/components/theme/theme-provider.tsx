@@ -22,38 +22,19 @@ export function ThemeProvider({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem("al-kaif-theme") as
-      | Theme
-      | null;
-
-    const preferredTheme =
-      savedTheme ??
-      (window.matchMedia("(prefers-color-scheme: light)").matches
-        ? "light"
-        : "dark");
-
-    setTheme(preferredTheme);
-    document.documentElement.dataset.theme = preferredTheme;
-    document.documentElement.classList.toggle("dark", preferredTheme === "dark");
+    setTheme("light");
+    document.documentElement.dataset.theme = "light";
+    document.documentElement.classList.remove("dark");
+    window.localStorage.setItem("al-kaif-theme", "light");
   }, []);
 
   const value = useMemo(
     () => ({
       theme,
-      toggleTheme: () => {
-        setTheme((currentTheme) => {
-          const nextTheme = currentTheme === "dark" ? "light" : "dark";
-
-          document.documentElement.dataset.theme = nextTheme;
-          document.documentElement.classList.toggle("dark", nextTheme === "dark");
-          window.localStorage.setItem("al-kaif-theme", nextTheme);
-
-          return nextTheme;
-        });
-      }
+      toggleTheme: () => {}
     }),
     [theme]
   );

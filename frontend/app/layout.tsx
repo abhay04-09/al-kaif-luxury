@@ -52,6 +52,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-theme="light"
       className={`${cinzel.variable} ${cormorant.variable} ${jakarta.variable}`}
     >
       <body>

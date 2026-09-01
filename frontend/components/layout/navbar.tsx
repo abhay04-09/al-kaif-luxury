@@ -5,10 +5,8 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { 
   Menu, 
-  Moon, 
   Search, 
   ShoppingBag, 
-  Sun, 
   UserRound, 
   X, 
   Heart, 
@@ -19,7 +17,6 @@ import {
 import { primaryNavigation } from "@/lib/navigation";
 import { AlKaifMark } from "@/components/brand/al-kaif-mark";
 import { useSession } from "@/components/auth/session-provider";
-import { useTheme } from "@/components/theme/theme-provider";
 import { useCartCount } from "@/lib/use-cart-count";
 
 const searchPlaceholders = [
@@ -32,7 +29,6 @@ const searchPlaceholders = [
 export function Navbar() {
   const pathname = usePathname();
   const { user, status } = useSession();
-  const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -94,10 +90,6 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Center: Brand Logo Image + Typography */}
-        <Link className="flex items-center justify-center py-1 gap-2 text-brand-gold font-serif" href="/" aria-label="AL-KAIF Home">
-          <AlKaifMark className="h-10 sm:h-12 w-auto shrink-0 drop-shadow-sm" />
-        </Link>
 
         {/* Right Icons Row */}
         <div className="flex items-center gap-1 sm:gap-2">
@@ -130,19 +122,6 @@ export function Navbar() {
             <UserRound className="h-4 w-4" strokeWidth={1.8} />
           </Link>
 
-          {/* Theme Toggle Button */}
-          <button
-            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-            className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full text-brand-text transition hover:bg-brand-bg hover:text-brand-gold"
-            onClick={toggleTheme}
-            type="button"
-          >
-            {theme === "dark" ? (
-              <Sun className="h-4 w-4 text-brand-gold" strokeWidth={1.8} />
-            ) : (
-              <Moon className="h-4 w-4 text-brand-text" strokeWidth={1.8} />
-            )}
-          </button>
 
           {/* Shopping Cart Bag Icon with Active Circular Count Badge: bg-[#8B0000] text-white font-bold rounded-full */}
           <Link
@@ -166,8 +145,17 @@ export function Navbar() {
         </div>
       </nav>
 
-      {/* Global Full-Width Search Bar */}
-      <div className="mx-auto max-w-7xl px-4 pb-3 pt-1">
+      {/* Global Full-Width Search Bar with Logo on Left */}
+      <div className="mx-auto max-w-7xl px-4 pb-3 pt-1 flex items-center gap-3 sm:gap-4">
+        {/* AL-KAIF Logo Image on Left of Search Bar */}
+        <Link
+          href="/"
+          aria-label="AL-KAIF Home"
+          className="shrink-0 flex items-center transition hover:opacity-90"
+        >
+          <AlKaifMark className="h-8 sm:h-10 w-auto shrink-0 drop-shadow-sm" />
+        </Link>
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -175,7 +163,7 @@ export function Navbar() {
               window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`;
             }
           }}
-          className="relative flex items-center"
+          className="relative flex-1 flex items-center"
         >
           <Search className="absolute left-4 h-4 w-4 text-brand-muted pointer-events-none" strokeWidth={1.8} />
           
@@ -237,10 +225,6 @@ export function Navbar() {
               <Link href="/query" onClick={closeMenu} className="flex items-center gap-2 hover:text-brand-gold">
                 <MapPin className="h-4 w-4" /> Vapi Atelier Hub
               </Link>
-              <button onClick={toggleTheme} className="flex items-center gap-1.5 hover:text-brand-gold">
-                {theme === "dark" ? <Sun className="h-4 w-4 text-brand-gold" /> : <Moon className="h-4 w-4" />}
-                {theme === "dark" ? "Light Mode" : "Dark Mode"}
-              </button>
             </div>
           </div>
         </nav>
