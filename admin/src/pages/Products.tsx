@@ -9,6 +9,14 @@ import { apiFetch, apiJson } from '../api';
 import { Product, Category } from '../types';
 import { ExportButton } from '../components/ExportButton';
 import { productColumns } from '../exports';
+import { StockCell } from '../components/StockCell';
+
+/** A counted piece with stock left, but not much of it. */
+const isLowStock = (p: Product) =>
+  p.stockQuantity !== null &&
+  p.stockQuantity !== undefined &&
+  p.stockQuantity > 0 &&
+  p.stockQuantity <= (p.lowStockThreshold ?? 3);
 
 const EMPTY_FORM: Partial<Product> = {
   name: '',
@@ -124,7 +132,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
   // toolbar state
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [stockFilter, setStockFilter] = useState<'all' | 'in' | 'out'>('all');
+  const [stockFilter, setStockFilter] = useState<'all' | 'in' | 'out' | 'low'>('all');
   const [sortBy, setSortBy] = useState<SortOpt>('newest');
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState<number>(10);
@@ -210,7 +218,9 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
   // ── filtering / sorting / pagination ──
   const filtered = useMemo(() => {
     let list = [...products];
-    if (stockFilter !== 'all') list = list.filter(p => (stockFilter === 'in' ? p.inStock : !p.inStock));
+    if (stockFilter === 'in') list = list.filter(p => p.inStock);
+    else if (stockFilter === 'out') list = list.filter(p => !p.inStock);
+    else if (stockFilter === 'low') list = list.filter(p => isLowStock(p));
     if (categoryFilter !== 'all') list = list.filter(p => p.category === categoryFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -232,6 +242,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
       all: products.length,
       in: products.filter(p => p.inStock).length,
       out: products.filter(p => !p.inStock).length,
+      low: products.filter(p => isLowStock(p)).length,
     }),
     [products]
   );
@@ -300,18 +311,6 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
       toast.success(restore ? `"${p.name}" restored to the catalogue` : `"${p.name}" archived`);
     } catch (err: any) {
       toast.error(err?.message || 'Could not update the product');
-    }
-  };
-
-  const toggleStock = async (p: Product) => {
-    const next = !p.inStock;
-    setProducts(prev => prev.map(x => (x.id === p.id ? { ...x, inStock: next } : x)));
-    try {
-      await apiJson(`/api/products/${p.id}`, { method: 'PUT', body: JSON.stringify({ inStock: next }) });
-      toast.success(next ? 'Marked in stock' : 'Marked out of stock');
-    } catch (err: any) {
-      setProducts(prev => prev.map(x => (x.id === p.id ? { ...x, inStock: !next } : x)));
-      toast.error(err?.message || 'Could not update stock');
     }
   };
 
@@ -457,6 +456,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
         {([
           { id: 'all', label: 'All' },
           { id: 'in', label: 'In stock' },
+          { id: 'low', label: 'Running low' },
           { id: 'out', label: 'Out of stock' },
         ] as const).map(tab => {
           const active = stockFilter === tab.id;
@@ -621,18 +621,12 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                   {relativeDate(p.createdAt)}
                 </td>
                 <td className="p-4">
-                  <button
-                    onClick={() => toggleStock(p)}
-                    title={p.inStock ? 'Mark out of stock' : 'Mark in stock'}
-                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] rounded-full border cursor-pointer transition-colors ${
-                      p.inStock
-                        ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30 hover:border-emerald-400'
-                        : 'bg-red-950/60 text-red-400 border-red-500/30 hover:border-red-400'
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${p.inStock ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                    {p.inStock ? 'In stock' : 'Out of stock'}
-                  </button>
+                  <StockCell
+                    product={p}
+                    onChange={patch =>
+                      setProducts(prev => prev.map(x => (x.id === p.id ? { ...x, ...patch } : x)))
+                    }
+                  />
                 </td>
                 <td className="p-4">
                   <button

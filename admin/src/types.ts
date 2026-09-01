@@ -24,6 +24,9 @@ export interface Product {
   featured?: boolean;
   isNewArrival?: boolean;
   inStock: boolean;
+  /** null when the piece is not counted; it is then governed by inStock alone. */
+  stockQuantity?: number | null;
+  lowStockThreshold?: number;
   specifications: {
     material?: string; // e.g. 18K Yellow Gold, Platinum 950
     karat?: string; // e.g. 24K Gold, 18K Rose Gold

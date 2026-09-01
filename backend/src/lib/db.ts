@@ -25,6 +25,9 @@ export function rowToProduct(r: any): Product {
     featured: r.featured,
     isNewArrival: r.is_new_arrival,
     inStock: r.in_stock,
+    // null means the piece is not counted; it is governed by inStock alone.
+    stockQuantity: r.stock_quantity ?? null,
+    lowStockThreshold: r.low_stock_threshold ?? 3,
     specifications: r.specifications ?? {},
     artisanStory: r.artisan_story ?? undefined,
     sku: r.sku ?? '',
@@ -53,6 +56,20 @@ export function productToRow(p: Partial<Product>): Record<string, unknown> {
   if (p.featured !== undefined) row.featured = p.featured;
   if (p.isNewArrival !== undefined) row.is_new_arrival = p.isNewArrival;
   if (p.inStock !== undefined) row.in_stock = p.inStock;
+  if (p.stockQuantity !== undefined) {
+    // An empty field means "stop counting this piece", not "none left".
+    const raw = p.stockQuantity as unknown;
+    const counted =
+      raw === null || raw === '' || Number.isNaN(Number(raw))
+        ? null
+        : Math.max(0, Math.floor(Number(raw)));
+    row.stock_quantity = counted;
+    // Counting a piece decides its availability, so the two cannot disagree.
+    if (counted !== null) row.in_stock = counted > 0;
+  }
+  if (p.lowStockThreshold !== undefined) {
+    row.low_stock_threshold = Math.max(0, Math.floor(Number(p.lowStockThreshold) || 0));
+  }
   if (p.specifications !== undefined) row.specifications = p.specifications;
   if (p.artisanStory !== undefined) row.artisan_story = p.artisanStory;
   if (p.sku !== undefined) row.sku = p.sku;

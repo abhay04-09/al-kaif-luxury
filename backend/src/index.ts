@@ -461,6 +461,17 @@ async function priceItems(env: Env, items: IncomingItem[]) {
     if (product.archived) throw new Error(`No longer available: ${product.name}`);
     if (!product.inStock) throw new Error(`Out of stock: ${product.name}`);
     const quantity = Math.max(1, Math.min(50, Math.floor(Number(i.quantity) || 1)));
+    // A counted piece cannot be sold beyond what is on the shelf. Pieces that
+    // are not counted keep the old behaviour and rely on inStock alone.
+    if (product.stockQuantity !== null && product.stockQuantity !== undefined) {
+      if (product.stockQuantity < quantity) {
+        throw new Error(
+          product.stockQuantity === 0
+            ? `Out of stock: ${product.name}`
+            : `Only ${product.stockQuantity} left of ${product.name}`
+        );
+      }
+    }
     subtotalINR += product.priceINR * quantity;
     subtotalUSD += (product.priceUSD ?? 0) * quantity;
     return { product, quantity, selectedMetal: i.selectedMetal, selectedSize: i.selectedSize };
@@ -592,6 +603,26 @@ async function writeOrder(env: Env, draft: OrderDraft) {
   );
   if (itemsErr) throw new Error(itemsErr.message);
 
+  // Take the pieces off the shelf. The database settles this, not us: two
+  // clients paying in the same second would otherwise both read the same count
+  // and both write one less, selling the last piece twice.
+  for (const line of draft.priced.lines) {
+    const { data: taken, error: stockErr } = await db.rpc('decrement_stock', {
+      p_product_id: line.product.id,
+      p_quantity: line.quantity,
+    });
+    if (stockErr) {
+      console.error(`Stock update failed for ${line.product.id}: ${stockErr.message}`);
+    } else if (taken === false) {
+      // The piece sold out between paying and recording. Refusing now would
+      // strand a client who has already been charged, so the order stands and
+      // the maison is told to sort it out.
+      console.error(
+        `OVERSOLD: order ${orderNumber} took ${line.quantity} x ${line.product.name} (${line.product.id}) with insufficient stock`
+      );
+    }
+  }
+
   const { data: full } = await db.from('orders').select('*, order_items(*)').eq('id', id).single();
   const order = rowToOrder(full);
 
@@ -721,14 +752,37 @@ app.put('/api/orders/:id/status', requireAdmin, async c => {
   if (!allowed.includes(status)) return c.json({ error: 'Invalid status' }, 400);
 
   const db = getDb(c.env);
+  const orderId = c.req.param('id');
+
+  const { data: before } = await db
+    .from('orders')
+    .select('order_status')
+    .eq('id', orderId)
+    .maybeSingle();
+
   const { data, error } = await db
     .from('orders')
     .update({ order_status: status })
-    .eq('id', c.req.param('id'))
+    .eq('id', orderId)
     .select('*, order_items(*)')
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return c.json({ error: 'Order not found' }, 404);
+
+  // Cancelling puts the pieces back on the shelf — but only on the way into
+  // Cancelled, so re-saving a cancelled order does not conjure stock.
+  if (status === 'Cancelled' && before?.order_status !== 'Cancelled') {
+    for (const item of data.order_items ?? []) {
+      const { error: stockErr } = await db.rpc('increment_stock', {
+        p_product_id: item.product_id,
+        p_quantity: item.quantity,
+      });
+      if (stockErr) {
+        console.error(`Could not restock ${item.product_id}: ${stockErr.message}`);
+      }
+    }
+  }
+
   return c.json(rowToOrder(data));
 });
 

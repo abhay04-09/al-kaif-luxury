@@ -91,6 +91,11 @@ export const productColumns: Column<Product>[] = [
   { header: 'Subcategory', value: p => p.subcategory ?? '' },
   { header: 'Price (INR)', value: p => p.priceINR },
   { header: 'In stock', value: p => (p.inStock ? 'Yes' : 'No') },
+  {
+    header: 'Stock quantity',
+    value: p =>
+      p.stockQuantity === null || p.stockQuantity === undefined ? 'Not counted' : p.stockQuantity
+  },
   { header: 'Featured', value: p => (p.featured ? 'Yes' : 'No') },
   { header: 'New arrival', value: p => (p.isNewArrival ? 'Yes' : 'No') },
   { header: 'Added', value: p => isoDate(p.createdAt) }
