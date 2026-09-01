@@ -9,7 +9,8 @@ import {
   Gift,
   Loader2,
   Lock,
-  ShieldCheck
+  ShieldCheck,
+  Truck
 } from "lucide-react";
 import { useSession } from "@/components/auth/session-provider";
 import { getCartSummary } from "@/lib/cart";
@@ -24,9 +25,7 @@ const RAZORPAY_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
 // tax; it is never added on top. The Worker prices the order either way.
 const GST_RATE = 0.03;
 
-// Cash on delivery is not offered yet — it waits on the courier
-// integration, and on the maison deciding whether to carry the risk.
-type PaymentMethod = "Razorpay";
+type PaymentMethod = "Razorpay" | "COD";
 
 declare global {
   interface Window {
@@ -123,6 +122,11 @@ export function CheckoutView() {
     setIsPlacing(true);
 
     try {
+      if (method === "COD") {
+        await submitOrder({ ...details, paymentMethod: "COD", items: orderItems });
+        return;
+      }
+
       const scriptReady = await loadRazorpay();
       if (!scriptReady) {
         setError("Could not load the secure payment window. Please try again.");
@@ -371,7 +375,7 @@ export function CheckoutView() {
 
         <section>
           <StepHeading step="03" title="Payment" />
-          <div className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             {(
               [
                 {
@@ -379,6 +383,12 @@ export function CheckoutView() {
                   title: "Pay securely now",
                   copy: "Card, UPI, netbanking or wallet",
                   icon: ShieldCheck
+                },
+                {
+                  value: "COD" as const,
+                  title: "Cash on delivery",
+                  copy: "Settle when the piece arrives",
+                  icon: Truck
                 }
               ]
             ).map((option) => {
@@ -501,7 +511,7 @@ export function CheckoutView() {
               ) : (
                 <Lock aria-hidden="true" className="h-4 w-4" strokeWidth={1.6} />
               )}
-              {`Pay ${inr(total)}`}
+              {method === "COD" ? "Place order" : `Pay ${inr(total)}`}
             </button>
 
             <p className="mt-4 flex items-center justify-center gap-2 text-[0.62rem] uppercase tracking-luxury text-mist">

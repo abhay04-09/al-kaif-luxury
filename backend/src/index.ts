@@ -676,10 +676,7 @@ app.post('/api/orders', optionalAuth, async c => {
     paymentStatus = 'Paid';
     razorpayOrderId = razorpay_order_id;
     razorpayPaymentId = razorpay_payment_id;
-  } else {
-    // Cash on delivery is not offered yet. Removing it from the checkout is not
-    // enough on its own — without this, an order could still be placed unpaid
-    // by calling the API directly.
+  } else if (paymentMethod !== 'COD') {
     return c.json({ error: 'Unsupported payment method' }, 400);
   }
 

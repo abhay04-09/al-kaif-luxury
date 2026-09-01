@@ -93,6 +93,14 @@ export default function ShippingPage() {
         </p>
       </Section>
 
+      <Section title="Cash on delivery">
+        <p>
+          Where cash on delivery is offered, please have the exact amount ready.
+          Orders refused at the door without reason may mean we decline cash on
+          delivery for future orders from that address.
+        </p>
+      </Section>
+
       <Section title="Returns">
         <p>
           Sending something back is covered in our{" "}

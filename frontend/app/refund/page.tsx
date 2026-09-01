@@ -97,6 +97,10 @@ export default function RefundPage() {
           further few days to show on a statement.
         </p>
         <p>
+          Orders paid by cash on delivery are refunded by bank transfer, for
+          which we will ask for your account details.
+        </p>
+        <p>
           A refund covers the price of the piece and the tax charged on it.
           Original delivery charges are refunded where the return is our fault,
           and are not refunded where it is not.
