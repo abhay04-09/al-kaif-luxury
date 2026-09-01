@@ -17,7 +17,17 @@ const app = new Hono<{ Bindings: Env }>();
 
 app.use('*', cors({ origin: '*', allowHeaders: ['Content-Type', 'Authorization'] }));
 
+/**
+ * A problem with what the client is trying to buy, rather than a fault of ours:
+ * an empty bag, a piece withdrawn from sale, more asked for than exists. The
+ * client can act on these, so the reason is told to them plainly.
+ */
+class CartError extends Error {}
+
 app.onError((err, c) => {
+  if (err instanceof CartError) {
+    return c.json({ error: err.message }, 400);
+  }
   console.error('API error:', err);
   // Admin routes get the real reason — a generic message makes a broken save
   // impossible to diagnose from the panel.
@@ -445,7 +455,7 @@ interface IncomingItem {
 const GST_RATE = 0.03;
 
 async function priceItems(env: Env, items: IncomingItem[]) {
-  if (!Array.isArray(items) || items.length === 0) throw new Error('Cart is empty');
+  if (!Array.isArray(items) || items.length === 0) throw new CartError('Cart is empty');
   const db = getDb(env);
   const ids = items.map(i => i.productId);
   const { data: rows, error } = await db.from('products').select('*').in('id', ids);
@@ -456,16 +466,16 @@ async function priceItems(env: Env, items: IncomingItem[]) {
   let subtotalUSD = 0;
   const lines = items.map(i => {
     const product = byId.get(i.productId);
-    if (!product) throw new Error(`Product not found: ${i.productId}`);
+    if (!product) throw new CartError(`Product not found: ${i.productId}`);
     // A piece can sell out or be archived while it sits in someone's bag.
-    if (product.archived) throw new Error(`No longer available: ${product.name}`);
-    if (!product.inStock) throw new Error(`Out of stock: ${product.name}`);
+    if (product.archived) throw new CartError(`No longer available: ${product.name}`);
+    if (!product.inStock) throw new CartError(`Out of stock: ${product.name}`);
     const quantity = Math.max(1, Math.min(50, Math.floor(Number(i.quantity) || 1)));
     // A counted piece cannot be sold beyond what is on the shelf. Pieces that
     // are not counted keep the old behaviour and rely on inStock alone.
     if (product.stockQuantity !== null && product.stockQuantity !== undefined) {
       if (product.stockQuantity < quantity) {
-        throw new Error(
+        throw new CartError(
           product.stockQuantity === 0
             ? `Out of stock: ${product.name}`
             : `Only ${product.stockQuantity} left of ${product.name}`
