@@ -40,6 +40,10 @@ export const orderColumns: Column<Order>[] = [
   { header: 'Order status', value: o => o.orderStatus },
   { header: 'Razorpay order', value: o => o.razorpayOrderId ?? '' },
   { header: 'Razorpay payment', value: o => o.razorpayPaymentId ?? '' },
+  { header: 'Courier', value: o => o.courierName ?? '' },
+  { header: 'AWB', value: o => o.awbNumber ?? '' },
+  { header: 'Tracking status', value: o => o.trackingStatus ?? '' },
+  { header: 'Shipped on', value: o => isoDate(o.shippedAt) },
   { header: 'Gift wrapped', value: o => (o.giftWrapped ? 'Yes' : 'No') },
   { header: 'Notes', value: o => o.notes ?? '' }
 ];

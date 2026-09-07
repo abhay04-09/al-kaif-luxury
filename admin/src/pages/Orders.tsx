@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { apiJson } from '../api';
 import { ExportButton } from '../components/ExportButton';
 import { itemColumns, itemRows, orderColumns } from '../exports';
+import { ShippingPanel } from '../components/ShippingPanel';
 import { Order } from '../types';
 
 const STATUSES = ['Placed', 'In Artisan Crafting', 'Quality Assured', 'Shipped via Express', 'Delivered', 'Cancelled'];
@@ -196,6 +197,13 @@ export const OrdersPage: React.FC = () => {
               </span>
               <span className="font-mono text-[#FFD700]">Total: ₹{o.totalINR.toLocaleString('en-IN')}</span>
             </div>
+
+            <ShippingPanel
+              order={o}
+              onChange={updated =>
+                setOrders(os => os.map(x => (x.id === updated.id ? { ...x, ...updated } : x)))
+              }
+            />
           </div>
         ))}
       </div>

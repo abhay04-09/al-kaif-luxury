@@ -13,6 +13,13 @@ export interface Env {
   ORDER_FROM_EMAIL: string;
   /** Where the maison's own copy of each order goes. */
   SHOP_EMAIL: string;
+  /** Shipmozo keys. Note they are issued in the reverse of the order used. */
+  SHIPMOZO_PUBLIC_KEY: string;
+  SHIPMOZO_PRIVATE_KEY: string;
+  /** Pickup address id from the Shipmozo panel. */
+  SHIPMOZO_WAREHOUSE_ID: string;
+  /** Pin code parcels are collected from; defaults to the Vapi atelier. */
+  SHIPMOZO_PICKUP_PINCODE: string;
   ADMIN_EMAIL: string;
   ADMIN_PASSWORD: string;
 }

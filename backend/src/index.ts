@@ -11,6 +11,14 @@ import {
   verifyWebhookSignature,
 } from './lib/razorpay';
 import { sendOrderEmails } from './lib/email';
+import {
+  cancelShipment,
+  checkServiceability,
+  isShipmozoConfigured,
+  pushOrder,
+  schedulePickup,
+  trackByAwb,
+} from './lib/shipmozo';
 import { SEED_PRODUCTS } from './data/seedProducts';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -756,6 +764,171 @@ app.post('/api/orders', optionalAuth, async c => {
   return c.json(written, 201);
 });
 
+// ---------------------------------------------------------------- shipping
+
+/** Hands an order to the courier and records what comes back. */
+app.post('/api/orders/:id/ship', requireAdmin, async c => {
+  if (!isShipmozoConfigured(c.env)) {
+    return c.json({ error: 'Shipmozo is not configured yet' }, 503);
+  }
+
+  const db = getDb(c.env);
+  const orderId = c.req.param('id');
+  const { data: row } = await db
+    .from('orders')
+    .select('*, order_items(*)')
+    .eq('id', orderId)
+    .maybeSingle();
+  if (!row) return c.json({ error: 'Order not found' }, 404);
+  if (row.awb_number || row.shipmozo_order_id) {
+    return c.json({ error: 'This order has already been sent to the courier' }, 409);
+  }
+
+  const body = await c.req.json().catch(() => ({}));
+  const result = await pushOrder(c.env, rowToOrder(row), {
+    weightGrams: Number(body?.weightGrams) || undefined,
+  });
+
+  const { data: updated, error } = await db
+    .from('orders')
+    .update({
+      shipmozo_order_id: result.shipmozoOrderId,
+      awb_number: result.awbNumber,
+      courier_name: result.courierName,
+      shipped_at: new Date().toISOString(),
+      // Only claim it has shipped once a parcel actually has a number.
+      order_status: result.awbNumber ? 'Shipped via Express' : row.order_status,
+    })
+    .eq('id', orderId)
+    .select('*, order_items(*)')
+    .single();
+  if (error) throw new Error(error.message);
+
+  return c.json(rowToOrder(updated));
+});
+
+/** Records an AWB entered by hand, for a parcel booked in the courier's panel. */
+app.put('/api/orders/:id/awb', requireAdmin, async c => {
+  const { awbNumber, courierName } = await c.req.json();
+  const awb = String(awbNumber ?? '').trim();
+  if (!awb) return c.json({ error: 'An AWB number is required' }, 400);
+
+  const { data, error } = await getDb(c.env)
+    .from('orders')
+    .update({
+      awb_number: awb,
+      courier_name: courierName ? String(courierName).trim() : null,
+      shipped_at: new Date().toISOString(),
+      order_status: 'Shipped via Express',
+    })
+    .eq('id', c.req.param('id'))
+    .select('*, order_items(*)')
+    .maybeSingle();
+
+  // The unique index: that number is already on another order.
+  if (error?.code === '23505') {
+    return c.json({ error: 'That AWB is already on another order' }, 409);
+  }
+  if (error) throw new Error(error.message);
+  if (!data) return c.json({ error: 'Order not found' }, 404);
+  return c.json(rowToOrder(data));
+});
+
+/**
+ * Where the parcel is now.
+ *
+ * A client may ask about their own order; an administrator about any. The
+ * answer is fetched live from the courier and the last status kept on the
+ * order, so the archive still reads sensibly when the courier is unreachable.
+ */
+app.get('/api/orders/:orderNumber/tracking', requireAuth, async c => {
+  const user = currentUser(c)!;
+  const db = getDb(c.env);
+
+  const { data: row } = await db
+    .from('orders')
+    .select('id, user_id, awb_number, courier_name, tracking_status, tracking_updated_at')
+    .eq('order_number', c.req.param('orderNumber'))
+    .maybeSingle();
+
+  if (!row || (user.role !== 'admin' && row.user_id !== user.sub)) {
+    return c.json({ error: 'Order not found' }, 404);
+  }
+  if (!row.awb_number) {
+    return c.json({ awbNumber: null, status: null, history: [] });
+  }
+  if (!isShipmozoConfigured(c.env)) {
+    return c.json({
+      awbNumber: row.awb_number,
+      courierName: row.courier_name,
+      status: row.tracking_status,
+      history: [],
+    });
+  }
+
+  try {
+    const update = await trackByAwb(c.env, row.awb_number);
+    await db
+      .from('orders')
+      .update({
+        tracking_status: update.status,
+        courier_name: update.courierName ?? row.courier_name,
+        tracking_updated_at: new Date().toISOString(),
+      })
+      .eq('id', row.id);
+
+    return c.json({
+      awbNumber: row.awb_number,
+      courierName: update.courierName ?? row.courier_name,
+      status: update.status,
+      history: update.history,
+    });
+  } catch (err: any) {
+    // A courier having a bad morning must not break the order page.
+    console.error(`Tracking failed for ${row.awb_number}: ${err?.message}`);
+    return c.json({
+      awbNumber: row.awb_number,
+      courierName: row.courier_name,
+      status: row.tracking_status,
+      history: [],
+      stale: true,
+    });
+  }
+});
+
+app.post('/api/orders/:id/pickup', requireAdmin, async c => {
+  const { data: row } = await getDb(c.env)
+    .from('orders')
+    .select('shipmozo_order_id')
+    .eq('id', c.req.param('id'))
+    .maybeSingle();
+  if (!row?.shipmozo_order_id) {
+    return c.json({ error: 'This order has not been sent to the courier yet' }, 400);
+  }
+  await schedulePickup(c.env, row.shipmozo_order_id);
+  return c.json({ status: 'pickup scheduled' });
+});
+
+/** Tells a client, before they order, whether anyone will deliver to them. */
+app.post('/api/shipping/serviceability', async c => {
+  const { pincode } = await c.req.json();
+  const delivery = String(pincode ?? '').replace(/\D/g, '');
+  if (delivery.length !== 6) return c.json({ error: 'Enter a six-digit pin code' }, 400);
+  if (!isShipmozoConfigured(c.env)) return c.json({ serviceable: null });
+
+  try {
+    const serviceable = await checkServiceability(
+      c.env,
+      delivery,
+      c.env.SHIPMOZO_PICKUP_PINCODE || '396191'
+    );
+    return c.json({ serviceable });
+  } catch {
+    // Unknown is better than a wrong "no" that turns a client away.
+    return c.json({ serviceable: null });
+  }
+});
+
 app.put('/api/orders/:id/status', requireAdmin, async c => {
   const { status } = await c.req.json();
   const allowed = ['Placed', 'In Artisan Crafting', 'Quality Assured', 'Shipped via Express', 'Delivered', 'Cancelled'];
@@ -782,6 +955,17 @@ app.put('/api/orders/:id/status', requireAdmin, async c => {
   // Cancelling puts the pieces back on the shelf — but only on the way into
   // Cancelled, so re-saving a cancelled order does not conjure stock.
   if (status === 'Cancelled' && before?.order_status !== 'Cancelled') {
+    // Tell the courier too, or a cancelled order is still collected and sent.
+    if (data.shipmozo_order_id && isShipmozoConfigured(c.env)) {
+      try {
+        await cancelShipment(c.env, data.shipmozo_order_id);
+      } catch (err: any) {
+        console.error(
+          `Order ${data.order_number} cancelled here but Shipmozo refused: ${err?.message}`
+        );
+      }
+    }
+
     for (const item of data.order_items ?? []) {
       const { error: stockErr } = await db.rpc('increment_stock', {
         p_product_id: item.product_id,

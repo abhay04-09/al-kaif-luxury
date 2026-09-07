@@ -107,6 +107,12 @@ export interface Order {
   razorpayPaymentId?: string;
   giftWrapped?: boolean;
   notes?: string;
+  shipmozoOrderId?: string | null;
+  awbNumber?: string | null;
+  courierName?: string | null;
+  trackingStatus?: string | null;
+  trackingUpdatedAt?: string | null;
+  shippedAt?: string | null;
 }
 
 export type ThemeMode = 'emerald' | 'obsidian' | 'pearl';

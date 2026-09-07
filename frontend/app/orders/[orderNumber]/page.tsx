@@ -9,6 +9,7 @@ import {
   Package
 } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
+import { OrderTracking } from "@/components/orders/order-tracking";
 import { Footer } from "@/components/layout/footer";
 import { API_BASE } from "@/lib/api";
 import { getSessionToken, requireUser } from "@/lib/session";
@@ -194,6 +195,8 @@ export default async function OrderPage({
             </ol>
           </section>
         )}
+
+        <OrderTracking orderNumber={order.orderNumber} />
 
         {/* Pieces */}
         <section className="mt-6 border border-graphite bg-onyx">

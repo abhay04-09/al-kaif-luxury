@@ -143,5 +143,11 @@ export function rowToOrder(r: any): Order {
     razorpayPaymentId: r.razorpay_payment_id ?? undefined,
     giftWrapped: r.gift_wrapped,
     notes: r.notes ?? undefined,
+    shipmozoOrderId: r.shipmozo_order_id ?? null,
+    awbNumber: r.awb_number ?? null,
+    courierName: r.courier_name ?? null,
+    trackingStatus: r.tracking_status ?? null,
+    trackingUpdatedAt: r.tracking_updated_at ?? null,
+    shippedAt: r.shipped_at ?? null,
   };
 }
