@@ -13,7 +13,7 @@ import {
 import { sendOrderEmails } from './lib/email';
 import {
   cancelShipment,
-  checkServiceability,
+  getQuotes,
   isShipmozoConfigured,
   pushOrder,
   schedulePickup,
@@ -917,12 +917,16 @@ app.post('/api/shipping/serviceability', async c => {
   if (!isShipmozoConfigured(c.env)) return c.json({ serviceable: null });
 
   try {
-    const serviceable = await checkServiceability(
+    const quotes = await getQuotes(
       c.env,
       delivery,
       c.env.SHIPMOZO_PICKUP_PINCODE || '396191'
     );
-    return c.json({ serviceable });
+    return c.json({
+      serviceable: quotes.length > 0,
+      // The cheapest quote is what the maison would actually pay to send it.
+      fromINR: quotes[0]?.totalINR ?? null,
+    });
   } catch {
     // Unknown is better than a wrong "no" that turns a client away.
     return c.json({ serviceable: null });

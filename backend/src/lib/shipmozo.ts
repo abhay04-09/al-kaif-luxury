@@ -215,21 +215,57 @@ export async function schedulePickup(env: Env, shipmozoOrderId: string): Promise
   });
 }
 
-/** Whether anyone will carry a parcel to this pin code. */
-export async function checkServiceability(
+export interface CourierQuote {
+  courier: string;
+  totalINR: number;
+}
+
+/**
+ * Whether anyone will carry a parcel to this pin code, and for how much.
+ *
+ * Shipmozo has a pincode-serviceability endpoint, and it is not to be trusted:
+ * it answers "not serviceable" for Mumbai and Delhi while the rate calculator
+ * offers eighteen couriers for the same route. So the quote is the answer — a
+ * courier willing to name a price is a courier willing to carry it.
+ */
+export async function getQuotes(
   env: Env,
   deliveryPincode: string,
-  pickupPincode: string
-): Promise<boolean> {
-  const reply = await call(env, 'pincode-serviceability', {
+  pickupPincode: string,
+  options: { weightGrams?: number; orderAmountINR?: number; cod?: boolean } = {}
+): Promise<CourierQuote[]> {
+  const reply = await call(env, 'rate-calculator', {
     method: 'POST',
     body: {
       pickup_pincode: pickupPincode,
       delivery_pincode: deliveryPincode,
       order_type: 'FORWARD',
-      payment_type: 'PREPAID',
-      weight: '200',
+      shipment_type: 'FORWARD',
+      payment_type: options.cod ? 'COD' : 'PREPAID',
+      type_of_package: 'SPS',
+      weight: String(Math.max(50, Math.round(options.weightGrams ?? 200))),
+      // Shipmozo rejects a zero declared value outright, and the figure only
+      // affects insurance — a nominal rupee is enough to ask "who delivers here".
+      order_amount: String(Math.max(1, Math.round(options.orderAmountINR ?? 1))),
+      dimensions: [{ no_of_box: '1', length: '12', width: '12', height: '6' }],
     },
   });
-  return Boolean(reply.data?.serviceable);
+
+  const rows: any[] = Array.isArray(reply.data) ? reply.data : [];
+  return rows
+    .map(r => ({
+      courier: String(r.courier_name ?? r.name ?? 'Courier'),
+      totalINR: Number(r.total_charges ?? r.rate ?? r.freight_charge ?? 0),
+    }))
+    .filter(q => q.totalINR > 0)
+    .sort((a, b) => a.totalINR - b.totalINR);
+}
+
+export async function checkServiceability(
+  env: Env,
+  deliveryPincode: string,
+  pickupPincode: string
+): Promise<boolean> {
+  const quotes = await getQuotes(env, deliveryPincode, pickupPincode);
+  return quotes.length > 0;
 }
