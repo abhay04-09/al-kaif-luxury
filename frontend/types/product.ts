@@ -9,6 +9,8 @@ export type Product = {
   category: ProductCategory;
   collection: string;
   price: number;
+  /** Listed price, struck through beside the price. Null when not discounted. */
+  mrp: number | null;
   currency: "INR";
   image: string;
   gallery: string[];

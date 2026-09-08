@@ -18,6 +18,8 @@ export function rowToProduct(r: any): Product {
     category: r.category,
     subcategory: r.subcategory ?? null,
     priceINR: Number(r.price_inr),
+    // Null means the piece is sold at its price with nothing struck through.
+    mrpINR: r.mrp_inr === null || r.mrp_inr === undefined ? null : Number(r.mrp_inr),
     priceUSD: Number(r.price_usd ?? 0),
     image: r.image,
     secondaryImages: r.secondary_images ?? [],
@@ -49,6 +51,16 @@ export function productToRow(p: Partial<Product>): Record<string, unknown> {
   if (p.category !== undefined) row.category = p.category;
   if (p.subcategory !== undefined) row.subcategory = p.subcategory || null;
   if (p.priceINR !== undefined) row.price_inr = p.priceINR;
+  if (p.mrpINR !== undefined) {
+    // A blank field, a zero, or anything at or below the selling price all mean
+    // the same thing: no discount to advertise. The database rejects the rest.
+    const raw = p.mrpINR as unknown;
+    const mrp =
+      raw === null || raw === '' || Number.isNaN(Number(raw))
+        ? null
+        : Math.round(Number(raw));
+    row.mrp_inr = mrp !== null && mrp > 0 ? mrp : null;
+  }
   if (p.priceUSD !== undefined) row.price_usd = p.priceUSD;
   if (p.image !== undefined) row.image = p.image;
   if (p.secondaryImages !== undefined) row.secondary_images = p.secondaryImages;

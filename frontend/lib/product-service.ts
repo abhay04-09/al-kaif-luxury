@@ -51,6 +51,12 @@ function normalize(product: ApiProduct): Product {
     category: product.category,
     collection: product.subtitle || product.category,
     price: Math.round(product.priceINR),
+    // Only a genuine reduction is carried through; anything at or below the
+    // selling price would print a strikethrough that says nothing.
+    mrp:
+      product.mrpINR && product.mrpINR > product.priceINR
+        ? Math.round(product.mrpINR)
+        : null,
     currency: "INR",
     image: product.image,
     gallery: product.secondaryImages ?? [],

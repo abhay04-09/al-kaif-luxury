@@ -94,6 +94,14 @@ export const productColumns: Column<Product>[] = [
   { header: 'Category', value: p => p.category },
   { header: 'Subcategory', value: p => p.subcategory ?? '' },
   { header: 'Price (INR)', value: p => p.priceINR },
+  { header: 'MRP (INR)', value: p => p.mrpINR ?? '' },
+  {
+    header: 'Discount (%)',
+    value: p =>
+      p.mrpINR && p.mrpINR > p.priceINR
+        ? Math.round(((p.mrpINR - p.priceINR) / p.mrpINR) * 100)
+        : '',
+  },
   { header: 'In stock', value: p => (p.inStock ? 'Yes' : 'No') },
   {
     header: 'Stock quantity',

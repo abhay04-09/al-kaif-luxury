@@ -26,6 +26,7 @@ const EMPTY_FORM: Partial<Product> = {
   sku: '',
   sizes: [],
   priceINR: 100000,
+  mrpINR: null,
   image: '',
   secondaryImages: [],
   description: '',
@@ -615,7 +616,17 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                     <span className="block text-[10px] text-[#A7A7A7]">↳ {categoryName(p.subcategory)}</span>
                   )}
                 </td>
-                <td className="p-4 font-mono text-[#FFD700]">₹{p.priceINR.toLocaleString('en-IN')}</td>
+                <td className="p-4 font-mono text-[#FFD700]">
+                  ₹{p.priceINR.toLocaleString('en-IN')}
+                  {p.mrpINR && p.mrpINR > p.priceINR ? (
+                    <span className="block text-[10px] text-[#A7A7A7]">
+                      <span className="line-through">₹{p.mrpINR.toLocaleString('en-IN')}</span>
+                      <span className="ml-1.5 text-[#DFC27C]">
+                        {Math.round(((p.mrpINR - p.priceINR) / p.mrpINR) * 100)}% off
+                      </span>
+                    </span>
+                  ) : null}
+                </td>
                 <td className="p-4 font-mono text-[#A7A7A7] hidden lg:table-cell">{p.sku || '—'}</td>
                 <td className="p-4 hidden xl:table-cell text-[#A7A7A7] whitespace-nowrap" title={exactDate(p.createdAt)}>
                   {relativeDate(p.createdAt)}
@@ -810,13 +821,45 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                 </div>
               </div>
 
-              <div>
-                <label className="text-[#DFC27C] block mb-1">PRICE (INR) *</label>
-                <input
-                  type="number" required value={form.priceINR ?? ''}
-                  onChange={e => setForm({ ...form, priceINR: Number(e.target.value) })}
-                  className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
-                />
+              {/* Two prices: what the client pays, and what it is struck through
+                  from. The second is optional — a piece with no MRP is simply
+                  shown at its price, with no strikethrough and no badge. */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[#DFC27C] block mb-1">SELLING PRICE (INR) *</label>
+                  <input
+                    type="number" required value={form.priceINR ?? ''}
+                    onChange={e => setForm({ ...form, priceINR: Number(e.target.value) })}
+                    className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
+                  />
+                  <p className="mt-1 text-[10px] text-[#A7A7A7]">What the client is charged. GST included.</p>
+                </div>
+                <div>
+                  <label className="text-[#DFC27C] block mb-1">MRP (INR)</label>
+                  <input
+                    type="number" value={form.mrpINR ?? ''}
+                    placeholder="Leave blank — no discount"
+                    onChange={e =>
+                      setForm({
+                        ...form,
+                        mrpINR: e.target.value === '' ? null : Number(e.target.value),
+                      })
+                    }
+                    className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs placeholder:text-[#A7A7A7]/50 focus:border-[#C5A059] focus:outline-none"
+                  />
+                  {form.mrpINR && form.priceINR && form.mrpINR > form.priceINR ? (
+                    <p className="mt-1 text-[10px] text-[#DFC27C]">
+                      Shows as <span className="line-through">₹{form.mrpINR.toLocaleString('en-IN')}</span>{' '}
+                      and a {Math.round(((form.mrpINR - form.priceINR) / form.mrpINR) * 100)}% OFF badge.
+                    </p>
+                  ) : form.mrpINR ? (
+                    <p className="mt-1 text-[10px] text-red-400">
+                      The MRP must be higher than the selling price.
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-[10px] text-[#A7A7A7]">Struck through on the storefront.</p>
+                  )}
+                </div>
               </div>
 
               {/* Sizes */}

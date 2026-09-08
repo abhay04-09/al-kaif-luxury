@@ -18,8 +18,15 @@ export function ProductCard({ product }: ProductCardProps) {
       ? "⭐ MUST TRY"
       : "♥ FAN FAVORITE";
 
-  // Calculate simulated original price for strikethrough comparison
-  const originalPrice = Math.round(product.price * 1.35);
+  // The MRP is set per product in the admin panel. It used to be invented here
+  // as price x 1.35 with a flat "25% OFF" badge on every card, which advertised
+  // a reduction that had never happened. A piece with no MRP now simply shows
+  // its price.
+  const mrp = product.mrp;
+  const discountPercent =
+    mrp && mrp > product.price
+      ? Math.round(((mrp - product.price) / mrp) * 100)
+      : 0;
 
   return (
     <article className="group h-full flex flex-col justify-between rounded-2xl border border-brand-border bg-brand-card p-3 shadow-sm hover:shadow-xl transition-all duration-300">
@@ -79,15 +86,19 @@ export function ProductCard({ product }: ProductCardProps) {
             <span className="font-extrabold text-sm text-brand-gold">
               {formatPrice(product.price)}
             </span>
-            <span className="text-[10px] text-brand-muted line-through">
-              {formatPrice(originalPrice)}
-            </span>
+            {discountPercent > 0 ? (
+              <span className="text-[10px] text-brand-muted line-through">
+                {formatPrice(mrp!)}
+              </span>
+            ) : null}
           </div>
 
           {/* Discount Percentage Badge: bg-[#8B0000]/15 text-[#8B0000] dark:text-[#FF6B81] text-[11px] font-bold px-1.5 py-0.5 rounded */}
-          <span className="bg-[#8B0000]/15 text-[#8B0000] dark:text-[#FF6B81] text-[11px] font-bold px-1.5 py-0.5 rounded">
-            25% OFF
-          </span>
+          {discountPercent > 0 ? (
+            <span className="bg-[#8B0000]/15 text-[#8B0000] dark:text-[#FF6B81] text-[11px] font-bold px-1.5 py-0.5 rounded">
+              {discountPercent}% OFF
+            </span>
+          ) : null}
         </div>
       </Link>
     </article>

@@ -13,6 +13,7 @@ export type ApiProduct = {
   category: string;
   subcategory?: string | null;
   priceINR: number;
+  mrpINR?: number | null;
   priceUSD?: number;
   image: string;
   secondaryImages?: string[];

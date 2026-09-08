@@ -58,7 +58,22 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             <h1 className="mt-4 font-serif text-5xl leading-tight text-porcelain sm:text-6xl">
               {product.name}
             </h1>
-            <p className="mt-6 text-2xl text-porcelain">{formatPrice(product.price)}</p>
+            {/* The MRP is only shown when the shop has set one that is genuinely
+                higher; otherwise the price stands on its own. */}
+            <div className="mt-6 flex flex-wrap items-baseline gap-3">
+              <p className="text-2xl text-porcelain">{formatPrice(product.price)}</p>
+              {product.mrp && product.mrp > product.price ? (
+                <>
+                  <p className="text-base text-porcelain/50 line-through">
+                    {formatPrice(product.mrp)}
+                  </p>
+                  <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light">
+                    {Math.round(((product.mrp - product.price) / product.mrp) * 100)}% off
+                  </p>
+                </>
+              ) : null}
+            </div>
+            <p className="mt-2 text-xs text-mist">Inclusive of all taxes</p>
             <p className="mt-6 text-base leading-8 text-porcelain/72">{product.description}</p>
             <div className="mt-8">
               <AddToCartButton product={product} />

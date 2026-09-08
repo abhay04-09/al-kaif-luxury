@@ -16,6 +16,8 @@ export interface Product {
   category: CategoryType;
   subcategory?: string | null;
   priceINR: number;
+  /** Listed price, struck through on the storefront. Null when there is no discount. */
+  mrpINR?: number | null;
   /** Optional — the shop prices in INR; kept for legacy rows. */
   priceUSD?: number;
   image: string;

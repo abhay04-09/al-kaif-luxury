@@ -322,6 +322,40 @@ app.get('/api/products/:id', async c => {
   return c.json(rowToProduct(data));
 });
 
+/**
+ * Keeps the struck-through price honest.
+ *
+ * The database has a constraint, but a raw constraint violation reaches the
+ * panel as a wall of Postgres, so the same rule is stated here in a sentence
+ * the shop can act on. On an edit the selling price may not be in the patch, so
+ * the stored one is fetched rather than assumed.
+ */
+async function assertMrpAbovePrice(
+  db: ReturnType<typeof getDb>,
+  row: Record<string, unknown>,
+  productId?: string
+): Promise<void> {
+  if (row.mrp_inr === undefined || row.mrp_inr === null) return;
+  const mrp = Number(row.mrp_inr);
+
+  let price = row.price_inr === undefined ? NaN : Number(row.price_inr);
+  if (Number.isNaN(price) && productId) {
+    const { data } = await db
+      .from('products')
+      .select('price_inr')
+      .eq('id', productId)
+      .maybeSingle();
+    price = Number(data?.price_inr ?? NaN);
+  }
+  if (Number.isNaN(price)) return;
+
+  if (mrp <= price) {
+    throw new CartError(
+      `The MRP must be higher than the selling price. ₹${mrp} is not above ₹${price} — leave the MRP blank if this piece is not discounted.`
+    );
+  }
+}
+
 app.post('/api/products', requireAdmin, async c => {
   const body = await c.req.json();
   const db = getDb(c.env);
@@ -331,6 +365,7 @@ app.post('/api/products', requireAdmin, async c => {
   // The form no longer collects a dollar price, but the column is NOT NULL on
   // databases created before migration 003.
   if (row.price_usd === undefined) row.price_usd = 0;
+  await assertMrpAbovePrice(db, row);
 
   const { data, error } = await db.from('products').insert(row).select('*').single();
   if (error || !data) throw new Error(error?.message ?? 'Insert failed');
@@ -344,6 +379,7 @@ app.put('/api/products/:id', requireAdmin, async c => {
   delete row.id; // never change the primary key
   // Clearing the SKU field hands the code back to us, same as on create.
   if (row.sku !== undefined && !row.sku) row.sku = `ALK-NEW-${Math.floor(1000 + Math.random() * 9000)}`;
+  await assertMrpAbovePrice(db, row, c.req.param('id'));
   const { data, error } = await db.from('products').update(row).eq('id', c.req.param('id')).select('*').maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return c.json({ error: 'Product not found' }, 404);
