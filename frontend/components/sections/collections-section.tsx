@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -39,6 +39,7 @@ const collectionsList = [
 
 export function CollectionsSection() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   function prevSlide() {
     setActiveIndex((prev) => (prev - 1 + collectionsList.length) % collectionsList.length);
@@ -46,6 +47,12 @@ export function CollectionsSection() {
 
   function nextSlide() {
     setActiveIndex((prev) => (prev + 1) % collectionsList.length);
+  }
+
+  function scrollByAmount(direction: 1 | -1) {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: direction * el.clientWidth * 0.8, behavior: "smooth" });
   }
 
   return (
@@ -69,7 +76,8 @@ export function CollectionsSection() {
           </Link>
         </div>
 
-        {/* 3D Overlapping Card Slider Showcase */}
+        {/* Mobile / Tablet: 3D Overlapping Card Slider Showcase */}
+        <div className="lg:hidden">
         <div className="relative my-8 flex items-center justify-center min-h-[420px] sm:min-h-[500px]">
           {/* Navigation Prev Button */}
           <button
@@ -186,6 +194,65 @@ export function CollectionsSection() {
               }`}
             />
           ))}
+        </div>
+        </div>
+
+        {/* Desktop: Continuous Horizontal Scrolling Row (no more single centered card with empty gutters) */}
+        <div className="relative hidden lg:block my-8">
+          <button
+            onClick={() => scrollByAmount(-1)}
+            aria-label="Scroll collections left"
+            className="absolute left-0 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md transition hover:bg-gold-light hover:text-black shadow-2xl"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+
+          <div
+            ref={scrollRef}
+            className="flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth px-14 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {collectionsList.map((item) => (
+              <article
+                key={item.id}
+                className="group relative h-[440px] w-[300px] shrink-0 snap-start overflow-hidden rounded-[24px] border border-white/20 bg-black shadow-2xl xl:w-[320px]"
+              >
+                <Image
+                  src={item.image}
+                  alt={item.title}
+                  fill
+                  sizes="320px"
+                  className="object-cover transition duration-500 group-hover:scale-105"
+                />
+
+                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+
+                <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-6 text-left">
+                  <p className="text-[10px] uppercase tracking-widest text-gold-light font-medium">
+                    {item.subtitle}
+                  </p>
+                  <h3 className="font-serif text-xl font-bold uppercase tracking-wider text-white">
+                    {item.title}
+                  </h3>
+
+                  <Link
+                    href={item.link}
+                    className="mt-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-luxury text-white underline underline-offset-4 decoration-gold-light hover:text-gold-light transition"
+                  >
+                    <span>SHOP NOW</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <button
+            onClick={() => scrollByAmount(1)}
+            aria-label="Scroll collections right"
+            className="absolute right-0 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md transition hover:bg-gold-light hover:text-black shadow-2xl"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
         </div>
       </div>
     </section>

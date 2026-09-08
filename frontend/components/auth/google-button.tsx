@@ -34,12 +34,14 @@ export function GoogleButton({ next }: { next?: string }) {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Rendering a button that cannot work is worse than rendering nothing, so it
-  // stays hidden until the Supabase keys are actually present.
-  if (!isGoogleSignInConfigured()) return null;
-
   async function signIn() {
     setError(null);
+
+    if (!isGoogleSignInConfigured()) {
+      setError("Google sign-in isn't connected yet.");
+      return;
+    }
+
     setIsRedirecting(true);
 
     const supabase = getSupabaseBrowserClient();
@@ -65,16 +67,8 @@ export function GoogleButton({ next }: { next?: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <span className="h-px flex-1 bg-graphite" />
-        <span className="text-[0.6rem] uppercase tracking-luxury text-mist">
-          or
-        </span>
-        <span className="h-px flex-1 bg-graphite" />
-      </div>
-
       <button
-        className="inline-flex min-h-12 w-full items-center justify-center gap-3 border border-graphite bg-obsidian px-6 py-3 text-[0.7rem] uppercase tracking-luxury text-porcelain transition hover:border-gold-light hover:text-gold-light disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-md border border-graphite bg-onyx px-6 py-3 text-sm font-medium text-porcelain shadow-sm transition hover:border-gold-light disabled:cursor-not-allowed disabled:opacity-60"
         disabled={isRedirecting}
         onClick={signIn}
         type="button"

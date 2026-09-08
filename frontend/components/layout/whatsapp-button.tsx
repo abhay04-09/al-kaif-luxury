@@ -2,10 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { MessageSquare, X, Sparkles, Headset } from "lucide-react";
+
+const HIDDEN_ON = ["/login", "/signup"];
 
 export function WhatsAppButton() {
   const [isDismissed, setIsDismissed] = useState(false);
+  const pathname = usePathname();
+
+  if (HIDDEN_ON.includes(pathname)) return null;
 
   return (
     <aside className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2 pointer-events-auto select-none">

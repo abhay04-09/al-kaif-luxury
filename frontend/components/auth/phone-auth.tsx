@@ -30,7 +30,6 @@ export function PhoneAuth({
   const { refresh } = useSession();
 
   const [available, setAvailable] = useState(false);
-  const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"number" | "code">("number");
 
   const [name, setName] = useState("");
@@ -59,15 +58,16 @@ export function PhoneAuth({
     return () => window.clearTimeout(timer);
   }, [secondsLeft]);
 
-  // Rendering an option that cannot work is worse than rendering nothing, so it
-  // stays hidden until an SMS gateway is actually connected.
-  if (!available) return null;
-
   const e164 = `+91${mobile}`;
 
   async function sendCode(event?: FormEvent) {
     event?.preventDefault();
     setError(null);
+
+    if (!available) {
+      setError("Mobile sign-in isn't connected yet.");
+      return;
+    }
 
     if (!isValidMobile(mobile)) {
       setError("Please enter a ten-digit Indian mobile number.");
@@ -154,23 +154,10 @@ export function PhoneAuth({
     }
   }
 
-  if (!open) {
-    return (
-      <button
-        className="inline-flex min-h-12 w-full items-center justify-center gap-3 border border-graphite bg-obsidian px-6 py-3 text-[0.7rem] uppercase tracking-luxury text-porcelain transition hover:border-gold-light hover:text-gold-light"
-        onClick={() => setOpen(true)}
-        type="button"
-      >
-        <Smartphone aria-hidden="true" className="h-4 w-4" strokeWidth={1.5} />
-        Continue with mobile number
-      </button>
-    );
-  }
-
   return (
-    <div className="grid gap-5 border border-graphite bg-obsidian/60 p-5">
+    <div className="grid gap-5">
       {step === "number" ? (
-        <form className="grid gap-5" onSubmit={sendCode}>
+        <form className="grid gap-4" onSubmit={sendCode}>
           {mode === "register" ? (
             <div>
               <label className={labelClass} htmlFor="otp-name">
@@ -187,29 +174,22 @@ export function PhoneAuth({
             </div>
           ) : null}
 
-          <div>
-            <label className={labelClass} htmlFor="otp-mobile">
-              Mobile number
-            </label>
-            <div className="flex">
-              <span className="flex min-h-12 items-center border border-r-0 border-white/10 bg-abyss px-4 text-sm text-mist">
-                +91
-              </span>
-              <input
-                autoComplete="tel-national"
-                className={`${fieldClass} tracking-[0.2em]`}
-                id="otp-mobile"
-                inputMode="numeric"
-                onChange={e =>
-                  setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))
-                }
-                placeholder="9876543210"
-                value={mobile}
-              />
-            </div>
-            <p className="mt-2 text-xs text-mist">
-              We will send a six-digit code by SMS.
-            </p>
+          <div className="flex gap-2">
+            <span className="flex min-h-12 shrink-0 items-center gap-1 rounded-md border border-graphite bg-onyx px-3 text-sm text-porcelain">
+              🇮🇳 +91
+            </span>
+            <input
+              aria-label="Mobile number"
+              autoComplete="tel-national"
+              className="min-h-12 w-full rounded-md border border-graphite bg-onyx px-4 text-sm tracking-[0.15em] text-porcelain outline-none transition focus:border-gold-light"
+              id="otp-mobile"
+              inputMode="numeric"
+              onChange={e =>
+                setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))
+              }
+              placeholder="Enter mobile number"
+              value={mobile}
+            />
           </div>
 
           {error ? (
@@ -222,14 +202,17 @@ export function PhoneAuth({
           ) : null}
 
           <button
-            className="inline-flex min-h-12 items-center justify-center gap-2 bg-gold px-6 py-3 text-[0.72rem] uppercase tracking-luxury text-obsidian transition hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-gold to-gold-light px-6 py-3 text-sm font-semibold text-obsidian transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={busy}
             type="submit"
           >
             {busy ? (
               <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-            ) : null}
-            Send code
+            ) : (
+              <>
+                Send OTP <Smartphone aria-hidden="true" className="h-4 w-4" strokeWidth={1.5} />
+              </>
+            )}
           </button>
         </form>
       ) : (

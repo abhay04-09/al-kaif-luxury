@@ -1,6 +1,14 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import { Sparkles } from "lucide-react";
 
+const HIDDEN_ON = ["/login", "/signup"];
+
 export function AnnouncementBar() {
+  const pathname = usePathname();
+  if (HIDDEN_ON.includes(pathname)) return null;
+
   return (
     <div className="bg-gradient-to-r from-[#121212] via-[#7A0C1E] to-[#121212] text-white py-1.5 text-xs text-center font-medium border-b border-white/10 flex items-center justify-between px-4 sm:px-6">
       <div className="hidden opacity-85 md:block text-[11px] uppercase tracking-wider text-amber-200">
