@@ -44,6 +44,10 @@ export const orderColumns: Column<Order>[] = [
   { header: 'AWB', value: o => o.awbNumber ?? '' },
   { header: 'Tracking status', value: o => o.trackingStatus ?? '' },
   { header: 'Shipped on', value: o => isoDate(o.shippedAt) },
+  { header: 'Cancelled on', value: o => isoDate(o.cancelledAt) },
+  { header: 'Cancelled by', value: o => o.cancelledBy ?? '' },
+  { header: 'Cancellation reason', value: o => o.cancellationReason ?? '' },
+  { header: 'Refund', value: o => o.refundStatus ?? '' },
   { header: 'Gift wrapped', value: o => (o.giftWrapped ? 'Yes' : 'No') },
   { header: 'Notes', value: o => o.notes ?? '' }
 ];

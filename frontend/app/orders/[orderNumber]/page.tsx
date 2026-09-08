@@ -6,9 +6,11 @@ import {
   CheckCircle2,
   CreditCard,
   MapPin,
-  Package
+  Package,
+  XCircle
 } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
+import { CancelOrder } from "@/components/orders/cancel-order";
 import { OrderTracking } from "@/components/orders/order-tracking";
 import { Footer } from "@/components/layout/footer";
 import { API_BASE } from "@/lib/api";
@@ -42,7 +44,15 @@ type Order = {
   paymentStatus: string;
   orderStatus: string;
   giftWrapped?: boolean;
+  awbNumber?: string | null;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
+  cancelledBy?: string | null;
+  refundStatus?: string | null;
 };
+
+/** Statuses a client may still cancel from — mirrors the rule the API enforces. */
+const CANCELLABLE = ["Placed", "In Artisan Crafting", "Quality Assured"];
 
 const inr = (value: number) => `₹${(value ?? 0).toLocaleString("en-IN")}`;
 
@@ -98,6 +108,12 @@ export default async function OrderPage({
   if (!order) notFound();
 
   const isCancelled = (order.orderStatus ?? "").toLowerCase() === "cancelled";
+  // The button is offered on exactly the terms the API will accept, so it is
+  // never shown to a client who would then be refused.
+  const canCancel =
+    !isCancelled &&
+    !order.awbNumber &&
+    CANCELLABLE.includes(order.orderStatus);
   const stepIndex = JOURNEY.findIndex(
     (step) => step.toLowerCase() === (order.orderStatus ?? "").toLowerCase()
   );
@@ -165,6 +181,35 @@ export default async function OrderPage({
             })}
           </span>
         </div>
+
+        {/* Cancelled orders say so plainly, and answer the question that
+            follows immediately: where is my money? */}
+        {isCancelled ? (
+          <section className="mt-10 border border-red-400/30 bg-red-400/5 p-6">
+            <h2 className="flex items-center gap-2 font-serif text-xl text-porcelain">
+              <XCircle aria-hidden="true" className="h-4 w-4 text-red-300" strokeWidth={1.5} />
+              This order was cancelled
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-porcelain/72">
+              {order.cancelledAt
+                ? `Cancelled on ${new Date(order.cancelledAt).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric"
+                  })}`
+                : "Cancelled"}
+              {order.cancelledBy === "customer" ? " at your request." : " by the maison."}
+              {order.cancellationReason ? ` Reason given: ${order.cancellationReason}.` : ""}
+            </p>
+            {order.paymentStatus === "Paid" ? (
+              <p className="mt-3 text-sm leading-7 text-porcelain/72">
+                {order.refundStatus === "Refunded"
+                  ? `Your ${inr(order.totalINR)} has been refunded to the card or account it came from. Banks can take a few days to show it.`
+                  : `Your ${inr(order.totalINR)} is being returned to the card or account it came from. This usually takes five to seven working days.`}
+              </p>
+            ) : null}
+          </section>
+        ) : null}
 
         {/* Progress */}
         {isCancelled ? null : (
@@ -320,6 +365,13 @@ export default async function OrderPage({
           >
             Need help?
           </Link>
+
+          {canCancel ? (
+            <CancelOrder
+              orderNumber={order.orderNumber}
+              paid={order.paymentStatus === "Paid"}
+            />
+          ) : null}
         </div>
       </main>
       <Footer />

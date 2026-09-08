@@ -34,6 +34,8 @@ type Order = {
   paymentStatus: string;
   orderStatus: string;
   giftWrapped?: boolean;
+  cancelledAt?: string | null;
+  refundStatus?: string | null;
 };
 
 const inr = (value: number) => `₹${value.toLocaleString("en-IN")}`;
@@ -63,11 +65,139 @@ async function fetchOrders(token: string): Promise<Order[] | null> {
   }
 }
 
+
+/** One order in the client's archive. Used by both lists below. */
+function OrderCard({ order, isAdmin }: { order: Order; isAdmin: boolean }) {
+  return (
+    <article className="border border-graphite bg-onyx">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-graphite px-6 py-5">
+          <div>
+            <Link
+              className="font-serif text-2xl text-porcelain transition hover:text-gold-light"
+              href={`/orders/${order.orderNumber}`}
+            >
+              {order.orderNumber}
+            </Link>
+            <p className="mt-1 text-xs text-mist">
+              {new Date(order.createdAt).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric"
+              })}
+              {" · "}
+              {order.paymentMethod}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span
+              className={`border px-3 py-1 text-[0.6rem] uppercase tracking-luxury ${statusTone(
+                order.paymentStatus
+              )}`}
+            >
+              {order.paymentStatus}
+            </span>
+            <span
+              className={`border px-3 py-1 text-[0.6rem] uppercase tracking-luxury ${statusTone(
+                order.orderStatus
+              )}`}
+            >
+              {order.orderStatus}
+            </span>
+          </div>
+        </header>
+
+        <ul className="divide-y divide-graphite">
+          {order.items.map((item, index) => (
+            <li
+              className="flex items-center gap-4 px-6 py-4"
+              key={`${order.id}-${item.product.id}-${index}`}
+            >
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-graphite bg-obsidian">
+                {item.product.image ? (
+                  <Image
+                    alt=""
+                    className="object-cover"
+                    fill
+                    sizes="64px"
+                    src={item.product.image}
+                  />
+                ) : null}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-porcelain">
+                  {item.product.name}
+                </p>
+                <p className="mt-1 text-xs text-mist">
+                  Qty {item.quantity}
+                  {item.selectedMetal ? ` · ${item.selectedMetal}` : ""}
+                  {item.selectedSize ? ` · ${item.selectedSize}` : ""}
+                </p>
+              </div>
+
+              <p className="text-sm text-porcelain/80">
+                {inr(item.product.priceINR * item.quantity)}
+              </p>
+            </li>
+          ))}
+        </ul>
+
+        <footer className="grid gap-6 border-t border-graphite px-6 py-5 md:grid-cols-2">
+          <div className="text-sm text-porcelain/70">
+            <p className="mb-2 text-[0.6rem] uppercase tracking-luxury text-gold-light">
+              Delivering to
+            </p>
+            <p className="text-porcelain">{order.customerName}</p>
+            <p>{order.customerPhone}</p>
+            {isAdmin ? <p>{order.customerEmail}</p> : null}
+            <p className="mt-2 whitespace-pre-line">
+              {order.shippingAddress}
+            </p>
+            {order.giftWrapped ? (
+              <p className="mt-2 text-gold-light">Gift wrapped</p>
+            ) : null}
+          </div>
+
+          <dl className="space-y-2 text-sm md:justify-self-end md:text-right">
+            <div className="flex justify-between gap-8 text-porcelain/70">
+              <dt>Subtotal</dt>
+              <dd>{inr(order.subtotalINR)}</dd>
+            </div>
+            <div className="flex justify-between gap-8 text-porcelain/70">
+              <dt>Tax</dt>
+              <dd>{inr(order.taxINR)}</dd>
+            </div>
+            <div className="flex justify-between gap-8 border-t border-graphite pt-2 font-serif text-lg text-gold-light">
+              <dt>Total</dt>
+              <dd>{inr(order.totalINR)}</dd>
+            </div>
+            {/* The one question a cancelled paid order raises. */}
+            {order.orderStatus === "Cancelled" && order.paymentStatus === "Paid" ? (
+              <p className="pt-1 text-xs text-mist">
+                {order.refundStatus === "Refunded"
+                  ? "Refunded to your original payment method."
+                  : "Refund on its way — five to seven working days."}
+              </p>
+            ) : null}
+          </dl>
+        </footer>
+      </article>
+  );
+}
+
 export default async function OrdersPage() {
   const user = await requireUser();
   const token = await getSessionToken();
   const orders = token ? await fetchOrders(token) : null;
   const isAdmin = user.role === "admin";
+
+  // Cancelled orders are kept, not hidden — a client needs the record when a
+  // refund is slow — but they sit below the live ones rather than among them.
+  const isCancelled = (order: Order) =>
+    (order.orderStatus ?? "").toLowerCase() === "cancelled";
+  const live = (orders ?? []).filter((order) => !isCancelled(order));
+  const cancelled = (orders ?? []).filter(isCancelled);
 
   return (
     <>
@@ -106,115 +236,34 @@ export default async function OrdersPage() {
             </Link>
           </div>
         ) : (
-          <div className="mt-10 space-y-6">
-            {orders.map((order) => (
-              <article className="border border-graphite bg-onyx" key={order.id}>
-                <header className="flex flex-wrap items-center justify-between gap-4 border-b border-graphite px-6 py-5">
-                  <div>
-                    <Link
-                      className="font-serif text-2xl text-porcelain transition hover:text-gold-light"
-                      href={`/orders/${order.orderNumber}`}
-                    >
-                      {order.orderNumber}
-                    </Link>
-                    <p className="mt-1 text-xs text-mist">
-                      {new Date(order.createdAt).toLocaleDateString("en-IN", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric"
-                      })}
-                      {" · "}
-                      {order.paymentMethod}
-                    </p>
-                  </div>
+          <div className="mt-10 space-y-10">
+            {live.length > 0 ? (
+              <section className="space-y-6">
+                {cancelled.length > 0 ? (
+                  <h2 className="text-[0.62rem] uppercase tracking-luxury text-gold-light">
+                    Active orders
+                  </h2>
+                ) : null}
+                {live.map((order) => (
+                  <OrderCard isAdmin={isAdmin} key={order.id} order={order} />
+                ))}
+              </section>
+            ) : null}
 
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`border px-3 py-1 text-[0.6rem] uppercase tracking-luxury ${statusTone(
-                        order.paymentStatus
-                      )}`}
-                    >
-                      {order.paymentStatus}
-                    </span>
-                    <span
-                      className={`border px-3 py-1 text-[0.6rem] uppercase tracking-luxury ${statusTone(
-                        order.orderStatus
-                      )}`}
-                    >
-                      {order.orderStatus}
-                    </span>
-                  </div>
-                </header>
-
-                <ul className="divide-y divide-graphite">
-                  {order.items.map((item, index) => (
-                    <li
-                      className="flex items-center gap-4 px-6 py-4"
-                      key={`${order.id}-${item.product.id}-${index}`}
-                    >
-                      <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-graphite bg-obsidian">
-                        {item.product.image ? (
-                          <Image
-                            alt=""
-                            className="object-cover"
-                            fill
-                            sizes="64px"
-                            src={item.product.image}
-                          />
-                        ) : null}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm text-porcelain">
-                          {item.product.name}
-                        </p>
-                        <p className="mt-1 text-xs text-mist">
-                          Qty {item.quantity}
-                          {item.selectedMetal ? ` · ${item.selectedMetal}` : ""}
-                          {item.selectedSize ? ` · ${item.selectedSize}` : ""}
-                        </p>
-                      </div>
-
-                      <p className="text-sm text-porcelain/80">
-                        {inr(item.product.priceINR * item.quantity)}
-                      </p>
-                    </li>
+            {/* Kept, not hidden: a cancelled order is the client's receipt for
+                a refund they may still be waiting on. */}
+            {cancelled.length > 0 ? (
+              <section className="space-y-6">
+                <h2 className="text-[0.62rem] uppercase tracking-luxury text-red-200/80">
+                  Cancelled ({cancelled.length})
+                </h2>
+                <div className="space-y-6 opacity-75">
+                  {cancelled.map((order) => (
+                    <OrderCard isAdmin={isAdmin} key={order.id} order={order} />
                   ))}
-                </ul>
-
-                <footer className="grid gap-6 border-t border-graphite px-6 py-5 md:grid-cols-2">
-                  <div className="text-sm text-porcelain/70">
-                    <p className="mb-2 text-[0.6rem] uppercase tracking-luxury text-gold-light">
-                      Delivering to
-                    </p>
-                    <p className="text-porcelain">{order.customerName}</p>
-                    <p>{order.customerPhone}</p>
-                    {isAdmin ? <p>{order.customerEmail}</p> : null}
-                    <p className="mt-2 whitespace-pre-line">
-                      {order.shippingAddress}
-                    </p>
-                    {order.giftWrapped ? (
-                      <p className="mt-2 text-gold-light">Gift wrapped</p>
-                    ) : null}
-                  </div>
-
-                  <dl className="space-y-2 text-sm md:justify-self-end md:text-right">
-                    <div className="flex justify-between gap-8 text-porcelain/70">
-                      <dt>Subtotal</dt>
-                      <dd>{inr(order.subtotalINR)}</dd>
-                    </div>
-                    <div className="flex justify-between gap-8 text-porcelain/70">
-                      <dt>Tax</dt>
-                      <dd>{inr(order.taxINR)}</dd>
-                    </div>
-                    <div className="flex justify-between gap-8 border-t border-graphite pt-2 font-serif text-lg text-gold-light">
-                      <dt>Total</dt>
-                      <dd>{inr(order.totalINR)}</dd>
-                    </div>
-                  </dl>
-                </footer>
-              </article>
-            ))}
+                </div>
+              </section>
+            ) : null}
           </div>
         )}
       </main>

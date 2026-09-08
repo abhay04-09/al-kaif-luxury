@@ -109,6 +109,13 @@ export interface Order {
   razorpayPaymentId?: string;
   giftWrapped?: boolean;
   notes?: string;
+  /** Set the moment an order enters Cancelled; null for every other order. */
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
+  /** 'customer' or 'admin' — who asked for it. */
+  cancelledBy?: string | null;
+  /** null when nothing is owed, 'Due' once a paid order is cancelled, 'Refunded' after. */
+  refundStatus?: string | null;
   shipmozoOrderId?: string | null;
   awbNumber?: string | null;
   courierName?: string | null;

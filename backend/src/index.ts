@@ -969,6 +969,139 @@ app.post('/api/shipping/serviceability', async c => {
   }
 });
 
+/**
+ * Everything that must happen once an order becomes Cancelled.
+ *
+ * Called from two places — the panel and the client's own cancel button — and
+ * it must be safe to reach twice: an order already carrying a cancelled_at is
+ * left alone, so a second press cannot restock the same pieces again.
+ *
+ * Nothing in here is allowed to fail the cancellation. A courier that will not
+ * answer, or a restock that errors, is logged and stepped over; the client has
+ * been told their order is cancelled and that must remain true.
+ */
+async function settleCancellation(
+  env: Env,
+  db: ReturnType<typeof getDb>,
+  row: any,
+  by: 'customer' | 'admin',
+  reason?: string
+): Promise<void> {
+  // Tell the courier too, or a cancelled order is still collected and sent.
+  if (row.shipmozo_order_id && isShipmozoConfigured(env)) {
+    try {
+      await cancelShipment(env, row.shipmozo_order_id);
+    } catch (err: any) {
+      console.error(
+        `Order ${row.order_number} cancelled here but Shipmozo refused: ${err?.message}`
+      );
+    }
+  }
+
+  // The pieces go back on the shelf.
+  for (const item of row.order_items ?? []) {
+    const { error: stockErr } = await db.rpc('increment_stock', {
+      p_product_id: item.product_id,
+      p_quantity: item.quantity,
+    });
+    if (stockErr) {
+      console.error(`Could not restock ${item.product_id}: ${stockErr.message}`);
+    }
+  }
+
+  // Money that has been taken and is no longer owed is money to be sent back.
+  // It is recorded, not refunded — a refund leaves the shop's account, and that
+  // is the shop's decision to make, not this code's.
+  const refundStatus = row.payment_status === 'Paid' ? 'Due' : null;
+
+  const { error } = await db
+    .from('orders')
+    .update({
+      cancelled_at: new Date().toISOString(),
+      cancelled_by: by,
+      cancellation_reason: reason?.slice(0, 500) || null,
+      refund_status: refundStatus,
+    })
+    .eq('id', row.id);
+  if (error) console.error(`Could not record the cancellation: ${error.message}`);
+}
+
+/** Statuses a client may still cancel from. Once it is with the courier, no. */
+const CANCELLABLE = ['Placed', 'In Artisan Crafting', 'Quality Assured'];
+
+/**
+ * A client cancelling their own order.
+ *
+ * Deliberately narrower than the panel's power: only their own order, only
+ * before it has been handed to a courier. Past that point the parcel is moving
+ * and stopping it is a conversation, not a button.
+ */
+app.post('/api/orders/:orderNumber/cancel', requireAuth, async c => {
+  const user = currentUser(c)!;
+  const db = getDb(c.env);
+  const { reason } = await c.req.json<{ reason?: string }>().catch(() => ({ reason: undefined }));
+
+  const { data: row, error } = await db
+    .from('orders')
+    .select('*, order_items(*)')
+    .eq('order_number', c.req.param('orderNumber'))
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+
+  // Same silence as elsewhere: not yours and not there read alike.
+  if (!row || (user.role !== 'admin' && row.user_id !== user.sub)) {
+    return c.json({ error: 'Order not found' }, 404);
+  }
+
+  if (row.order_status === 'Cancelled') {
+    // Already done is not an error; the client only wants to see it cancelled.
+    return c.json(rowToOrder(row));
+  }
+
+  if (row.awb_number || !CANCELLABLE.includes(row.order_status)) {
+    throw new CartError(
+      'This order is already on its way, so it cannot be cancelled here. Write to us and we will help.'
+    );
+  }
+
+  const { data: updated, error: updateErr } = await db
+    .from('orders')
+    .update({ order_status: 'Cancelled' })
+    .eq('id', row.id)
+    .eq('order_status', row.order_status) // lost race = someone else moved it on
+    .select('*, order_items(*)')
+    .maybeSingle();
+  if (updateErr) throw new Error(updateErr.message);
+  if (!updated) {
+    throw new CartError('This order has just been updated. Reload the page and try again.');
+  }
+
+  await settleCancellation(c.env, db, updated, 'customer', reason);
+
+  const { data: fresh } = await db
+    .from('orders')
+    .select('*, order_items(*)')
+    .eq('id', row.id)
+    .maybeSingle();
+  return c.json(rowToOrder(fresh ?? updated));
+});
+
+/** Marks a refund as sent. The money moves in Razorpay; this records that it did. */
+app.put('/api/orders/:id/refund', requireAdmin, async c => {
+  const { refunded } = await c.req.json<{ refunded?: boolean }>();
+  const db = getDb(c.env);
+
+  const { data, error } = await db
+    .from('orders')
+    .update({ refund_status: refunded === false ? 'Due' : 'Refunded' })
+    .eq('id', c.req.param('id'))
+    .select('*, order_items(*)')
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return c.json({ error: 'Order not found' }, 404);
+  return c.json(rowToOrder(data));
+});
+
 app.put('/api/orders/:id/status', requireAdmin, async c => {
   const { status } = await c.req.json();
   const allowed = ['Placed', 'In Artisan Crafting', 'Quality Assured', 'Shipped via Express', 'Delivered', 'Cancelled'];
@@ -995,26 +1128,13 @@ app.put('/api/orders/:id/status', requireAdmin, async c => {
   // Cancelling puts the pieces back on the shelf — but only on the way into
   // Cancelled, so re-saving a cancelled order does not conjure stock.
   if (status === 'Cancelled' && before?.order_status !== 'Cancelled') {
-    // Tell the courier too, or a cancelled order is still collected and sent.
-    if (data.shipmozo_order_id && isShipmozoConfigured(c.env)) {
-      try {
-        await cancelShipment(c.env, data.shipmozo_order_id);
-      } catch (err: any) {
-        console.error(
-          `Order ${data.order_number} cancelled here but Shipmozo refused: ${err?.message}`
-        );
-      }
-    }
-
-    for (const item of data.order_items ?? []) {
-      const { error: stockErr } = await db.rpc('increment_stock', {
-        p_product_id: item.product_id,
-        p_quantity: item.quantity,
-      });
-      if (stockErr) {
-        console.error(`Could not restock ${item.product_id}: ${stockErr.message}`);
-      }
-    }
+    await settleCancellation(c.env, db, data, 'admin');
+    const { data: fresh } = await db
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('id', orderId)
+      .maybeSingle();
+    if (fresh) return c.json(rowToOrder(fresh));
   }
 
   return c.json(rowToOrder(data));
