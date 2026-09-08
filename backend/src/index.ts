@@ -1076,7 +1076,15 @@ app.post('/api/orders/:orderNumber/cancel', requireAuth, async c => {
     throw new CartError('This order has just been updated. Reload the page and try again.');
   }
 
-  await settleCancellation(c.env, db, updated, 'customer', reason);
+  // An administrator can reach this route too; the record should say who it
+  // actually was, not who the route was written for.
+  await settleCancellation(
+    c.env,
+    db,
+    updated,
+    user.role === 'admin' ? 'admin' : 'customer',
+    reason
+  );
 
   const { data: fresh } = await db
     .from('orders')
