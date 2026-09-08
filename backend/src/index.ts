@@ -606,10 +606,39 @@ interface OrderDraft {
  * rather than raising, because a second attempt at the same payment is the
  * system working, not a fault.
  */
+/**
+ * The next order number, counted out by the database.
+ *
+ * It used to be a random four-digit number on a unique column, which by about
+ * a hundred and twenty orders was a coin flip to collide — and a collision was
+ * read as a duplicate payment, so a paying client would have seen an error and
+ * had no order recorded. A counter cannot collide.
+ *
+ * If the sequence cannot be reached the order still has to be written, so it
+ * falls back to a timestamp-based number: ugly, but unique, and an ugly number
+ * is better than a lost sale.
+ */
+async function nextOrderNumber(db: ReturnType<typeof getDb>): Promise<string> {
+  const { data, error } = await db.rpc('next_order_number');
+  if (error || !data) {
+    console.error(`Order number sequence unavailable: ${error?.message}`);
+    return `AK${Date.now().toString().slice(-8)}`;
+  }
+  return String(data);
+}
+
+/** True only for the unique index on razorpay_payment_id — the one that means
+ *  "this payment is already an order", as opposed to any other clash. */
+function isDuplicatePayment(err: any): boolean {
+  if (err?.code !== '23505') return false;
+  const text = `${err.message ?? ''} ${err.details ?? ''} ${err.hint ?? ''}`;
+  return /razorpay_payment_id/.test(text);
+}
+
 async function writeOrder(env: Env, draft: OrderDraft) {
   const db = getDb(env);
   const id = `ord-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  const orderNumber = `ALK-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const orderNumber = await nextOrderNumber(db);
 
   const { data: orderRow, error: orderErr } = await db
     .from('orders')
@@ -637,9 +666,10 @@ async function writeOrder(env: Env, draft: OrderDraft) {
     .select('*')
     .single();
 
-  // 23505: the unique index on razorpay_payment_id rejected a second order for
-  // the same payment.
-  if (orderErr?.code === '23505') return 'duplicate' as const;
+  // Only a repeat of the same payment is a duplicate. Any other unique clash is
+  // a fault of ours and must be raised, not quietly reported to a paying client
+  // as "this payment has already been used".
+  if (isDuplicatePayment(orderErr)) return 'duplicate' as const;
   if (orderErr || !orderRow) throw new Error(orderErr?.message ?? 'Order insert failed');
 
   const { error: itemsErr } = await db.from('order_items').insert(
