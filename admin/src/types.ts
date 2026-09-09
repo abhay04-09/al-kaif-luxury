@@ -97,6 +97,10 @@ export interface Order {
   subtotalINR: number;
   taxINR: number;
   discountINR: number;
+  /** Delivery, as quoted when the order was placed. */
+  shippingINR?: number;
+  /** Charged on cash-on-delivery orders only. */
+  codFeeINR?: number;
   totalINR: number;
   totalUSD: number;
   paymentMethod: 'Razorpay' | 'Card' | 'UPI' | 'COD';
@@ -119,6 +123,14 @@ export interface Order {
   trackingStatus?: string | null;
   trackingUpdatedAt?: string | null;
   shippedAt?: string | null;
+}
+
+export interface ShippingSettings {
+  liveRates: boolean;
+  flatINR: number;
+  codFeeINR: number;
+  freeAboveINR: number;
+  markupINR: number;
 }
 
 export type ThemeMode = 'emerald' | 'obsidian' | 'pearl';

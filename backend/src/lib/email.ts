@@ -76,7 +76,14 @@ function orderHtml(order: Order, forShop: boolean): string {
         <tr><td style="padding:18px 28px 0">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;color:#a7a7a7">
             <tr><td style="padding:4px 0">GST (included)</td><td style="text-align:right;padding:4px 0">${inr(order.taxINR)}</td></tr>
-            <tr><td style="padding:4px 0">Shipping</td><td style="text-align:right;padding:4px 0;color:#dfc27c">Complimentary</td></tr>
+            <tr><td style="padding:4px 0">Shipping</td><td style="text-align:right;padding:4px 0;color:#dfc27c">${
+              order.shippingINR ? inr(order.shippingINR) : 'Complimentary'
+            }</td></tr>
+            ${
+              order.codFeeINR
+                ? `<tr><td style="padding:4px 0">Cash on delivery charge</td><td style="text-align:right;padding:4px 0">${inr(order.codFeeINR)}</td></tr>`
+                : ''
+            }
             <tr>
               <td style="padding:14px 0 0;border-top:1px solid #1d2b23;color:#c5a059;font-size:11px;letter-spacing:2px;text-transform:uppercase">Total</td>
               <td style="padding:14px 0 0;border-top:1px solid #1d2b23;text-align:right;color:#f5f2ee;font-size:22px">${inr(order.totalINR)}</td>

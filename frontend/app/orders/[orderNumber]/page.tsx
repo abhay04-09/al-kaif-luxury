@@ -13,6 +13,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { CancelOrder } from "@/components/orders/cancel-order";
 import { OrderTracking } from "@/components/orders/order-tracking";
 import { Footer } from "@/components/layout/footer";
+import { formatAddress } from "@/lib/address";
 import { API_BASE } from "@/lib/api";
 import { getSessionToken, requireUser } from "@/lib/session";
 
@@ -35,10 +36,12 @@ type Order = {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
-  shippingAddress: string;
+  shippingAddress: unknown;
   items: OrderItem[];
   subtotalINR: number;
   taxINR: number;
+  shippingINR?: number;
+  codFeeINR?: number;
   totalINR: number;
   paymentMethod: string;
   paymentStatus: string;
@@ -107,6 +110,10 @@ export default async function OrderPage({
   const order = await fetchOrder(orderNumber, token);
   if (!order) notFound();
 
+  // The total already carries delivery, so the goods line has to have it taken
+  // back out or the summary adds up to more than was charged.
+  const goodsINR =
+    order.totalINR - (order.shippingINR ?? 0) - (order.codFeeINR ?? 0);
   const isCancelled = (order.orderStatus ?? "").toLowerCase() === "cancelled";
   // The button is offered on exactly the terms the API will accept, so it is
   // never shown to a client who would then be refused.
@@ -284,7 +291,7 @@ export default async function OrderPage({
           <dl className="space-y-3 border-t border-graphite px-6 py-5 text-sm">
             <div className="flex justify-between text-porcelain/70">
               <dt>Subtotal</dt>
-              <dd>{inr(order.totalINR)}</dd>
+              <dd>{inr(goodsINR)}</dd>
             </div>
             <div className="flex justify-between text-porcelain/70">
               <dt>GST (included)</dt>
@@ -292,8 +299,16 @@ export default async function OrderPage({
             </div>
             <div className="flex justify-between text-porcelain/70">
               <dt>Shipping</dt>
-              <dd className="text-gold-light">Complimentary</dd>
+              <dd className={order.shippingINR ? undefined : "text-gold-light"}>
+                {order.shippingINR ? inr(order.shippingINR) : "Complimentary"}
+              </dd>
             </div>
+            {order.codFeeINR ? (
+              <div className="flex justify-between text-porcelain/70">
+                <dt>Cash on delivery charge</dt>
+                <dd>{inr(order.codFeeINR)}</dd>
+              </div>
+            ) : null}
             <div className="flex items-baseline justify-between border-t border-graphite pt-4">
               <dt className="text-[0.62rem] uppercase tracking-luxury text-gold-light">
                 Total paid
@@ -315,7 +330,9 @@ export default async function OrderPage({
             <p className="mt-5 text-sm leading-7 text-porcelain/72">
               {order.customerName}
               <br />
-              <span className="whitespace-pre-line">{order.shippingAddress}</span>
+              <span className="whitespace-pre-line">
+                {formatAddress(order.shippingAddress)}
+              </span>
               <br />
               {order.customerPhone}
             </p>

@@ -146,6 +146,8 @@ export function rowToOrder(r: any): Order {
     subtotalINR: Number(r.subtotal_inr),
     taxINR: Number(r.tax_inr),
     discountINR: Number(r.discount_inr),
+    shippingINR: Number(r.shipping_inr ?? 0),
+    codFeeINR: Number(r.cod_fee_inr ?? 0),
     totalINR: Number(r.total_inr),
     totalUSD: Number(r.total_usd),
     paymentMethod: r.payment_method,

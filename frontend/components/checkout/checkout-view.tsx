@@ -13,6 +13,7 @@ import {
   Truck
 } from "lucide-react";
 import { useSession } from "@/components/auth/session-provider";
+import { API_BASE } from "@/lib/api";
 import { getCartSummary } from "@/lib/cart";
 import { useCatalogue } from "@/lib/use-catalogue";
 import type { CartItem } from "@/types/product";
@@ -26,6 +27,14 @@ const RAZORPAY_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
 const GST_RATE = 0.03;
 
 type PaymentMethod = "Razorpay" | "COD";
+
+type ShippingQuote = {
+  shippingINR: number;
+  codFeeINR: number;
+  source: "courier" | "flat" | "free";
+  courier: string | null;
+  freeAboveINR: number;
+};
 
 declare global {
   interface Window {
@@ -74,6 +83,9 @@ export function CheckoutView() {
   const [giftWrapped, setGiftWrapped] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPlacing, setIsPlacing] = useState(false);
+  const [pincode, setPincode] = useState("");
+  const [quote, setQuote] = useState<ShippingQuote | null>(null);
+  const [quoting, setQuoting] = useState(false);
 
   useEffect(() => {
     try {
@@ -91,8 +103,57 @@ export function CheckoutView() {
   );
 
   const payableLines = summary.lines.filter((line) => line.product.inStock);
-  const total = summary.subtotal;
-  const tax = total - Math.round(total / (1 + GST_RATE));
+  const goods = summary.subtotal;
+  const tax = goods - Math.round(goods / (1 + GST_RATE));
+
+  const orderItems = useMemo(
+    () =>
+      payableLines.map((line) => ({
+        productId: line.product.id,
+        quantity: line.quantity,
+        selectedSize: line.size
+      })),
+    [payableLines]
+  );
+
+  // Delivery is priced by the maison, never by this page: the figure shown here
+  // is only what to display. The Worker prices the order again when it is
+  // placed, so nothing a browser sends can lower what is charged.
+  useEffect(() => {
+    if (orderItems.length === 0) return;
+    const digits = pincode.replace(/\D/g, "");
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setQuoting(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/shipping/quote`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            items: orderItems,
+            pincode: digits.length === 6 ? digits : undefined,
+            paymentMethod: method
+          })
+        });
+        if (res.ok) setQuote((await res.json()) as ShippingQuote);
+      } catch {
+        // An unreachable quote leaves the last one standing; the order is
+        // priced by the Worker regardless.
+      } finally {
+        setQuoting(false);
+      }
+    }, 400);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [orderItems, pincode, method]);
+
+  const shipping = quote?.shippingINR ?? 0;
+  const codFee = quote?.codFeeINR ?? 0;
+  const total = goods + shipping + codFee;
 
   async function placeOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -108,7 +169,13 @@ export function CheckoutView() {
       customerName: String(form.get("customerName") ?? "").trim(),
       customerEmail: String(form.get("customerEmail") ?? "").trim(),
       customerPhone: String(form.get("customerPhone") ?? "").trim(),
-      shippingAddress: String(form.get("shippingAddress") ?? "").trim(),
+      // Sent as parts, not one line: the courier needs a pin code it can read,
+      // and guessing one out of free text is how parcels go to the wrong city.
+      shippingAddress: {
+        addressLine1: String(form.get("shippingAddress") ?? "").trim(),
+        pincode: String(form.get("pincode") ?? "").replace(/\D/g, ""),
+        country: "India"
+      },
       notes: String(form.get("notes") ?? "").trim() || undefined,
       giftWrapped
     };
@@ -327,9 +394,40 @@ export function CheckoutView() {
               defaultValue={user?.address ?? ""}
               id="shippingAddress"
               name="shippingAddress"
-              placeholder="Flat, building, street, city, state, PIN"
+              placeholder="Flat, building, street, city, state"
               required
             />
+          </div>
+
+          {/* Delivery is priced by destination, so the pin code is asked for on
+              its own rather than hunted for inside the address. */}
+          <div className="mt-5 sm:max-w-56">
+            <label className={labelClass} htmlFor="pincode">
+              PIN code
+            </label>
+            <input
+              autoComplete="postal-code"
+              className={fieldClass}
+              id="pincode"
+              inputMode="numeric"
+              maxLength={6}
+              name="pincode"
+              onChange={(event) =>
+                setPincode(event.target.value.replace(/\D/g, "").slice(0, 6))
+              }
+              placeholder="396191"
+              required
+              value={pincode}
+            />
+            <p className="mt-2 text-[0.68rem] leading-5 text-mist">
+              {quoting
+                ? "Checking delivery to this pin code…"
+                : quote?.source === "courier"
+                  ? `Delivered by ${quote.courier ?? "our courier"}.`
+                  : pincode.length === 6
+                    ? "Enter your pin code for an exact delivery charge."
+                    : "Six digits."}
+            </p>
           </div>
 
           <div className="mt-5">
@@ -467,16 +565,38 @@ export function CheckoutView() {
           <dl className="space-y-3 border-t border-graphite px-6 py-5 text-sm">
             <div className="flex justify-between text-porcelain/70">
               <dt>Subtotal</dt>
-              <dd>{inr(total)}</dd>
+              <dd>{inr(goods)}</dd>
             </div>
             <div className="flex justify-between text-porcelain/70">
               <dt>GST ({Math.round(GST_RATE * 100)}%, included)</dt>
               <dd>{inr(tax)}</dd>
             </div>
             <div className="flex justify-between text-porcelain/70">
-              <dt>Shipping</dt>
-              <dd className="text-gold-light">Complimentary</dd>
+              <dt>
+                Shipping
+                {quote?.source === "courier" && quote.courier ? (
+                  <span className="ml-2 text-xs text-mist">{quote.courier}</span>
+                ) : null}
+              </dt>
+              <dd className={shipping === 0 ? "text-gold-light" : undefined}>
+                {quoting && !quote
+                  ? "…"
+                  : shipping === 0
+                    ? "Complimentary"
+                    : inr(shipping)}
+              </dd>
             </div>
+            {codFee > 0 ? (
+              <div className="flex justify-between text-porcelain/70">
+                <dt>Cash on delivery charge</dt>
+                <dd>{inr(codFee)}</dd>
+              </div>
+            ) : null}
+            {quote && quote.freeAboveINR > 0 && goods < quote.freeAboveINR ? (
+              <p className="text-xs text-gold-light">
+                Add {inr(quote.freeAboveINR - goods)} more for free delivery.
+              </p>
+            ) : null}
             <div className="flex items-baseline justify-between border-t border-graphite pt-4">
               <dt className="text-[0.62rem] uppercase tracking-luxury text-gold-light">
                 Total

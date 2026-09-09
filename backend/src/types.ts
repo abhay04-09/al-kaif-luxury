@@ -100,6 +100,10 @@ export interface Order {
   subtotalINR: number;
   taxINR: number;
   discountINR: number;
+  /** Delivery, as quoted when the order was placed. */
+  shippingINR?: number;
+  /** Charged on cash-on-delivery orders only. */
+  codFeeINR?: number;
   totalINR: number;
   totalUSD: number;
   paymentMethod: 'Razorpay' | 'Card' | 'UPI' | 'COD';

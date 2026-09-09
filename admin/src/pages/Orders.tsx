@@ -283,7 +283,19 @@ export const OrdersPage: React.FC = () => {
                 Ship to: {(o.shippingAddress as any)?.addressLine1}, {(o.shippingAddress as any)?.city}{' '}
                 {(o.shippingAddress as any)?.pincode}
               </span>
-              <span className="font-mono text-[#FFD700]">Total: ₹{o.totalINR.toLocaleString('en-IN')}</span>
+              <span className="font-mono text-[#FFD700]">
+                {(o.shippingINR ?? 0) > 0 && (
+                  <span className="text-[10px] text-[#A7A7A7] mr-2">
+                    + ₹{(o.shippingINR ?? 0).toLocaleString('en-IN')} shipping
+                  </span>
+                )}
+                {(o.codFeeINR ?? 0) > 0 && (
+                  <span className="text-[10px] text-[#A7A7A7] mr-2">
+                    + ₹{(o.codFeeINR ?? 0).toLocaleString('en-IN')} COD
+                  </span>
+                )}
+                Total: ₹{o.totalINR.toLocaleString('en-IN')}
+              </span>
             </div>
 
             {o.orderStatus === 'Cancelled' ? (

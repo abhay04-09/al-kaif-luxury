@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/navbar";
+import { formatAddress } from "@/lib/address";
 import { API_BASE } from "@/lib/api";
 import { getSessionToken, requireUser } from "@/lib/session";
 
@@ -25,10 +26,12 @@ type Order = {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
-  shippingAddress: string;
+  shippingAddress: unknown;
   items: OrderItem[];
   subtotalINR: number;
   taxINR: number;
+  shippingINR?: number;
+  codFeeINR?: number;
   totalINR: number;
   paymentMethod: string;
   paymentStatus: string;
@@ -152,7 +155,7 @@ function OrderCard({ order, isAdmin }: { order: Order; isAdmin: boolean }) {
             <p>{order.customerPhone}</p>
             {isAdmin ? <p>{order.customerEmail}</p> : null}
             <p className="mt-2 whitespace-pre-line">
-              {order.shippingAddress}
+              {formatAddress(order.shippingAddress)}
             </p>
             {order.giftWrapped ? (
               <p className="mt-2 text-gold-light">Gift wrapped</p>
@@ -168,6 +171,18 @@ function OrderCard({ order, isAdmin }: { order: Order; isAdmin: boolean }) {
               <dt>Tax</dt>
               <dd>{inr(order.taxINR)}</dd>
             </div>
+            {order.shippingINR ? (
+              <div className="flex justify-between gap-8 text-porcelain/70">
+                <dt>Shipping</dt>
+                <dd>{inr(order.shippingINR)}</dd>
+              </div>
+            ) : null}
+            {order.codFeeINR ? (
+              <div className="flex justify-between gap-8 text-porcelain/70">
+                <dt>COD charge</dt>
+                <dd>{inr(order.codFeeINR)}</dd>
+              </div>
+            ) : null}
             <div className="flex justify-between gap-8 border-t border-graphite pt-2 font-serif text-lg text-gold-light">
               <dt>Total</dt>
               <dd>{inr(order.totalINR)}</dd>

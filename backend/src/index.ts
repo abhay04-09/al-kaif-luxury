@@ -11,6 +11,8 @@ import {
   verifyWebhookSignature,
 } from './lib/razorpay';
 import { sendOrderEmails } from './lib/email';
+import { getShippingSettings, saveShippingSettings } from './lib/settings';
+import { quoteShipping } from './lib/shipping';
 import {
   cancelShipment,
   getQuotes,
@@ -546,6 +548,109 @@ async function priceItems(env: Env, items: IncomingItem[]) {
   };
 }
 
+/** Pulls the pin code out of whichever shape the address arrived in. */
+function pincodeOf(address: unknown): string | null {
+  if (!address) return null;
+  if (typeof address === 'object') {
+    const value = String((address as Record<string, unknown>).pincode ?? '').replace(/\D/g, '');
+    if (/^\d{6}$/.test(value)) return value;
+  }
+  // Older checkouts sent one line of text the client typed.
+  const found = String(address).match(/\b(\d{6})\b/);
+  return found ? found[1] : null;
+}
+
+/**
+ * The goods, plus what it costs to get them there.
+ *
+ * Delivery is priced here, on the server, and never taken from the browser —
+ * a shipping charge the client can edit is a shipping charge the client will
+ * set to zero.
+ */
+async function priceOrder(
+  env: Env,
+  items: IncomingItem[],
+  options: { address?: unknown; pincode?: string | null; cod: boolean }
+) {
+  const priced = await priceItems(env, items);
+  const pieces = priced.lines.reduce((n, l) => n + l.quantity, 0);
+
+  const quote = await quoteShipping(env, {
+    pincode: options.pincode ?? pincodeOf(options.address),
+    cod: options.cod,
+    goodsINR: priced.totalINR,
+    pieces,
+  });
+
+  return {
+    ...priced,
+    shippingINR: quote.shippingINR,
+    codFeeINR: quote.codFeeINR,
+    shippingSource: quote.source,
+    courier: quote.courier,
+    /** What the client actually pays. */
+    grandTotalINR: priced.totalINR + quote.shippingINR + quote.codFeeINR,
+  };
+}
+
+/**
+ * What delivery will cost, asked before anything is bought.
+ *
+ * Public, because the checkout has to show a total before a client signs in.
+ * It reveals only a price, and prices are on the shelf already.
+ */
+app.post('/api/shipping/quote', async c => {
+  const body = await c.req.json<{
+    items?: IncomingItem[];
+    pincode?: string;
+    paymentMethod?: string;
+    goodsINR?: number;
+  }>().catch(() => ({} as any));
+
+  const cod = body.paymentMethod === 'COD';
+  const settings = await getShippingSettings(c.env);
+
+  // The cart is priced here when it is given, so the free-delivery threshold
+  // cannot be reached by a browser claiming a larger basket than it has.
+  let goodsINR = 0;
+  let pieces = 1;
+  if (Array.isArray(body.items) && body.items.length > 0) {
+    try {
+      const priced = await priceItems(c.env, body.items);
+      goodsINR = priced.totalINR;
+      pieces = priced.lines.reduce((n, l) => n + l.quantity, 0);
+    } catch {
+      // An unpriceable cart still deserves a delivery estimate.
+      goodsINR = 0;
+    }
+  }
+
+  const quote = await quoteShipping(c.env, {
+    pincode: body.pincode,
+    cod,
+    goodsINR,
+    pieces,
+    settings,
+  });
+
+  return c.json({
+    shippingINR: quote.shippingINR,
+    codFeeINR: quote.codFeeINR,
+    source: quote.source,
+    courier: quote.courier ?? null,
+    freeAboveINR: settings.freeAboveINR,
+  });
+});
+
+app.get('/api/settings/shipping', requireAdmin, async c =>
+  c.json(await getShippingSettings(c.env))
+);
+
+app.put('/api/settings/shipping', requireAdmin, async c => {
+  const body = await c.req.json();
+  return c.json(await saveShippingSettings(c.env, body));
+});
+
 app.get('/api/orders', optionalAuth, async c => {
   const user = currentUser(c);
   if (!user) return c.json({ error: 'Please sign in first' }, 401);
@@ -584,6 +689,9 @@ type PricedCart = Awaited<ReturnType<typeof priceItems>>;
 
 interface OrderDraft {
   priced: PricedCart;
+  /** What the client was quoted, not what the courier would say now. */
+  shippingINR?: number;
+  codFeeINR?: number;
   userId: string | null;
   customerName: string;
   customerEmail: string;
@@ -639,6 +747,8 @@ async function writeOrder(env: Env, draft: OrderDraft) {
   const db = getDb(env);
   const id = `ord-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   const orderNumber = await nextOrderNumber(db);
+  const shippingINR = Math.max(0, Math.round(Number(draft.shippingINR) || 0));
+  const codFeeINR = Math.max(0, Math.round(Number(draft.codFeeINR) || 0));
 
   const { data: orderRow, error: orderErr } = await db
     .from('orders')
@@ -653,7 +763,10 @@ async function writeOrder(env: Env, draft: OrderDraft) {
       subtotal_inr: draft.priced.subtotalINR,
       tax_inr: draft.priced.taxINR,
       discount_inr: 0,
-      total_inr: draft.priced.totalINR,
+      shipping_inr: shippingINR,
+      cod_fee_inr: codFeeINR,
+      // What was actually charged: the goods, the delivery, and the cash fee.
+      total_inr: draft.priced.totalINR + shippingINR + codFeeINR,
       total_usd: draft.priced.totalUSD,
       payment_method: draft.paymentMethod,
       payment_status: draft.paymentStatus,
@@ -733,6 +846,39 @@ app.post('/api/orders', optionalAuth, async c => {
   const priced = await priceItems(c.env, items);
   const user = currentUser(c);
 
+  // What delivery costs on this order. For a card payment the figure is taken
+  // from the parked checkout rather than asked again: courier rates move, and a
+  // fresh quote a rupee different from the one the client was charged would see
+  // their own payment rejected as a mismatch.
+  let shippingINR = 0;
+  let codFeeINR = 0;
+  const parkedId = body.payment?.razorpay_order_id;
+  const parked = parkedId
+    ? (
+        await getDb(c.env)
+          .from('pending_checkouts')
+          .select('shipping_inr, cod_fee_inr')
+          .eq('razorpay_order_id', parkedId)
+          .maybeSingle()
+      ).data
+    : null;
+
+  if (parked) {
+    shippingINR = Math.round(Number(parked.shipping_inr) || 0);
+    codFeeINR = Math.round(Number(parked.cod_fee_inr) || 0);
+  } else {
+    const quote = await quoteShipping(c.env, {
+      pincode: pincodeOf(shippingAddress),
+      cod: paymentMethod === 'COD',
+      goodsINR: priced.totalINR,
+      pieces: priced.lines.reduce((n, l) => n + l.quantity, 0),
+    });
+    shippingINR = quote.shippingINR;
+    codFeeINR = quote.codFeeINR;
+  }
+
+  const payableINR = priced.totalINR + shippingINR + codFeeINR;
+
   let paymentStatus: 'Pending' | 'Paid' = 'Pending';
   let razorpayOrderId: string | null = null;
   let razorpayPaymentId: string | null = null;
@@ -749,7 +895,7 @@ app.post('/api/orders', optionalAuth, async c => {
     // cart, and not that it has not already been spent on another order. Both
     // have to be checked against Razorpay and against our own orders table.
     const payment = await fetchRazorpayPayment(c.env, razorpay_payment_id);
-    const expectedPaise = Math.round(priced.totalINR * 100);
+    const expectedPaise = Math.round(payableINR * 100);
 
     const mismatch = !payment
       ? 'no such payment at Razorpay'
@@ -797,6 +943,8 @@ app.post('/api/orders', optionalAuth, async c => {
 
   const written = await writeOrder(c.env, {
     priced,
+    shippingINR,
+    codFeeINR,
     userId: user?.sub ?? null,
     customerName,
     customerEmail: customerEmail ?? user?.email ?? '',
@@ -1183,8 +1331,11 @@ app.put('/api/orders/:id/status', requireAdmin, async c => {
 app.post('/api/payments/razorpay/order', optionalAuth, async c => {
   const body = await c.req.json();
   const { items, shippingAddress, customerName, customerEmail, customerPhone, giftWrapped, notes } = body;
-  const priced = await priceItems(c.env, items);
-  const rzpOrder = await createRazorpayOrder(c.env, priced.totalINR, `rcpt_${Date.now()}`);
+  // Razorpay is asked for the whole amount, delivery included — a payment
+  // window showing less than the order costs is a shortfall nobody can fix
+  // afterwards.
+  const priced = await priceOrder(c.env, items, { address: shippingAddress, cod: false });
+  const rzpOrder = await createRazorpayOrder(c.env, priced.grandTotalINR, `rcpt_${Date.now()}`);
   const user = currentUser(c);
 
   // A checkout that was opened and abandoned leaves its basket parked forever.
@@ -1206,6 +1357,8 @@ app.post('/api/payments/razorpay/order', optionalAuth, async c => {
       items,
       gift_wrapped: !!giftWrapped,
       notes: notes ?? null,
+      shipping_inr: priced.shippingINR,
+      cod_fee_inr: priced.codFeeINR,
     });
     // Never block the payment over this — losing recovery is far better than
     // refusing a client who is ready to pay.
@@ -1217,7 +1370,8 @@ app.post('/api/payments/razorpay/order', optionalAuth, async c => {
     amount: rzpOrder.amount, // paise
     currency: rzpOrder.currency,
     keyId: c.env.RAZORPAY_KEY_ID, // public key id — safe to expose
-    totalINR: priced.totalINR,
+    totalINR: priced.grandTotalINR,
+    shippingINR: priced.shippingINR,
   });
 });
 
@@ -1273,7 +1427,11 @@ app.post('/api/payments/razorpay/webhook', async c => {
   }
 
   const priced = await priceItems(c.env, parked.items);
-  const expectedPaise = Math.round(priced.totalINR * 100);
+  // The charges the client was quoted when the payment window opened, not what
+  // a courier would say now.
+  const shippingINR = Math.round(Number(parked.shipping_inr) || 0);
+  const codFeeINR = Math.round(Number(parked.cod_fee_inr) || 0);
+  const expectedPaise = Math.round((priced.totalINR + shippingINR + codFeeINR) * 100);
   if (payment.amount !== expectedPaise || payment.currency !== 'INR') {
     console.error(
       `Captured payment ${payment.id} is ${payment.amount} ${payment.currency}, parked basket is ${expectedPaise} INR — not recording`
@@ -1283,6 +1441,8 @@ app.post('/api/payments/razorpay/webhook', async c => {
 
   const written = await writeOrder(c.env, {
     priced,
+    shippingINR,
+    codFeeINR,
     userId: parked.user_id,
     customerName: parked.customer_name,
     customerEmail: parked.customer_email,
