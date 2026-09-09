@@ -13,6 +13,7 @@ import {
   Truck
 } from "lucide-react";
 import { useSession } from "@/components/auth/session-provider";
+import { UseMyLocation } from "@/components/location/use-my-location";
 import { API_BASE } from "@/lib/api";
 import { getCartSummary } from "@/lib/cart";
 import { useCatalogue } from "@/lib/use-catalogue";
@@ -83,7 +84,14 @@ export function CheckoutView() {
   const [giftWrapped, setGiftWrapped] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPlacing, setIsPlacing] = useState(false);
-  const [pincode, setPincode] = useState("");
+  const [street, setStreet] = useState(user?.address ?? "");
+  const [city, setCity] = useState("");
+  const [addressState, setAddressState] = useState("");
+  // A saved address is one line of text, so the only part that can be read back
+  // out of it reliably is the pin code.
+  const [pincode, setPincode] = useState(
+    (user?.address ?? "").match(/\b(\d{6})\b/)?.[1] ?? ""
+  );
   const [quote, setQuote] = useState<ShippingQuote | null>(null);
   const [quoting, setQuoting] = useState(false);
 
@@ -96,6 +104,17 @@ export function CheckoutView() {
     }
     setCartReady(true);
   }, []);
+
+  // The session arrives after the first render, so a saved address has to be
+  // filled in when it lands — but only into fields the client has not touched.
+  const savedAddress = user?.address ?? "";
+  useEffect(() => {
+    if (!savedAddress) return;
+    setStreet((current) => current || savedAddress);
+    setPincode(
+      (current) => current || savedAddress.match(/\b(\d{6})\b/)?.[1] || ""
+    );
+  }, [savedAddress]);
 
   const summary = useMemo(
     () => getCartSummary(items, catalogue),
@@ -182,6 +201,8 @@ export function CheckoutView() {
       // and guessing one out of free text is how parcels go to the wrong city.
       shippingAddress: {
         addressLine1: String(form.get("shippingAddress") ?? "").trim(),
+        city: String(form.get("city") ?? "").trim(),
+        state: String(form.get("state") ?? "").trim(),
         pincode: String(form.get("pincode") ?? "").replace(/\D/g, ""),
         country: "India"
       },
@@ -393,6 +414,28 @@ export function CheckoutView() {
 
         <section>
           <StepHeading step="02" title="Delivery" />
+          {/* A convenience, never a requirement. Everything below stays typed
+              by hand, and a client who declines loses nothing. */}
+          <UseMyLocation
+            className="mb-5"
+            onResolved={(location) => {
+              // The street is appended rather than substituted: whatever the
+              // client has already typed is likely their flat and building,
+              // which is exactly the part a satellite cannot know.
+              setStreet((current) => {
+                const typed = current.trim();
+                if (!location.street) return typed;
+                return typed && !typed.includes(location.street)
+                  ? `${typed}, ${location.street}`
+                  : location.street;
+              });
+              if (location.city) setCity(location.city);
+              if (location.state) setAddressState(location.state);
+              if (location.pincode) setPincode(location.pincode);
+              document.getElementById("shippingAddress")?.focus();
+            }}
+          />
+
           <div>
             <label className={labelClass} htmlFor="shippingAddress">
               Shipping address
@@ -400,12 +443,46 @@ export function CheckoutView() {
             <textarea
               autoComplete="street-address"
               className={`${fieldClass} min-h-32 resize-y py-3`}
-              defaultValue={user?.address ?? ""}
               id="shippingAddress"
               name="shippingAddress"
-              placeholder="Flat, building, street, city, state"
+              onChange={(event) => setStreet(event.target.value)}
+              placeholder="Flat, building, street"
               required
+              value={street}
             />
+          </div>
+
+          <div className="mt-5 grid gap-5 sm:grid-cols-2">
+            <div>
+              <label className={labelClass} htmlFor="city">
+                City
+              </label>
+              <input
+                autoComplete="address-level2"
+                className={fieldClass}
+                id="city"
+                name="city"
+                onChange={(event) => setCity(event.target.value)}
+                placeholder="Vapi"
+                required
+                value={city}
+              />
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="state">
+                State
+              </label>
+              <input
+                autoComplete="address-level1"
+                className={fieldClass}
+                id="state"
+                name="state"
+                onChange={(event) => setAddressState(event.target.value)}
+                placeholder="Gujarat"
+                required
+                value={addressState}
+              />
+            </div>
           </div>
 
           {/* Delivery is priced by destination, so the pin code is asked for on

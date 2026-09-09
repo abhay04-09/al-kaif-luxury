@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Check, Loader2, Pencil } from "lucide-react";
 import { useSession } from "@/components/auth/session-provider";
+import { UseMyLocation } from "@/components/location/use-my-location";
 
 const fieldClass =
   "min-h-12 w-full border border-white/10 bg-obsidian px-4 text-porcelain outline-none transition placeholder:text-mist/50 focus:border-gold-light";
@@ -26,6 +27,7 @@ export function AccountDetailsForm({
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [addressText, setAddressText] = useState(address);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -151,13 +153,38 @@ export function AccountDetailsForm({
           <label className={labelClass} htmlFor="account-address">
             Delivery address
           </label>
+          {/* Filling this once well pays off on every future order, since
+              checkout reads it back. Manual entry stays the way in. */}
+          <UseMyLocation
+            className="mb-3"
+            onResolved={(location) => {
+              const found = [
+                location.street,
+                location.city,
+                location.state,
+                location.pincode
+              ]
+                .filter(Boolean)
+                .join(", ");
+              // Appended, not substituted: what the client has already typed is
+              // most likely the flat and building, the one part a satellite fix
+              // can never supply.
+              setAddressText((current) => {
+                const typed = current.trim();
+                return typed ? `${typed}, ${found}` : found;
+              });
+              document.getElementById("account-address")?.focus();
+            }}
+          />
+
           <textarea
             autoComplete="street-address"
             className={`${fieldClass} min-h-32 resize-y py-3`}
-            defaultValue={address}
             id="account-address"
             name="address"
+            onChange={(event) => setAddressText(event.target.value)}
             placeholder={"Flat, building, street\nArea, landmark\nCity, State, PIN code"}
+            value={addressText}
           />
           <p className="mt-2 text-xs text-mist">
             Saved for next time. You can still change it at checkout.
