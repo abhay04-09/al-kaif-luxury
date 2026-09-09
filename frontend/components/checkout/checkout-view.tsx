@@ -34,6 +34,7 @@ type ShippingQuote = {
   codFeeINR: number;
   source: "courier" | "flat" | "free";
   courier: string | null;
+  estimatedDelivery: string | null;
   freeAboveINR: number;
 };
 

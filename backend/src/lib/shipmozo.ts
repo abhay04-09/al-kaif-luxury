@@ -218,6 +218,10 @@ export async function schedulePickup(env: Env, shipmozoOrderId: string): Promise
 export interface CourierQuote {
   courier: string;
   totalINR: number;
+  /** e.g. "2 Days", as the courier states it. */
+  estimatedDelivery?: string;
+  /** What the courier itself adds for collecting cash, when this is a COD quote. */
+  codChargeINR?: number;
 }
 
 /**
@@ -234,6 +238,7 @@ export async function getQuotes(
   pickupPincode: string,
   options: { weightGrams?: number; orderAmountINR?: number; cod?: boolean } = {}
 ): Promise<CourierQuote[]> {
+  const amount = Math.max(1, Math.round(options.orderAmountINR ?? 1));
   const reply = await call(env, 'rate-calculator', {
     method: 'POST',
     body: {
@@ -246,7 +251,10 @@ export async function getQuotes(
       weight: String(Math.max(50, Math.round(options.weightGrams ?? 200))),
       // Shipmozo rejects a zero declared value outright, and the figure only
       // affects insurance — a nominal rupee is enough to ask "who delivers here".
-      order_amount: String(Math.max(1, Math.round(options.orderAmountINR ?? 1))),
+      order_amount: String(amount),
+      // Refused outright without this on a COD quote: "the cod amount field is
+      // required when payment type is COD".
+      ...(options.cod ? { cod_amount: String(amount) } : {}),
       dimensions: [{ no_of_box: '1', length: '12', width: '12', height: '6' }],
     },
   });
@@ -256,6 +264,14 @@ export async function getQuotes(
     .map(r => ({
       courier: String(r.courier_name ?? r.name ?? 'Courier'),
       totalINR: Number(r.total_charges ?? r.rate ?? r.freight_charge ?? 0),
+      estimatedDelivery: r.estimated_delivery ? String(r.estimated_delivery) : undefined,
+      // The courier's own charge for collecting cash, already inside
+      // total_charges — worth surfacing so it is not billed for twice.
+      codChargeINR: Number(
+        (r.overhead_charges_details ?? []).find((d: any) =>
+          /cod/i.test(String(d?.name ?? ''))
+        )?.value ?? 0
+      ),
     }))
     .filter(q => q.totalINR > 0)
     .sort((a, b) => a.totalINR - b.totalINR);

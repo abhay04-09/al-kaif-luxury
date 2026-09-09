@@ -638,6 +638,7 @@ app.post('/api/shipping/quote', async c => {
     codFeeINR: quote.codFeeINR,
     source: quote.source,
     courier: quote.courier ?? null,
+    estimatedDelivery: quote.estimatedDelivery ?? null,
     freeAboveINR: settings.freeAboveINR,
   });
 });

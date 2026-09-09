@@ -23,6 +23,8 @@ export interface ShippingQuote {
   /** Where the number came from, so a surprising charge can be explained. */
   source: 'courier' | 'flat' | 'free';
   courier?: string;
+  /** e.g. "2 Days", straight from the courier. */
+  estimatedDelivery?: string;
 }
 
 /** Rejects rather than hanging, so a slow courier cannot hold up a checkout. */
@@ -80,6 +82,7 @@ export async function quoteShipping(
           codFeeINR,
           source: 'courier',
           courier: cheapest.courier,
+          estimatedDelivery: cheapest.estimatedDelivery,
         };
       }
     } catch (err: any) {
