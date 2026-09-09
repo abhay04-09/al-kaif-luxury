@@ -25,7 +25,7 @@ export interface ShippingSettings {
 export const SHIPPING_DEFAULTS: ShippingSettings = {
   liveRates: true,
   flatINR: 79,
-  codFeeINR: 49,
+  codFeeINR: 29,
   freeAboveINR: 0,
   markupINR: 0,
 };

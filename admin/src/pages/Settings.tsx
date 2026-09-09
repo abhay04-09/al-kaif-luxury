@@ -7,7 +7,7 @@ import { ShippingSettings } from '../types';
 const DEFAULTS: ShippingSettings = {
   liveRates: true,
   flatINR: 79,
-  codFeeINR: 49,
+  codFeeINR: 29,
   freeAboveINR: 0,
   markupINR: 0,
 };
