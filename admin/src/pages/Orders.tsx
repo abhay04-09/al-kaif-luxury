@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Ban, IndianRupee, Search, ShoppingBag, X } from 'lucide-react';
+import { Ban, Crosshair, IndianRupee, MapPin, Search, ShoppingBag, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { apiJson } from '../api';
 import { ExportButton } from '../components/ExportButton';
@@ -17,6 +17,29 @@ const STATUS_BADGES: Record<string, string> = {
   'Delivered': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
   'Cancelled': 'bg-red-500/10 text-red-400 border-red-500/20',
 };
+
+/** The address as a courier would need to read it, whatever shape it is in. */
+function fullAddress(value: Order['shippingAddress']): string {
+  if (!value) return '—';
+  if (typeof value === 'string') return value;
+  const a = value as unknown as Record<string, string>;
+  return (
+    [a.addressLine1, a.addressLine2, a.city, a.state, a.pincode, a.country]
+      .filter(Boolean)
+      .join(', ') || '—'
+  );
+}
+
+/** Coordinates the customer chose to share, if they used the location button. */
+function geoOf(
+  value: Order['shippingAddress']
+): { latitude: number; longitude: number; accuracy: number } | null {
+  if (!value || typeof value !== 'object') return null;
+  const geo = (value as any).geo;
+  return geo && Number.isFinite(geo.latitude) && Number.isFinite(geo.longitude)
+    ? geo
+    : null;
+}
 
 function Skeleton({ className }: { className?: string }) {
   return <div className={`animate-pulse bg-[#1a2a1f] rounded ${className}`} />;
@@ -279,9 +302,23 @@ export const OrdersPage: React.FC = () => {
             </div>
 
             <div className="pt-3 border-t border-[#2A2A2a] flex flex-wrap justify-between gap-2 text-[#A7A7A7]">
-              <span>
-                Ship to: {(o.shippingAddress as any)?.addressLine1}, {(o.shippingAddress as any)?.city}{' '}
-                {(o.shippingAddress as any)?.pincode}
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <MapPin className="w-3 h-3 text-[#C5A059] shrink-0" />
+                <span className="text-[#F5F2EE]">{fullAddress(o.shippingAddress)}</span>
+                {/* Shared by the customer at checkout, and only then. It is how
+                    a courier finds a house that has never had a number. */}
+                {geoOf(o.shippingAddress) && (
+                  <a
+                    href={`https://www.google.com/maps?q=${geoOf(o.shippingAddress)!.latitude},${geoOf(o.shippingAddress)!.longitude}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={`Shared by the customer, accurate to about ${geoOf(o.shippingAddress)!.accuracy}m`}
+                    className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-[#DFC27C] border border-[#C5A059]/40 px-1.5 py-0.5 rounded-xs hover:border-[#C5A059]"
+                  >
+                    <Crosshair className="w-2.5 h-2.5" />
+                    Pinned location
+                  </a>
+                )}
               </span>
               <span className="font-mono text-[#FFD700]">
                 {(o.shippingINR ?? 0) > 0 && (

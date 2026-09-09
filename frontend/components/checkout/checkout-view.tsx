@@ -94,6 +94,15 @@ export function CheckoutView() {
   );
   const [quote, setQuote] = useState<ShippingQuote | null>(null);
   const [quoting, setQuoting] = useState(false);
+  // What the location button filled in, kept so the client cannot submit an
+  // address that is only what a satellite guessed.
+  const [autofilled, setAutofilled] = useState("");
+  const [geo, setGeo] = useState<{
+    latitude: number;
+    longitude: number;
+    accuracy: number;
+    at: string;
+  } | null>(null);
 
   useEffect(() => {
     try {
@@ -192,6 +201,24 @@ export function CheckoutView() {
       return;
     }
 
+    // A satellite fix finds a street, never a doorway. If the address is still
+    // only what the button filled in, the parcel has nowhere to be handed over,
+    // so this is refused here rather than discovered by a courier.
+    const typedAddress = street.trim();
+    const beyondAutofill = autofilled
+      ? typedAddress.replace(autofilled.trim(), "").replace(/[,\s]+/g, " ").trim()
+      : typedAddress;
+
+    if (beyondAutofill.length < 4) {
+      setError(
+        autofilled
+          ? "Please add your flat or house number and building name — we only found your street."
+          : "Please enter your full address, including your flat or house number."
+      );
+      document.getElementById("shippingAddress")?.focus();
+      return;
+    }
+
     const form = new FormData(event.currentTarget);
     const details = {
       customerName: String(form.get("customerName") ?? "").trim(),
@@ -204,7 +231,10 @@ export function CheckoutView() {
         city: String(form.get("city") ?? "").trim(),
         state: String(form.get("state") ?? "").trim(),
         pincode: String(form.get("pincode") ?? "").replace(/\D/g, ""),
-        country: "India"
+        country: "India",
+        // Recorded only when the client chose to share it, and only ever shown
+        // to the maison — it is how a courier finds a house with no number.
+        ...(geo ? { geo } : {})
       },
       notes: String(form.get("notes") ?? "").trim() || undefined,
       giftWrapped
@@ -432,6 +462,13 @@ export function CheckoutView() {
               if (location.city) setCity(location.city);
               if (location.state) setAddressState(location.state);
               if (location.pincode) setPincode(location.pincode);
+              setAutofilled(location.street);
+              setGeo({
+                latitude: location.latitude,
+                longitude: location.longitude,
+                accuracy: location.accuracy,
+                at: new Date().toISOString()
+              });
               document.getElementById("shippingAddress")?.focus();
             }}
           />

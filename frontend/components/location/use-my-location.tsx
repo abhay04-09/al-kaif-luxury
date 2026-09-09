@@ -9,6 +9,11 @@ export type ResolvedLocation = {
   state: string;
   pincode: string;
   displayName: string;
+  /** Where the client actually was. Only ever set by pressing the button. */
+  latitude: number;
+  longitude: number;
+  /** Metres of uncertainty the browser reported. */
+  accuracy: number;
 };
 
 type Phase = "idle" | "locating" | "looking-up" | "done" | "error";
@@ -109,7 +114,12 @@ export function UseMyLocation({
         return;
       }
 
-      const resolved = data as ResolvedLocation;
+      const resolved: ResolvedLocation = {
+        ...(data as Omit<ResolvedLocation, 'latitude' | 'longitude' | 'accuracy'>),
+        latitude,
+        longitude,
+        accuracy: Math.round(fix.coords.accuracy ?? 0)
+      };
       if (!resolved.street && !resolved.city) {
         setPhase("error");
         setMessage(

@@ -24,6 +24,13 @@ export const orderColumns: Column<Order>[] = [
   { header: 'Phone', value: o => o.customerPhone },
   { header: 'Delivery address', value: o => address(o.shippingAddress) },
   {
+    header: 'Shared location',
+    value: o => {
+      const geo = (o.shippingAddress as any)?.geo;
+      return geo?.latitude && geo?.longitude ? `${geo.latitude}, ${geo.longitude}` : '';
+    }
+  },
+  {
     header: 'Items',
     value: o =>
       (o.items ?? [])
@@ -86,6 +93,7 @@ export const customerColumns: Column<Customer>[] = [
   { header: 'Name', value: c => c.name },
   { header: 'Email', value: c => c.email },
   { header: 'Phone', value: c => c.phone ?? '' },
+  { header: 'Saved address', value: c => c.address ?? '' },
   { header: 'Role', value: c => c.role },
   { header: 'Signed up via', value: c => c.signUpMethod },
   { header: 'Joined', value: c => isoDate(c.createdAt) },

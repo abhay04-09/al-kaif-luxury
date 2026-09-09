@@ -28,10 +28,31 @@ export function AccountDetailsForm({
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [addressText, setAddressText] = useState(address);
+  // What the location button filled in, so a saved address cannot be only the
+  // street a satellite guessed — this one gets reused on every future order.
+  const [autofilled, setAutofilled] = useState("");
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    // A saved address is reused on every future order, so it is worth being
+    // strict about the one part a satellite fix can never supply.
+    const typed = addressText.trim();
+    if (typed && autofilled) {
+      const beyond = typed
+        .replace(autofilled.trim(), "")
+        .replace(/[,\s]+/g, " ")
+        .trim();
+      if (beyond.length < 4) {
+        setError(
+          "Please add your flat or house number and building name — we only found your street."
+        );
+        document.getElementById("account-address")?.focus();
+        return;
+      }
+    }
+
     setIsSaving(true);
 
     const form = new FormData(event.currentTarget);
@@ -170,9 +191,10 @@ export function AccountDetailsForm({
               // most likely the flat and building, the one part a satellite fix
               // can never supply.
               setAddressText((current) => {
-                const typed = current.trim();
-                return typed ? `${typed}, ${found}` : found;
+                const already = current.trim();
+                return already ? `${already}, ${found}` : found;
               });
+              setAutofilled(found);
               document.getElementById("account-address")?.focus();
             }}
           />

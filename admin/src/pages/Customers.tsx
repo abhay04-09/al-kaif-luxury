@@ -144,6 +144,7 @@ export const CustomersPage: React.FC = () => {
             <tr className="text-left text-[10px] uppercase tracking-[0.2em] text-[#A7A7A7] border-b border-[#2A2A2a]">
               <th className="p-4 font-normal">Customer</th>
               <th className="p-4 font-normal">Phone</th>
+              <th className="p-4 font-normal hidden lg:table-cell">Saved address</th>
               <th className="p-4 font-normal">Signed up via</th>
               <th className="p-4 font-normal">Joined</th>
               <th className="p-4 font-normal">Orders</th>
@@ -202,6 +203,17 @@ export const CustomersPage: React.FC = () => {
                     </a>
                   ) : (
                     '—'
+                  )}
+                </td>
+                {/* What they saved to their account, which is what checkout
+                    fills in for them next time. */}
+                <td className="p-4 text-[#A7A7A7] hidden lg:table-cell max-w-64">
+                  {person.address ? (
+                    <span className="block whitespace-pre-line leading-relaxed" title={person.address}>
+                      {person.address}
+                    </span>
+                  ) : (
+                    <span className="text-[#A7A7A7]/50">Not saved</span>
                   )}
                 </td>
                 <td className="p-4">

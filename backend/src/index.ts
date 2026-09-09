@@ -1499,7 +1499,7 @@ app.get('/api/users', requireAdmin, async c => {
   const db = getDb(c.env);
   const { data: users, error } = await db
     .from('users')
-    .select('id, name, email, phone, role, avatar, created_at, password_hash')
+    .select('id, name, email, phone, role, avatar, address, created_at, password_hash')
     .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
 

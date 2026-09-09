@@ -166,6 +166,8 @@ export interface Customer {
   phone?: string | null;
   role: 'customer' | 'admin';
   avatar?: string | null;
+  /** The delivery address they saved to their account, if any. */
+  address?: string | null;
   createdAt: string | null;
   /** 'Email' for a password account, 'Google' for one created by Google sign-in. */
   signUpMethod: 'Email' | 'Google';

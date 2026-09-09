@@ -37,6 +37,9 @@ export default function PrivacyPolicyPage() {
             <p className="text-sm leading-8 text-porcelain/70">
               We collect essential contact information including name, delivery address, phone number, and email address during checkout to process orders and provide delivery updates.
             </p>
+            <p className="text-sm leading-8 text-porcelain/70">
+              If you choose to use &ldquo;Use my current location&rdquo; while entering an address, your device shares its coordinates with us so we can suggest the street, city, state and PIN code. Those coordinates are stored with that order and used only to help the courier find you. We never request your location without you asking us to, you can decline and type your address instead, and declining costs you nothing.
+            </p>
           </section>
 
           <section className="space-y-4 border-t border-white/10 pt-8">
