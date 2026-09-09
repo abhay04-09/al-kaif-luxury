@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { 
-  Send, 
   MessageSquare, 
   Mail, 
   Clock, 
@@ -55,7 +54,7 @@ export default function QuerySupportPage() {
         </div>
 
         {/* Support Options Grid */}
-        <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-12 grid gap-8 md:grid-cols-2">
           {/* WhatsApp Live Support Card */}
           <div className="border border-emerald-500/30 bg-emerald-950/20 p-8 flex flex-col justify-between rounded-xl shadow-lg hover:border-emerald-500/60 transition">
             <div>
@@ -80,32 +79,8 @@ export default function QuerySupportPage() {
             </a>
           </div>
 
-          {/* Google Form Ticket Desk Card */}
-          <div className="border border-gold-light/30 bg-onyx/40 p-8 flex flex-col justify-between rounded-xl shadow-lg hover:border-gold-light/60 transition">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-gold-light/10 px-3 py-1 text-[10px] uppercase tracking-widest text-gold-light border border-gold-light/20 mb-4">
-                <Send className="h-3 w-3" />
-                Official Ticket Log
-              </div>
-              <h2 className="font-serif text-2xl text-porcelain">Google Form Desk</h2>
-              <p className="mt-3 text-xs leading-relaxed text-porcelain/70">
-                Fill out our quick query form to log your issue directly into our customer service desk.
-              </p>
-            </div>
-
-            <a
-              href={process.env.NEXT_PUBLIC_GOOGLE_FORM_URL || "https://forms.google.com"}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-8 flex items-center justify-center gap-3 border border-gold-light bg-gold-light px-6 py-4 text-xs font-bold uppercase tracking-luxury text-black hover:bg-transparent hover:text-gold-light transition rounded-lg shadow-md"
-            >
-              <Send className="h-4 w-4" />
-              Open Google Form
-            </a>
-          </div>
-
           {/* Direct Contact Channels Card */}
-          <div className="border border-white/10 bg-onyx/40 p-8 flex flex-col justify-between rounded-xl shadow-lg hover:border-white/20 transition md:col-span-2 lg:col-span-1">
+          <div className="border border-white/10 bg-onyx/40 p-8 flex flex-col justify-between rounded-xl shadow-lg hover:border-white/20 transition">
             <div>
               <h2 className="font-serif text-2xl text-porcelain">Direct Contact Details</h2>
               <p className="mt-2 text-xs text-porcelain/60">Official communication channels.</p>
