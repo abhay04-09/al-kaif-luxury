@@ -2,18 +2,14 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { useSession } from "@/components/auth/session-provider";
 import {
   getSupabaseBrowserClient,
-  isGoogleSignInConfigured,
-  isPhoneSignInEnabled
+  isGoogleSignInConfigured
 } from "@/lib/supabase-browser";
 import styles from "./login-page.module.css";
-
-const RESEND_SECONDS = 30;
-const isValidMobile = (digits: string) => /^[6-9]\d{9}$/.test(digits);
 
 function GoogleGlyph() {
   return (
@@ -45,8 +41,6 @@ export function LoginClient() {
   const next = params.get("next") ?? undefined;
 
   function handleClose() {
-    // Prefer returning to wherever the shopper actually came from; only fall
-    // back to the homepage when there is no in-site history to go back to.
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
     } else {
@@ -54,42 +48,15 @@ export function LoginClient() {
     }
   }
 
-  // Google
+  // Google Sign-In
   const [googleBusy, setGoogleBusy] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
 
-  // Mobile OTP
-  const [phoneAvailable, setPhoneAvailable] = useState(false);
-  const [phoneStep, setPhoneStep] = useState<"number" | "code">("number");
-  const [mobile, setMobile] = useState("");
-  const [code, setCode] = useState("");
-  const [phoneBusy, setPhoneBusy] = useState(false);
-  const [phoneError, setPhoneError] = useState<string | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState(0);
-  const codeInput = useRef<HTMLInputElement>(null);
-
-  // Email + password
-  const [emailStep, setEmailStep] = useState<"email" | "password">("email");
+  // Email + Password Sign-In
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailBusy, setEmailBusy] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    void isPhoneSignInEnabled().then(on => {
-      if (alive) setPhoneAvailable(on);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (secondsLeft <= 0) return;
-    const timer = window.setTimeout(() => setSecondsLeft(s => s - 1), 1000);
-    return () => window.clearTimeout(timer);
-  }, [secondsLeft]);
 
   async function handleGoogleLogin() {
     setGoogleError(null);
@@ -121,110 +88,19 @@ export function LoginClient() {
     }
   }
 
-  const e164 = `+91${mobile}`;
-
-  async function handleSendOtp(event?: FormEvent) {
-    event?.preventDefault();
-    setPhoneError(null);
-
-    if (!phoneAvailable) {
-      setPhoneError("Mobile sign-in isn't connected yet.");
-      return;
-    }
-    if (!isValidMobile(mobile)) {
-      setPhoneError("Please enter a ten-digit Indian mobile number.");
-      return;
-    }
-
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) {
-      setPhoneError("Mobile sign-in is not available right now.");
-      return;
-    }
-
-    setPhoneBusy(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      phone: e164,
-      options: { shouldCreateUser: false }
-    });
-    setPhoneBusy(false);
-
-    if (error) {
-      setPhoneError(error.message);
-      return;
-    }
-
-    setPhoneStep("code");
-    setSecondsLeft(RESEND_SECONDS);
-    window.setTimeout(() => codeInput.current?.focus(), 50);
-  }
-
-  async function handleVerifyOtp(event: FormEvent) {
+  async function handleLoginSubmit(event: FormEvent) {
     event.preventDefault();
-    setPhoneError(null);
+    setEmailError(null);
 
-    if (code.length !== 6) {
-      setPhoneError("Please enter the six-digit code.");
-      return;
-    }
-
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) {
-      setPhoneError("Mobile sign-in is not available right now.");
-      return;
-    }
-
-    setPhoneBusy(true);
-    const { data, error } = await supabase.auth.verifyOtp({
-      phone: e164,
-      token: code,
-      type: "sms"
-    });
-    const accessToken = data?.session?.access_token;
-
-    if (error || !accessToken) {
-      setPhoneBusy(false);
-      setPhoneError(error?.message ?? "That code did not match. Please retry.");
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/session/phone", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessToken })
-      });
-      const body = (await res.json()) as { error?: string };
-
-      if (!res.ok) {
-        setPhoneBusy(false);
-        setPhoneError(body.error ?? "Could not complete sign-in.");
-        return;
-      }
-
-      await supabase.auth.signOut();
-      await refresh();
-      router.replace(next ?? "/orders");
-      router.refresh();
-    } catch {
-      setPhoneBusy(false);
-      setPhoneError("Could not reach the maison. Please try again.");
-    }
-  }
-
-  function handleContinueWithEmail(event: FormEvent) {
-    event.preventDefault();
     if (!email.trim()) {
       setEmailError("Please enter your email address.");
       return;
     }
-    setEmailError(null);
-    setEmailStep("password");
-  }
+    if (!password) {
+      setEmailError("Please enter your password.");
+      return;
+    }
 
-  async function handleLoginSubmit(event: FormEvent) {
-    event.preventDefault();
-    setEmailError(null);
     setEmailBusy(true);
 
     try {
@@ -236,7 +112,7 @@ export function LoginClient() {
       const data = (await res.json()) as { error?: string };
 
       if (!res.ok) {
-        setEmailError(data.error ?? "Something went wrong. Please try again.");
+        setEmailError(data.error ?? "Invalid email or password. Please try again.");
         setEmailBusy(false);
         return;
       }
@@ -334,129 +210,56 @@ export function LoginClient() {
           </div>
           <p className={styles.sub}>Login to continue shopping with AL-KAIF</p>
 
+          {/* GOOGLE SIGN-IN */}
           <button className={styles.btnGoogle} disabled={googleBusy} onClick={handleGoogleLogin} type="button">
             {googleBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleGlyph />}
             Continue with Google
           </button>
           {googleError ? <p className={styles.errorText} role="alert">{googleError}</p> : null}
 
+          {/* DIVIDER */}
           <div className={styles.dividerMain}>
             <div className={styles.line} />
-            <span>OR USE MOBILE / EMAIL</span>
+            <span>OR SIGN IN WITH EMAIL</span>
             <div className={styles.line} />
           </div>
 
-          <div className={styles.mergedPanel}>
-            <div className={styles.mergedLabel}>MOBILE OR EMAIL LOGIN</div>
-
-            {phoneStep === "number" ? (
-              <form onSubmit={handleSendOtp}>
-                <div className={styles.phoneRow}>
-                  <div className={styles.country}>🇮🇳 +91 &#9662;</div>
-                  <input
-                    aria-label="Mobile number"
-                    className={styles.phoneInput}
-                    inputMode="numeric"
-                    onChange={e => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                    placeholder="Enter mobile number"
-                    type="tel"
-                    value={mobile}
-                  />
-                </div>
-                <button className={styles.otpBtn} disabled={phoneBusy} type="submit">
-                  {phoneBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Send OTP &rarr;</>}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyOtp}>
-                <input
-                  aria-label={`Verification code sent to +91 ${mobile}`}
-                  className={styles.codeInput}
-                  inputMode="numeric"
-                  onChange={e => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="6-digit code"
-                  ref={codeInput}
-                  value={code}
-                />
-                <div>
-                  <button
-                    className={styles.changeLink}
-                    onClick={() => {
-                      setPhoneStep("number");
-                      setCode("");
-                      setPhoneError(null);
-                    }}
-                    type="button"
-                  >
-                    Change number
-                  </button>
-                </div>
-                <button className={styles.signinBtn} disabled={phoneBusy} type="submit">
-                  {phoneBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify &amp; sign in"}
-                </button>
-                <button
-                  className={styles.resendLink}
-                  disabled={phoneBusy || secondsLeft > 0}
-                  onClick={() => void handleSendOtp()}
-                  type="button"
-                >
-                  {secondsLeft > 0 ? `Resend code in ${secondsLeft}s` : "Didn't get it? Send again"}
-                </button>
-              </form>
-            )}
-
-            {phoneError ? <p className={styles.errorText} role="alert">{phoneError}</p> : null}
-
-            <div className={styles.inlineDivider}>
-              <div className={styles.dot} />
-              <span>OR USE EMAIL INSTEAD</span>
-              <div className={styles.dot} />
+          {/* EMAIL & PASSWORD MANUAL LOGIN FORM */}
+          <form onSubmit={handleLoginSubmit} className="space-y-4 mt-2">
+            <div>
+              <label className="block text-xs font-semibold text-amber-900/80 mb-1.5 uppercase tracking-wider">
+                Email Address
+              </label>
+              <input
+                className={styles.emailInput}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="Enter your email address"
+                type="email"
+                value={email}
+                required
+              />
             </div>
 
-            {emailStep === "email" ? (
-              <form onSubmit={handleContinueWithEmail}>
-                <input
-                  className={styles.emailInput}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="✉ Enter your email address"
-                  type="email"
-                  value={email}
-                />
-                <button className={styles.continueBtn} type="submit">
-                  Continue &rarr;
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleLoginSubmit}>
-                <div className={styles.emailChip}>
-                  <span>{email}</span>
-                  <button
-                    onClick={() => {
-                      setEmailStep("email");
-                      setEmailError(null);
-                    }}
-                    type="button"
-                  >
-                    Change
-                  </button>
-                </div>
-                <input
-                  autoFocus
-                  className={styles.passwordInput}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  style={{ marginTop: 10 }}
-                  type="password"
-                  value={password}
-                />
-                <button className={styles.signinBtn} disabled={emailBusy} type="submit">
-                  {emailBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign in"}
-                </button>
-              </form>
-            )}
+            <div>
+              <label className="block text-xs font-semibold text-amber-900/80 mb-1.5 uppercase tracking-wider">
+                Password
+              </label>
+              <input
+                className={styles.passwordInput}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                type="password"
+                value={password}
+                required
+              />
+            </div>
+
+            <button className={styles.signinBtn} disabled={emailBusy} type="submit" style={{ marginTop: 16 }}>
+              {emailBusy ? <Loader2 className="h-4 w-4 animate-spin text-white mx-auto" /> : "Sign In \u2192"}
+            </button>
 
             {emailError ? <p className={styles.errorText} role="alert">{emailError}</p> : null}
-          </div>
+          </form>
 
           <div className={styles.footer}>
             New to AL-KAIF? <Link href="/signup">Create an account &rarr;</Link>

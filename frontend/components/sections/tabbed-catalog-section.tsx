@@ -8,10 +8,10 @@ import { ProductCard } from "@/components/products/product-card";
 import type { Product } from "@/types/product";
 
 const collectionSheets = [
-  { id: "necklaces", label: "Necklace Sets", subcategory: "necklaces" },
-  { id: "bangles", label: "Royal Bangles", subcategory: "bangles" },
-  { id: "rings", label: "Bridal Rings", subcategory: "rings" },
-  { id: "earrings", label: "Earrings", subcategory: "earrings" },
+  { id: "rings", label: "Royal Heritage Rings", subcategory: "rings" },
+  { id: "bangles", label: "Classic Bangles & Bracelets", subcategory: "bangles" },
+  { id: "jhumkas", label: "Jhumkas", subcategory: "earrings" },
+  { id: "necklaces", label: "Necklace & Mangal Sutras", subcategory: "necklaces" },
   { id: "chokers", label: "Kundan Chokers", subcategory: "chokers" },
   { id: "pendants", label: "Pendant Sets", subcategory: "pendants" }
 ];

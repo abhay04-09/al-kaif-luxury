@@ -2,6 +2,7 @@ import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
 import { LuxuryPreloader } from "@/components/motion/luxury-preloader";
 import { CollectionsSection } from "@/components/sections/collections-section";
+import { ShopByAreaSection } from "@/components/sections/shop-by-area-section";
 import { HeroSection } from "@/components/sections/hero-section";
 import { TabbedCatalogSection } from "@/components/sections/tabbed-catalog-section";
 import { NewsletterSection } from "@/components/sections/newsletter-section";
@@ -18,6 +19,7 @@ export default async function Home() {
         <HeroSection />
         <CollectionsSection />
         <TabbedCatalogSection allProducts={allProducts} />
+        <ShopByAreaSection />
         <NewsletterSection />
       </main>
       <Footer />

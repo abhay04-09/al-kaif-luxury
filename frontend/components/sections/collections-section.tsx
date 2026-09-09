@@ -8,31 +8,27 @@ import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
 const collectionsList = [
   {
-    id: "bridal-kundan",
-    title: "BRIDAL KUNDAN",
-    subtitle: "Heritage Kundan & Meenakari Masterpieces",
-    image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=90",
-    link: "/products?category=jewellery&search=kundan"
+    id: "royal-heritage-rings",
+    title: "ROYAL HERITAGE RINGS",
+    image: "/media/hero-flower-ring.jpg",
+    link: "/products?category=jewellery&search=ring"
   },
   {
-    id: "royal-bangles",
-    title: "ROYAL BANGLES & KADAS",
-    subtitle: "Artisanal Gold Polish Traditional Bangles",
-    image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1200&q=90",
+    id: "classic-bangles",
+    title: "CLASSIC BANGLES AND BRACELETS",
+    image: "/media/classic-bangles.png",
     link: "/products?category=jewellery&search=bangle"
   },
   {
-    id: "jhumkas-chandbalis",
-    title: "CHANDBALIS & JHUMKAS",
-    subtitle: "Jaipur Artisanal Statement Drop Earrings",
-    image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=90",
-    link: "/products?category=jewellery&search=earring"
+    id: "jhumkas",
+    title: "JHUMKAS",
+    image: "/media/hero-jhumkas.jpg",
+    link: "/products?category=jewellery&search=jhumka"
   },
   {
-    id: "necklace-sets",
-    title: "NECKLACE & PENDANT SETS",
-    subtitle: "Fine Jewellery Composed for Legacy",
-    image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=1200&q=90",
+    id: "necklace-mangal-sutras",
+    title: "NECKLACE AND MANGAL SUTRAS",
+    image: "/media/necklace-mangal-sutras.jpg",
     link: "/products?category=jewellery&search=necklace"
   }
 ];
@@ -150,9 +146,6 @@ export function CollectionsSection() {
 
                   {/* Bottom Overlay Info */}
                   <div className="absolute inset-x-0 bottom-0 p-6 flex flex-col gap-2 text-left">
-                    <p className="text-[10px] uppercase tracking-widest text-gold-light font-medium">
-                      {item.subtitle}
-                    </p>
                     <h3 className="font-serif text-xl sm:text-2xl font-bold uppercase tracking-wider text-white">
                       {item.title}
                     </h3>
@@ -227,9 +220,6 @@ export function CollectionsSection() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
 
                 <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-6 text-left">
-                  <p className="text-[10px] uppercase tracking-widest text-gold-light font-medium">
-                    {item.subtitle}
-                  </p>
                   <h3 className="font-serif text-xl font-bold uppercase tracking-wider text-white">
                     {item.title}
                   </h3>

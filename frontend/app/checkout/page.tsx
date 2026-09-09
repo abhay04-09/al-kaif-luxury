@@ -17,8 +17,8 @@ export default function CheckoutPage() {
           Secure Checkout
         </h1>
         <p className="mt-5 max-w-xl text-sm leading-7 text-porcelain/70">
-          Every piece leaves the atelier hallmarked, individually numbered and
-          despatched insured.
+          Every piece leaves the atelier quality-checked, individually curated and
+          dispatched with tamper-proof packaging.
         </p>
 
         <div className="mt-12">

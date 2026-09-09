@@ -36,8 +36,8 @@ export function Footer() {
             </Link>
 
             <p className="mt-6 max-w-sm text-sm leading-7 text-brand-muted">
-              AL-KAIF creates handcrafted fine jewellery for those who value
-              rarity, restraint, and enduring craft.
+              AL-KAIF creates handcrafted artificial jewellery for those who value
+              elegance, restraint, and enduring craft.
             </p>
           </div>
 
@@ -122,7 +122,7 @@ export function Footer() {
         </div>
 
         <div className="mt-16 flex flex-col gap-6 border-t border-brand-border pt-8 text-xs text-brand-muted sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2019 AL-KAIF. All rights reserved.</p>
+          <p>© 2026 AL-KAIF. All rights reserved. (Est. 1998)</p>
 
           <div className="flex flex-wrap gap-6">
             <Link href="/privacy-policy" className="transition hover:text-brand-gold">

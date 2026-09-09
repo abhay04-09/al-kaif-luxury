@@ -18,6 +18,7 @@ import { primaryNavigation } from "@/lib/navigation";
 import { AlKaifMark } from "@/components/brand/al-kaif-mark";
 import { useSession } from "@/components/auth/session-provider";
 import { useCartCount } from "@/lib/use-cart-count";
+import { useCartDrawer } from "@/components/cart/cart-drawer-context";
 
 const searchPlaceholders = [
   "Search for necklaces, earrings, bangles, rings...",
@@ -29,6 +30,7 @@ const searchPlaceholders = [
 export function Navbar() {
   const pathname = usePathname();
   const { user, status } = useSession();
+  const { openCart } = useCartDrawer();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -171,14 +173,15 @@ export function Navbar() {
 
 
           {/* Shopping Cart Bag Icon with Active Circular Count Badge: bg-[#8B0000] text-white font-bold rounded-full */}
-          <Link
+          <button
+            type="button"
+            onClick={openCart}
             aria-label={
               cartCount > 0
                 ? `Open shopping bag, ${cartCount} ${cartCount === 1 ? "item" : "items"}`
                 : "Open shopping bag"
             }
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-brand-text transition hover:bg-brand-bg hover:text-brand-gold"
-            href="/cart"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-brand-text transition hover:bg-brand-bg hover:text-brand-gold focus:outline-none"
           >
             <ShoppingBag className="h-5 w-5" strokeWidth={1.8} />
             <span
@@ -188,7 +191,7 @@ export function Navbar() {
             >
               {cartCount > 99 ? "99+" : cartCount}
             </span>
-          </Link>
+          </button>
         </div>
       </nav>
 

@@ -16,3 +16,7 @@ pnpm-debug.log*
 
 # TypeScript build info
 *.tsbuildinfo
+
+# Local-only reference files, not for the repo
+/AlKaif-LoginPage-React.zip
+/intro.mp4

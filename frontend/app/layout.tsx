@@ -7,6 +7,8 @@ import { SessionProvider } from "@/components/auth/session-provider";
 import { WhatsAppButton } from "@/components/layout/whatsapp-button";
 import { SmoothScrollProvider } from "@/components/motion/smooth-scroll-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { CartDrawerProvider } from "@/components/cart/cart-drawer-context";
+import { CartDrawer } from "@/components/cart/cart-drawer";
 
 const cinzel = Cinzel({
   subsets: ["latin"],
@@ -58,9 +60,12 @@ export default function RootLayout({
       <body>
         <SessionProvider>
           <ThemeProvider>
-            <AnnouncementBar />
-            <SmoothScrollProvider>{children}</SmoothScrollProvider>
-            <WhatsAppButton />
+            <CartDrawerProvider>
+              <AnnouncementBar />
+              <SmoothScrollProvider>{children}</SmoothScrollProvider>
+              <WhatsAppButton />
+              <CartDrawer />
+            </CartDrawerProvider>
           </ThemeProvider>
         </SessionProvider>
       </body>

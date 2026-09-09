@@ -81,10 +81,9 @@ export default function QuerySupportPage() {
 
       const payload = new FormData();
       // If access_key is set in .env, use it; otherwise Web3Forms will accept form details
-      payload.append("access_key", accessKey || "5b6a3861-5586-4f40-9a84-eb893f41ee13");
+      payload.append("access_key", accessKey || "40e7199a-10e2-4ec6-a3a0-f10fc96fb9c1");
       payload.append("subject", `New AL-KAIF Inquiry: ${formData.category} [${refNo}]`);
       payload.append("from_name", "AL-KAIF Web Concierge");
-      payload.append("to_email", "info@alkaif.in");
       payload.append("name", formData.fullName);
       payload.append("email", formData.email);
       payload.append("phone", formData.mobile);
@@ -98,10 +97,12 @@ export default function QuerySupportPage() {
         payload.append("attachment", selectedFile);
       }
 
-      await fetch("https://api.web3forms.com/submit", {
+      const response = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
         body: payload
       });
+      const resData = await response.json();
+      console.log("Web3Forms API result:", resData);
     } catch (err) {
       console.error("Web3Forms email submission error:", err);
     } finally {
@@ -374,6 +375,21 @@ export default function QuerySupportPage() {
                     <p className="text-xs text-porcelain/60 mt-1">Vapi, Gujarat, India</p>
                   </div>
                 </div>
+              </div>
+
+              {/* Google Form / Google Sheet Collection Channel */}
+              <div className="mt-8 border-t border-white/10 pt-8">
+                <p className="text-xs uppercase tracking-luxury text-gold-light mb-2">Google Sheet Ticket Log</p>
+                <p className="text-xs text-porcelain/60 mb-3">Submit via our official Google Form to automatically record your query into our Google Sheet desk.</p>
+                <a
+                  href={process.env.NEXT_PUBLIC_GOOGLE_FORM_URL || "https://forms.google.com"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-3 border border-gold-light/60 bg-gold-light/10 px-6 py-3.5 text-xs font-semibold uppercase tracking-luxury text-gold-light hover:bg-gold-light hover:text-black transition rounded-sm"
+                >
+                  <Send className="h-4 w-4" />
+                  Fill Out via Google Form
+                </a>
               </div>
 
               {/* Instant WhatsApp Button */}
