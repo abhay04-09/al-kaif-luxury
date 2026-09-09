@@ -122,6 +122,15 @@ export function CheckoutView() {
   useEffect(() => {
     if (orderItems.length === 0) return;
     const digits = pincode.replace(/\D/g, "");
+
+    // No pin code, no quote. A flat number shown before the courier has been
+    // asked is a guess wearing the clothes of a price.
+    if (digits.length !== 6) {
+      setQuote(null);
+      setQuoting(false);
+      return;
+    }
+
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       setQuoting(true);
@@ -132,7 +141,7 @@ export function CheckoutView() {
           signal: controller.signal,
           body: JSON.stringify({
             items: orderItems,
-            pincode: digits.length === 6 ? digits : undefined,
+            pincode: digits,
             paymentMethod: method
           })
         });
@@ -578,12 +587,16 @@ export function CheckoutView() {
                   <span className="ml-2 text-xs text-mist">{quote.courier}</span>
                 ) : null}
               </dt>
-              <dd className={shipping === 0 ? "text-gold-light" : undefined}>
-                {quoting && !quote
-                  ? "…"
-                  : shipping === 0
-                    ? "Complimentary"
-                    : inr(shipping)}
+              <dd className={quote && shipping === 0 ? "text-gold-light" : undefined}>
+                {quoting
+                  ? "Checking…"
+                  : !quote
+                    ? (
+                      <span className="text-xs text-mist">Enter your PIN code</span>
+                    )
+                    : shipping === 0
+                      ? "Complimentary"
+                      : inr(shipping)}
               </dd>
             </div>
             {codFee > 0 ? (
@@ -601,7 +614,14 @@ export function CheckoutView() {
               <dt className="text-[0.62rem] uppercase tracking-luxury text-gold-light">
                 Total
               </dt>
-              <dd className="font-serif text-3xl text-porcelain">{inr(total)}</dd>
+              <dd className="font-serif text-3xl text-porcelain">
+                {quote ? inr(total) : inr(goods)}
+                {!quote ? (
+                  <span className="ml-2 align-middle text-xs text-mist">
+                    + delivery
+                  </span>
+                ) : null}
+              </dd>
             </div>
           </dl>
 
@@ -623,7 +643,7 @@ export function CheckoutView() {
           <div className="px-6 pb-6">
             <button
               className="inline-flex min-h-14 w-full items-center justify-center gap-3 bg-gold px-6 text-[0.7rem] uppercase tracking-luxury text-obsidian transition hover:bg-gold-light disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isPlacing}
+              disabled={isPlacing || !quote}
               type="submit"
             >
               {isPlacing ? (
@@ -631,7 +651,11 @@ export function CheckoutView() {
               ) : (
                 <Lock aria-hidden="true" className="h-4 w-4" strokeWidth={1.6} />
               )}
-              {method === "COD" ? "Place order" : `Pay ${inr(total)}`}
+              {!quote
+                ? "Enter your PIN code"
+                : method === "COD"
+                  ? "Place order"
+                  : `Pay ${inr(total)}`}
             </button>
 
             <p className="mt-4 flex items-center justify-center gap-2 text-[0.62rem] uppercase tracking-luxury text-mist">

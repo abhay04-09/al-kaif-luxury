@@ -111,8 +111,8 @@ export const SettingsPage: React.FC = () => {
 
         <div className="grid sm:grid-cols-2 gap-6">
           <Field
-            label="Flat rate"
-            hint="Charged when live rates are off, when the courier does not answer in four seconds, or before a pin code has been entered."
+            label="Fallback rate"
+            hint="Only used if the courier does not answer within four seconds, or if live rates are switched off above. Customers are normally charged the real rate to their own pin code."
             value={form.flatINR}
             onChange={flatINR => setForm({ ...form, flatINR })}
           />
@@ -147,8 +147,8 @@ export const SettingsPage: React.FC = () => {
           </button>
           <p className="text-[11px] text-[#A7A7A7]">
             {form.liveRates
-              ? `Live rates on. A customer with no pin code yet sees ₹${form.flatINR}.`
-              : `Every order is charged ₹${form.flatINR}.`}
+              ? `Live rates on. Each customer is charged the real cost to their pin code; ₹${form.flatINR} only if the courier does not answer.`
+              : `Live rates off — every order is charged ₹${form.flatINR}.`}
             {form.freeAboveINR > 0 && ` Free over ₹${form.freeAboveINR.toLocaleString('en-IN')}.`}
           </p>
         </div>
