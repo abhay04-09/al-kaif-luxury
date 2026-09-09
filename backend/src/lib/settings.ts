@@ -14,7 +14,13 @@ export interface ShippingSettings {
   liveRates: boolean;
   /** Charged when the courier will not answer, or has no pin code to answer about. */
   flatINR: number;
-  /** Added to cash-on-delivery orders. */
+  /**
+   * Added to cash-on-delivery orders, on top of the courier's rate.
+   *
+   * Zero by default and deliberately so: a live COD quote already contains the
+   * courier's own collection charge — Shipmozo itemises it as "COD Charges" —
+   * so anything here is that fee charged a second time.
+   */
   codFeeINR: number;
   /** Carts at or over this ship free. 0 turns it off. */
   freeAboveINR: number;
@@ -25,7 +31,7 @@ export interface ShippingSettings {
 export const SHIPPING_DEFAULTS: ShippingSettings = {
   liveRates: true,
   flatINR: 79,
-  codFeeINR: 29,
+  codFeeINR: 0,
   freeAboveINR: 0,
   markupINR: 0,
 };

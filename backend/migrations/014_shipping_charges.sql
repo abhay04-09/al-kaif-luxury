@@ -30,7 +30,7 @@ insert into settings (key, value)
 values ('shipping', '{
   "liveRates": true,
   "flatINR": 79,
-  "codFeeINR": 29,
+  "codFeeINR": 0,
   "freeAboveINR": 0,
   "markupINR": 0
 }'::jsonb)

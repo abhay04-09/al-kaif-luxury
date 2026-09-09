@@ -7,7 +7,7 @@ import { ShippingSettings } from '../types';
 const DEFAULTS: ShippingSettings = {
   liveRates: true,
   flatINR: 79,
-  codFeeINR: 29,
+  codFeeINR: 0,
   freeAboveINR: 0,
   markupINR: 0,
 };
@@ -118,7 +118,7 @@ export const SettingsPage: React.FC = () => {
           />
           <Field
             label="Cash on delivery charge"
-            hint="Added to COD orders only. Covers the courier's collection fee and discourages casual fake orders."
+            hint="Added to COD orders on top of the courier's rate. Leave at 0: the live COD rate already contains the courier's own collection charge, so anything here is charged for the second time."
             value={form.codFeeINR}
             onChange={codFeeINR => setForm({ ...form, codFeeINR })}
           />
