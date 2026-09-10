@@ -1,6 +1,6 @@
 import { Navbar } from "@/components/layout/navbar";
 import { ProductCard } from "@/components/products/product-card";
-import { getStoreCategories, getStoreProducts } from "@/lib/product-service";
+import { getStoreCategories, getStoreProducts, getPriceTiers } from "@/lib/product-service";
 import type { ProductCategory } from "@/types/product";
 
 type ProductsPageProps = {
@@ -9,16 +9,18 @@ type ProductsPageProps = {
     subcategory?: string;
     search?: string;
     query?: string;
+    tier?: string;
   }>;
 };
 
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  const { category, subcategory, search, query } = await searchParams;
+  const { category, subcategory, search, query, tier } = await searchParams;
   const keyword = (search || query || "").toLowerCase().trim();
 
-  const [allProducts, categories] = await Promise.all([
-    getStoreProducts(category, subcategory),
-    getStoreCategories()
+  const [allProducts, categories, tiers] = await Promise.all([
+    getStoreProducts(category, subcategory, tier),
+    getStoreCategories(),
+    getPriceTiers()
   ]);
 
   const visibleProducts = keyword
@@ -87,6 +89,42 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             </div>
           )}
         </div>
+
+        {/* Price bands, set by the piece's own price rather than chosen by hand.
+            Shown wherever jewellery is being browsed, which is everywhere. */}
+        {tiers.length > 0 && (
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <span className="text-[0.65rem] uppercase tracking-luxury text-porcelain/50">
+              Shop by price
+            </span>
+            <a
+              className={`rounded-full border px-4 py-2 text-[0.65rem] uppercase tracking-luxury transition ${
+                tier
+                  ? "border-white/10 text-porcelain/80 hover:border-gold-light hover:text-porcelain"
+                  : "border-gold-light text-porcelain"
+              }`}
+              href={`/products${category ? `?category=${category}` : ""}`}
+            >
+              All
+            </a>
+            {tiers.map((band) => (
+              <a
+                key={band.id}
+                className={`rounded-full border px-4 py-2 text-[0.65rem] uppercase tracking-luxury transition ${
+                  tier === band.id
+                    ? "border-gold-light text-porcelain"
+                    : "border-white/10 text-porcelain/80 hover:border-gold-light hover:text-porcelain"
+                }`}
+                href={`/products?tier=${band.id}${category ? `&category=${category}` : ""}`}
+              >
+                {band.name}
+                <span className="ml-2 normal-case tracking-normal text-porcelain/45">
+                  {band.description}
+                </span>
+              </a>
+            ))}
+          </div>
+        )}
 
         {subcategories.length > 0 && (
           <div className="mt-8 flex flex-wrap items-center gap-3">

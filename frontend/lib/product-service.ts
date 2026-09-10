@@ -69,10 +69,15 @@ function normalize(product: ApiProduct): Product {
   };
 }
 
-async function fetchProducts(category?: ProductCategory, subcategory?: string): Promise<Product[]> {
+async function fetchProducts(
+  category?: ProductCategory,
+  subcategory?: string,
+  tier?: string
+): Promise<Product[]> {
   const params = new URLSearchParams();
   if (category) params.set("category", category);
   if (subcategory) params.set("subcategory", subcategory);
+  if (tier) params.set("tier", tier);
   const query = params.toString();
 
   const products = await apiGet<ApiProduct[]>(`/api/products${query ? `?${query}` : ""}`);
@@ -82,9 +87,20 @@ async function fetchProducts(category?: ProductCategory, subcategory?: string): 
 
 export async function getStoreProducts(
   category?: ProductCategory,
-  subcategory?: string
+  subcategory?: string,
+  tier?: string
 ): Promise<Product[]> {
-  return fetchProducts(category, subcategory);
+  return fetchProducts(category, subcategory, tier);
+}
+
+export type PriceBand = { id: string; name: string; description: string };
+
+/**
+ * The price bands and where they sit, asked of the API rather than repeated
+ * here. The shop can move a threshold from the panel, and this follows.
+ */
+export async function getPriceTiers(): Promise<PriceBand[]> {
+  return (await apiGet<PriceBand[]>("/api/tiers", 300)) ?? [];
 }
 
 export async function getFeaturedStoreProducts(): Promise<Product[]> {

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2, Save, Truck } from 'lucide-react';
+import { Layers, Loader2, Save, Truck } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { apiJson } from '../api';
-import { ShippingSettings } from '../types';
+import { PriceTierSettings, ShippingSettings } from '../types';
 
 const DEFAULTS: ShippingSettings = {
   liveRates: true,
@@ -44,12 +44,15 @@ export const SettingsPage: React.FC = () => {
   const [form, setForm] = useState<ShippingSettings>(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [tiers, setTiers] = useState<PriceTierSettings>({ classicUnder: 299, premiumAbove: 1299 });
+  const [savingTiers, setSavingTiers] = useState(false);
 
   useEffect(() => {
     apiJson<ShippingSettings>('/api/settings/shipping')
       .then(setForm)
       .catch((err: any) => toast.error(err?.message || 'Could not load the shipping settings'))
       .finally(() => setLoading(false));
+    apiJson<PriceTierSettings>('/api/settings/tiers').then(setTiers).catch(() => {});
   }, []);
 
   const save = async () => {
@@ -65,6 +68,22 @@ export const SettingsPage: React.FC = () => {
       toast.error(err?.message || 'Could not save');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveTiers = async () => {
+    setSavingTiers(true);
+    try {
+      const saved = await apiJson<PriceTierSettings>('/api/settings/tiers', {
+        method: 'PUT',
+        body: JSON.stringify(tiers),
+      });
+      setTiers(saved);
+      toast.success('Sections updated');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not save');
+    } finally {
+      setSavingTiers(false);
     }
   };
 
@@ -85,6 +104,58 @@ export const SettingsPage: React.FC = () => {
           Changes here take effect on the next checkout. Orders already placed keep what they were
           charged.
         </p>
+      </div>
+
+      <div className="p-6 bg-[#00140a] border border-[#2A2A2a] rounded-xs space-y-6">
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[#A7A7A7]">
+          <Layers className="w-3.5 h-3.5 text-[#C5A059]" />
+          Jewellery sections
+        </div>
+
+        <p className="text-[11px] text-[#A7A7A7] leading-relaxed">
+          Every piece falls into a section by its price alone. There is nothing to pick when
+          adding a product, and nothing that can be set to disagree with the price beside it —
+          change a price and the piece moves section on save.
+        </p>
+
+        <div className="grid sm:grid-cols-2 gap-6">
+          <Field
+            label="Classic is under"
+            hint="Anything cheaper than this is Classic."
+            value={tiers.classicUnder}
+            onChange={classicUnder => setTiers({ ...tiers, classicUnder })}
+          />
+          <Field
+            label="Premium is above"
+            hint="Anything dearer than this is Premium. Everything in between is Standard."
+            value={tiers.premiumAbove}
+            onChange={premiumAbove => setTiers({ ...tiers, premiumAbove })}
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 text-[11px]">
+          <span className="px-2 py-1 border border-[#8AB4F8]/40 text-[#8AB4F8] rounded-xs">
+            Classic — under ₹{tiers.classicUnder.toLocaleString('en-IN')}
+          </span>
+          <span className="px-2 py-1 border border-[#C5A059]/50 text-[#DFC27C] rounded-xs">
+            Standard — ₹{tiers.classicUnder.toLocaleString('en-IN')} to ₹
+            {tiers.premiumAbove.toLocaleString('en-IN')}
+          </span>
+          <span className="px-2 py-1 border border-[#FFD700]/60 text-[#FFD700] rounded-xs">
+            Premium — above ₹{tiers.premiumAbove.toLocaleString('en-IN')}
+          </span>
+        </div>
+
+        <div className="border-t border-[#2A2A2a] pt-5">
+          <button
+            onClick={saveTiers}
+            disabled={savingTiers}
+            className="inline-flex items-center gap-2 bg-[#C5A059] hover:bg-[#FFD700] text-black px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xs disabled:opacity-40"
+          >
+            {savingTiers ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            Save sections
+          </button>
+        </div>
       </div>
 
       <div className="p-6 bg-[#00140a] border border-[#2A2A2a] rounded-xs space-y-6">

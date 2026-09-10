@@ -82,3 +82,78 @@ export async function saveShippingSettings(
   if (error) throw new Error(error.message);
   return next;
 }
+
+
+/**
+ * Price bands for jewellery: Classic, Standard, Premium.
+ *
+ * The bands are derived from a piece's price, never stored on it, so raising a
+ * price moves the piece to its new band the moment it is saved. A stored band
+ * would quietly disagree with the price beside it.
+ *
+ * The three the maison asked for were "Classic under 299", "Standard up to
+ * 799" and "Premium above 1299", which leaves everything between 800 and 1299
+ * belonging to no band at all. Standard is stretched to meet Premium instead,
+ * because a piece with no band is a piece that appears in no section.
+ */
+export interface PriceTierSettings {
+  classicUnder: number;
+  premiumAbove: number;
+}
+
+export const TIER_DEFAULTS: PriceTierSettings = {
+  classicUnder: 299,
+  premiumAbove: 1299,
+};
+
+export type PriceTier = 'Classic' | 'Standard' | 'Premium';
+
+export const TIER_IDS: Record<PriceTier, string> = {
+  Classic: 'classic',
+  Standard: 'standard',
+  Premium: 'premium',
+};
+
+export function priceTierOf(priceINR: number, tiers: PriceTierSettings): PriceTier {
+  if (priceINR < tiers.classicUnder) return 'Classic';
+  if (priceINR > tiers.premiumAbove) return 'Premium';
+  return 'Standard';
+}
+
+export async function getPriceTierSettings(env: Env): Promise<PriceTierSettings> {
+  try {
+    const { data } = await getDb(env)
+      .from('settings')
+      .select('value')
+      .eq('key', 'price_tiers')
+      .maybeSingle();
+    const raw = (data?.value ?? {}) as Partial<PriceTierSettings>;
+    const classicUnder = money(raw.classicUnder, TIER_DEFAULTS.classicUnder);
+    const premiumAbove = money(raw.premiumAbove, TIER_DEFAULTS.premiumAbove);
+    // Bands that cross over would leave pieces in two at once, or in none.
+    return premiumAbove >= classicUnder
+      ? { classicUnder, premiumAbove }
+      : { ...TIER_DEFAULTS };
+  } catch {
+    return { ...TIER_DEFAULTS };
+  }
+}
+
+export async function savePriceTierSettings(
+  env: Env,
+  patch: Partial<PriceTierSettings>
+): Promise<PriceTierSettings> {
+  const current = await getPriceTierSettings(env);
+  const classicUnder = money(patch.classicUnder, current.classicUnder);
+  const premiumAbove = money(patch.premiumAbove, current.premiumAbove);
+  if (premiumAbove < classicUnder) {
+    throw new Error('The Premium threshold must not be below the Classic one');
+  }
+
+  const next = { classicUnder, premiumAbove };
+  const { error } = await getDb(env)
+    .from('settings')
+    .upsert({ key: 'price_tiers', value: next, updated_at: new Date().toISOString() });
+  if (error) throw new Error(error.message);
+  return next;
+}

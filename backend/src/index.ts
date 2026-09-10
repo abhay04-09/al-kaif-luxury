@@ -12,7 +12,14 @@ import {
   verifyWebhookSignature,
 } from './lib/razorpay';
 import { sendOrderEmails } from './lib/email';
-import { getShippingSettings, saveShippingSettings } from './lib/settings';
+import {
+  getShippingSettings,
+  saveShippingSettings,
+  getPriceTierSettings,
+  savePriceTierSettings,
+  priceTierOf,
+  TIER_IDS,
+} from './lib/settings';
 import { quoteShipping } from './lib/shipping';
 import {
   cancelShipment,
@@ -400,7 +407,7 @@ app.get('/api/auth/me', optionalAuth, async c => {
 // ---------------------------------------------------------------- products
 
 app.get('/api/products', async c => {
-  const { category, subcategory, search, featured, newArrival, archived } = c.req.query();
+  const { category, subcategory, search, featured, newArrival, archived, tier } = c.req.query();
   const db = getDb(c.env);
   const wantArchived = archived === 'true';
 
@@ -413,7 +420,17 @@ app.get('/api/products', async c => {
     if (subcategory) query = query.eq('subcategory', subcategory);
     if (featured === 'true') query = query.eq('featured', true);
     if (newArrival === 'true') query = query.eq('is_new_arrival', true);
-    if (search) query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,subtitle.ilike.%${search}%`);
+    if (search) {
+      // Pasted straight into a PostgREST filter, a comma or a bracket in the
+      // search term rewrites the filter around it. Only the characters a client
+      // could reasonably be searching for survive.
+      const safe = String(search).replace(/[^\p{L}\p{N} .&-]/gu, ' ').trim().slice(0, 80);
+      if (safe) {
+        query = query.or(
+          `name.ilike.%${safe}%,description.ilike.%${safe}%,subtitle.ilike.%${safe}%`
+        );
+      }
+    }
     return query;
   };
 
@@ -427,7 +444,21 @@ app.get('/api/products', async c => {
   }
 
   if (error) throw new Error(error.message);
-  return c.json((data ?? []).map(rowToProduct));
+
+  // The band is worked out from the price every time it is asked for, so a
+  // piece cannot be sitting in Premium with a Classic price beside it.
+  const tiers = await getPriceTierSettings(c.env);
+  let products = (data ?? []).map(row => {
+    const product = rowToProduct(row);
+    return { ...product, priceTier: priceTierOf(product.priceINR, tiers) };
+  });
+
+  if (tier) {
+    const wanted = String(tier).toLowerCase();
+    products = products.filter(p => TIER_IDS[p.priceTier] === wanted);
+  }
+
+  return c.json(products);
 });
 
 app.get('/api/products/:id', async c => {
@@ -760,6 +791,33 @@ app.post('/api/shipping/quote', async c => {
     estimatedDelivery: quote.estimatedDelivery ?? null,
     freeAboveINR: settings.freeAboveINR,
   });
+});
+
+app.get('/api/settings/tiers', requireAdmin, async c =>
+  c.json(await getPriceTierSettings(c.env))
+);
+
+app.put('/api/settings/tiers', requireAdmin, async c => {
+  const body = await c.req.json();
+  try {
+    return c.json(await savePriceTierSettings(c.env, body));
+  } catch (err: any) {
+    throw new CartError(err?.message ?? 'Those thresholds do not work together');
+  }
+});
+
+/** Public, so the storefront can label and link the bands without guessing. */
+app.get('/api/tiers', async c => {
+  const tiers = await getPriceTierSettings(c.env);
+  return c.json([
+    { id: 'classic', name: 'Classic', description: `Under ₹${tiers.classicUnder}` },
+    {
+      id: 'standard',
+      name: 'Standard',
+      description: `₹${tiers.classicUnder} – ₹${tiers.premiumAbove}`,
+    },
+    { id: 'premium', name: 'Premium', description: `Above ₹${tiers.premiumAbove}` },
+  ]);
 });
 
 app.get('/api/settings/shipping', requireAdmin, async c =>

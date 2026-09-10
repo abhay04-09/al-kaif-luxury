@@ -35,6 +35,39 @@ const EMPTY_FORM: Partial<Product> = {
   isNewArrival: false,
 };
 
+/**
+ * Which band a price falls in.
+ *
+ * Mirrors what the API works out, so the form can show the band the moment a
+ * price is typed instead of after a save. Thresholds are loaded from the panel
+ * settings so the two cannot drift.
+ */
+function tierOf(
+  priceINR: number,
+  tiers: { classicUnder: number; premiumAbove: number }
+): 'Classic' | 'Standard' | 'Premium' {
+  if (priceINR < tiers.classicUnder) return 'Classic';
+  if (priceINR > tiers.premiumAbove) return 'Premium';
+  return 'Standard';
+}
+
+const TIER_STYLES: Record<string, string> = {
+  Classic: 'border-[#8AB4F8]/40 text-[#8AB4F8]',
+  Standard: 'border-[#C5A059]/50 text-[#DFC27C]',
+  Premium: 'border-[#FFD700]/60 text-[#FFD700]',
+};
+
+const TierBadge: React.FC<{ tier?: string }> = ({ tier }) =>
+  tier ? (
+    <span
+      className={`inline-block text-[9px] uppercase tracking-wider px-1.5 py-0.5 border rounded-xs ${
+        TIER_STYLES[tier] ?? TIER_STYLES.Standard
+      }`}
+    >
+      {tier}
+    </span>
+  ) : null;
+
 const SORT_OPTS = [
   { value: 'newest', label: 'Newest first' },
   { value: 'oldest', label: 'Oldest first' },
@@ -134,6 +167,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [stockFilter, setStockFilter] = useState<'all' | 'in' | 'out' | 'low'>('all');
+  const [tierFilter, setTierFilter] = useState<'all' | 'Classic' | 'Standard' | 'Premium'>('all');
   const [sortBy, setSortBy] = useState<SortOpt>('newest');
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState<number>(10);
@@ -142,6 +176,8 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<Partial<Product>>(EMPTY_FORM);
+  // Loaded, not hardcoded, so the form and the shop agree on where the bands sit.
+  const [tiers, setTiers] = useState({ classicUnder: 299, premiumAbove: 1299 });
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [seoOpen, setSeoOpen] = useState(false);
@@ -195,6 +231,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
   useEffect(() => {
     refresh();
     apiJson<Category[]>('/api/categories').then(setCategories).catch(() => {});
+    apiJson<typeof tiers>('/api/settings/tiers').then(setTiers).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -219,6 +256,9 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
   // ── filtering / sorting / pagination ──
   const filtered = useMemo(() => {
     let list = [...products];
+    if (tierFilter !== 'all') {
+      list = list.filter(p => (p.priceTier ?? tierOf(p.priceINR, tiers)) === tierFilter);
+    }
     if (stockFilter === 'in') list = list.filter(p => p.inStock);
     else if (stockFilter === 'out') list = list.filter(p => !p.inStock);
     else if (stockFilter === 'low') list = list.filter(p => isLowStock(p));
@@ -236,7 +276,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
     if (sortBy === 'price-high') list.sort((a, b) => b.priceINR - a.priceINR);
     if (sortBy === 'price-low') list.sort((a, b) => a.priceINR - b.priceINR);
     return list;
-  }, [products, search, categoryFilter, stockFilter, sortBy]);
+  }, [products, search, categoryFilter, stockFilter, sortBy, tierFilter, tiers]);
 
   const stockCounts = useMemo(
     () => ({
@@ -252,7 +292,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
   const pageSafe = Math.min(page, totalPages);
   const pageItems = filtered.slice((pageSafe - 1) * perPage, pageSafe * perPage);
 
-  useEffect(() => { setPage(1); }, [search, categoryFilter, stockFilter, sortBy, perPage]);
+  useEffect(() => { setPage(1); }, [search, categoryFilter, stockFilter, sortBy, perPage, tierFilter]);
 
   // ── actions ──
   const openAdd = () => {
@@ -516,6 +556,17 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
           {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
 
+        <select
+          value={tierFilter}
+          onChange={e => setTierFilter(e.target.value as typeof tierFilter)}
+          className="bg-[#00140a] border border-[#2A2A2a] text-xs text-[#DFC27C] p-2.5 rounded-xs focus:outline-none"
+        >
+          <option value="all">All sections</option>
+          <option value="Classic">Classic — under ₹{tiers.classicUnder}</option>
+          <option value="Standard">Standard — ₹{tiers.classicUnder}–₹{tiers.premiumAbove}</option>
+          <option value="Premium">Premium — above ₹{tiers.premiumAbove}</option>
+        </select>
+
         <div className="flex items-center gap-2 bg-[#00140a] border border-[#2A2A2a] px-3 py-2.5 rounded-xs">
           <SlidersHorizontal className="w-3.5 h-3.5 text-[#C5A059]" />
           <select
@@ -618,6 +669,9 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                 </td>
                 <td className="p-4 font-mono text-[#FFD700]">
                   ₹{p.priceINR.toLocaleString('en-IN')}
+                  <span className="block mt-1">
+                    <TierBadge tier={p.priceTier ?? tierOf(p.priceINR, tiers)} />
+                  </span>
                   {p.mrpINR && p.mrpINR > p.priceINR ? (
                     <span className="block text-[10px] text-[#A7A7A7]">
                       <span className="line-through">₹{p.mrpINR.toLocaleString('en-IN')}</span>
@@ -833,6 +887,15 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                     className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
                   />
                   <p className="mt-1 text-[10px] text-[#A7A7A7]">What the client is charged. GST included.</p>
+                  {/* The band follows the price by itself; there is nothing to
+                      choose, and nothing that can be set to disagree with it. */}
+                  {form.priceINR ? (
+                    <p className="mt-2 flex items-center gap-2 text-[10px] text-[#A7A7A7]">
+                      Section:
+                      <TierBadge tier={tierOf(Number(form.priceINR), tiers)} />
+                      <span className="opacity-70">set automatically</span>
+                    </p>
+                  ) : null}
                 </div>
                 <div>
                   <label className="text-[#DFC27C] block mb-1">MRP (INR)</label>

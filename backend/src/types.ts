@@ -16,6 +16,12 @@ export interface Product {
   category: CategoryType;
   subcategory?: string | null;
   priceINR: number;
+  /**
+   * Which price band the piece falls in — Classic, Standard or Premium.
+   * Worked out from the price on the way out, never stored, so it cannot
+   * disagree with the price beside it. Read-only.
+   */
+  priceTier?: 'Classic' | 'Standard' | 'Premium';
   /** Listed price, struck through on the storefront. Null when there is no discount. */
   mrpINR?: number | null;
   /** Optional — the shop prices in INR; kept for legacy rows. */
