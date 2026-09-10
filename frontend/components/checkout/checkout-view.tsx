@@ -131,7 +131,14 @@ export function CheckoutView() {
     [items, catalogue]
   );
 
-  const payableLines = summary.lines.filter((line) => line.product.inStock);
+  // Memoised, and it matters: this list is a dependency of the delivery quote
+  // below. A fresh array every render made that effect fire on every render,
+  // which set state, which rendered again — a loop that hammered the courier
+  // and swallowed every keystroke in the PIN field.
+  const payableLines = useMemo(
+    () => summary.lines.filter((line) => line.product.inStock),
+    [summary.lines]
+  );
   const goods = summary.subtotal;
   const tax = goods - Math.round(goods / (1 + GST_RATE));
 
@@ -144,6 +151,10 @@ export function CheckoutView() {
       })),
     [payableLines]
   );
+
+  // Compared by value, not by identity. Even if the list above is rebuilt, an
+  // unchanged basket must not send the checkout back to the courier.
+  const itemsKey = useMemo(() => JSON.stringify(orderItems), [orderItems]);
 
   // Delivery is priced by the maison, never by this page: the figure shown here
   // is only what to display. The Worker prices the order again when it is
@@ -187,7 +198,8 @@ export function CheckoutView() {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [orderItems, pincode, method]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemsKey, pincode, method]);
 
   const shipping = quote?.shippingINR ?? 0;
   const codFee = quote?.codFeeINR ?? 0;
