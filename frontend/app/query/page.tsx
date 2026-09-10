@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { 
@@ -17,11 +18,11 @@ import {
 const faqs = [
   {
     question: "How do I track my shipment?",
-    answer: "Tracking links and AWB numbers are sent via SMS/Email within 24 hours of dispatch. You can track directly through our courier partner portal using your tracking ID."
+    answer: "Open My Orders and choose the order you are waiting for — once the courier has collected it, that page shows the tracking number, the courier's name and every scan along the way. The tracking number is also sent by SMS and email within 24 hours of dispatch."
   },
   {
     question: "How do I report a damaged jewelry or perfume item?",
-    answer: "Contact our WhatsApp support or submit via Google Form with your order number and mandatory continuous unboxing video within 48 hours of delivery."
+    answer: "Message us on WhatsApp or email info@alkaif.in with your order number and the mandatory continuous unboxing video, within 48 hours of delivery."
   },
   {
     question: "How long do the perfume fragrances last?",
@@ -130,6 +131,11 @@ export default function QuerySupportPage() {
           </div>
           <p className="mt-3 text-sm text-porcelain/70">
             Quick answers to questions regarding tracking, damaged items, fragrances, and jewelry care.
+            For delivery charges, payment, cancellations and returns, see the{" "}
+            <Link href="/faq" className="text-gold-light underline-offset-4 hover:underline">
+              full list of questions
+            </Link>
+            .
           </p>
 
           <div className="mt-8 space-y-4 max-w-4xl">

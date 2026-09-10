@@ -137,6 +137,9 @@ export function Footer() {
             <Link href="/refund-policy" className="transition hover:text-brand-gold">
               Return & Refund Policy
             </Link>
+            <Link href="/faq" className="transition hover:text-brand-gold">
+              FAQ
+            </Link>
             <Link href="/query" className="transition hover:text-brand-gold">
               Raise a Query
             </Link>
