@@ -79,9 +79,9 @@ const SECTIONS: { title: string; icon: React.ElementType; items: QA[] }[] = [
           "Orders are verified and dispatched within 1 to 2 business days, excluding Sundays and national holidays. Transit is typically 3 to 7 business days, and 3 to 4 days to metro cities. Perfume travels by surface courier under the regulations for liquids, which can add a day or two to remote pin codes."
       },
       {
-        question: "Do you deliver everywhere in India?",
+        question: "Do you deliver to my area?",
         answer:
-          "Almost everywhere. Enter your PIN code at checkout and you will know immediately — if a courier will carry to you, you will see their name and their price. We do not currently ship outside India."
+          "Enter your PIN code at checkout and you will know straight away — if a courier will carry to you, you will see their name and their price before you pay. For anywhere our couriers do not reach, write to us and we will tell you what is possible."
       },
       {
         question: "What is the “use my current location” button?",
@@ -133,7 +133,7 @@ const SECTIONS: { title: string; icon: React.ElementType; items: QA[] }[] = [
       {
         question: "How long does a refund take?",
         answer:
-          "Approved refunds reach the original payment method within 5 to 7 business days. Refunds on cash-on-delivery orders are sent by bank transfer, so we will ask you for your NEFT or UPI details."
+          "Approved refunds reach the original payment method within 5 to 7 business days. Where an order was paid in cash there is no card to return it to, so we will get in touch to arrange it with you."
       }
     ]
   },
