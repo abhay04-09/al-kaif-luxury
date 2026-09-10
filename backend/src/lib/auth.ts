@@ -12,7 +12,15 @@ export interface TokenPayload {
   [key: string]: unknown;
 }
 
-const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
+/**
+ * How long a session lasts.
+ *
+ * The role travels inside the token, and nothing can call one back: an
+ * administrator who is demoted, or a laptop that walks off, keeps working
+ * until this expires. Two days is short enough to matter and long enough that
+ * a client is not asked to sign in mid-purchase.
+ */
+const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 2;
 
 export async function createToken(
   user: { id: string; email: string | null; name: string; role: 'customer' | 'admin' },

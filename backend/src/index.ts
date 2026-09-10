@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { cors } from 'hono/cors';
 import type { Env } from './env';
 import { getDb, rowToProduct, productToRow, rowToOrder, rowToCategory, buildCategoryTree } from './lib/db';
@@ -25,7 +26,69 @@ import { SEED_PRODUCTS } from './data/seedProducts';
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.use('*', cors({ origin: '*', allowHeaders: ['Content-Type', 'Authorization'] }));
+/**
+ * Who may call this API from a browser.
+ *
+ * It used to be everyone. The admin panel keeps its token in localStorage, so
+ * any page a maison administrator happened to open could talk to this API in
+ * their name. Images stay open — they are meant to be hot-linked by the shop.
+ */
+const ALLOWED_ORIGINS = [
+  'https://www.alkaif.in',
+  'https://alkaif.in',
+  'https://al-kaiff-admin.pages.dev',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:5173',
+];
+
+app.use(
+  '*',
+  cors({
+    origin: origin => {
+      if (!origin) return undefined; // curl, server-to-server, webhooks
+      if (ALLOWED_ORIGINS.includes(origin)) return origin;
+      // Every preview build of the admin panel gets its own subdomain.
+      if (/^https:\/\/[a-z0-9-]+\.al-kaiff-admin\.pages\.dev$/.test(origin)) return origin;
+      return undefined;
+    },
+    allowHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
+/**
+ * Refuses a caller who is asking too often.
+ *
+ * Nothing here was limited before: a login endpoint took unlimited password
+ * guesses, and the public quote and newsletter routes could be run in a loop
+ * by anyone. Keyed on the client's IP, and open by design if the limiter is
+ * unavailable — a shop that cannot sell is worse than one being hammered.
+ */
+async function withinRate(
+  c: Context<{ Bindings: Env }>,
+  bucket: string,
+  limit: number,
+  windowSeconds = 60
+): Promise<boolean> {
+  const ip =
+    c.req.header('CF-Connecting-IP') ?? c.req.header('X-Forwarded-For') ?? 'unknown';
+  try {
+    const { data, error } = await getDb(c.env).rpc('rate_hit', {
+      p_key: `${bucket}:${ip}`.slice(0, 200),
+      p_limit: limit,
+      p_window_seconds: windowSeconds,
+    });
+    if (error) {
+      console.error(`Rate limiter unavailable: ${error.message}`);
+      return true;
+    }
+    return data !== false;
+  } catch {
+    return true;
+  }
+}
+
+const TOO_MANY = 'Too many attempts. Please wait a minute and try again.';
 
 /**
  * A problem with what the client is trying to buy, rather than a fault of ours:
@@ -54,6 +117,9 @@ app.get('/api/health', c =>
 // ---------------------------------------------------------------- auth
 
 app.post('/api/auth/register', async c => {
+  if (!(await withinRate(c, 'register', 5))) {
+    return c.json({ error: TOO_MANY }, 429);
+  }
   const { name, email, password, phone } = await c.req.json();
   if (!name || !email || !password) return c.json({ error: 'Name, email and password are required' }, 400);
   if (String(password).length < 8) return c.json({ error: 'Password must be at least 8 characters' }, 400);
@@ -81,7 +147,12 @@ app.post('/api/auth/register', async c => {
 });
 
 app.post('/api/auth/login', async c => {
+  // Keyed on the address as well as the IP, so guessing at one account is
+  // stopped without locking out a whole office behind one router.
   const { email, password } = await c.req.json();
+  if (!(await withinRate(c, `login:${String(email ?? '').toLowerCase()}`, 8))) {
+    return c.json({ error: TOO_MANY }, 429);
+  }
   if (!email || !password) return c.json({ error: 'Email and password are required' }, 400);
 
   const db = getDb(c.env);
@@ -100,21 +171,67 @@ app.post('/api/auth/login', async c => {
   return c.json({ user: safeUser, token });
 });
 
+/**
+ * Reads a Supabase token and insists it came from the sign-in we asked for.
+ *
+ * Supabase issues one shape of token for every method it supports, and this
+ * API accepted any of them. A token minted by an ordinary email-and-password
+ * signup was enough to pass through the Google endpoint and be handed a
+ * session under whatever address it carried — including, if the project ever
+ * had e-mail confirmation switched off, an administrator's.
+ *
+ * So the provider is checked, not assumed. Nothing else about the token is
+ * trusted: the identity used is the one Supabase returns, never the one the
+ * browser claims.
+ */
+async function verifySupabaseToken(
+  env: Env,
+  accessToken: string,
+  expectedProvider: 'google' | 'phone'
+): Promise<{ ok: true; profile: any } | { ok: false; reason: string }> {
+  const res = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+    },
+  });
+  if (!res.ok) return { ok: false, reason: 'could not be verified' };
+
+  const profile: any = await res.json();
+  const providers: string[] = profile?.app_metadata?.providers ?? [
+    profile?.app_metadata?.provider,
+  ];
+
+  if (!providers.includes(expectedProvider)) {
+    console.error(
+      `Rejected a ${providers.join('/')} token at the ${expectedProvider} endpoint`
+    );
+    return { ok: false, reason: 'could not be verified' };
+  }
+
+  // An address nobody has proved they can read is not an identity.
+  if (expectedProvider === 'google' && !profile?.email_confirmed_at) {
+    return { ok: false, reason: 'has an unverified email address' };
+  }
+  if (expectedProvider === 'phone' && !profile?.phone_confirmed_at) {
+    return { ok: false, reason: 'has an unverified mobile number' };
+  }
+
+  return { ok: true, profile };
+}
+
 app.post('/api/auth/google', async c => {
+  if (!(await withinRate(c, 'google', 20))) {
+    return c.json({ error: TOO_MANY }, 429);
+  }
   const { accessToken } = await c.req.json();
   if (!accessToken) return c.json({ error: 'Missing Google sign-in token' }, 400);
 
-  // The browser could send us any email it likes, so the token is verified with
-  // Supabase before it is trusted. Only what Supabase returns is used.
-  const res = await fetch(`${c.env.SUPABASE_URL}/auth/v1/user`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      apikey: c.env.SUPABASE_SERVICE_ROLE_KEY,
-    },
-  });
-  if (!res.ok) return c.json({ error: 'Google sign-in could not be verified' }, 401);
-
-  const profile: any = await res.json();
+  const verified = await verifySupabaseToken(c.env, accessToken, 'google');
+  if (!verified.ok) {
+    return c.json({ error: `Google sign-in ${verified.reason}` }, 401);
+  }
+  const profile = verified.profile;
   const email = String(profile?.email ?? '').trim().toLowerCase();
   if (!email) return c.json({ error: 'Google account has no email address' }, 400);
 
@@ -151,20 +268,17 @@ app.post('/api/auth/google', async c => {
 });
 
 app.post('/api/auth/phone', async c => {
+  if (!(await withinRate(c, 'phone', 20))) {
+    return c.json({ error: TOO_MANY }, 429);
+  }
   const { accessToken, name } = await c.req.json();
   if (!accessToken) return c.json({ error: 'Missing sign-in token' }, 400);
 
-  // The browser could claim any number it likes, so the token is verified with
-  // Supabase and only the number Supabase confirms is trusted.
-  const res = await fetch(`${c.env.SUPABASE_URL}/auth/v1/user`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      apikey: c.env.SUPABASE_SERVICE_ROLE_KEY,
-    },
-  });
-  if (!res.ok) return c.json({ error: 'Mobile sign-in could not be verified' }, 401);
-
-  const profile: any = await res.json();
+  const verified = await verifySupabaseToken(c.env, accessToken, 'phone');
+  if (!verified.ok) {
+    return c.json({ error: `Mobile sign-in ${verified.reason}` }, 401);
+  }
+  const profile = verified.profile;
   const phone = String(profile?.phone ?? '').replace(/\D/g, '');
   if (!phone) return c.json({ error: 'That sign-in carried no mobile number' }, 400);
 
@@ -600,6 +714,11 @@ async function priceOrder(
  * It reveals only a price, and prices are on the shelf already.
  */
 app.post('/api/shipping/quote', async c => {
+  // Each of these asks eighteen couriers for a price; a loop would burn the
+  // maison's Shipmozo quota for nothing.
+  if (!(await withinRate(c, 'quote', 60))) {
+    return c.json({ error: TOO_MANY }, 429);
+  }
   const body = await c.req.json<{
     items?: IncomingItem[];
     pincode?: string;
@@ -1126,6 +1245,9 @@ app.post('/api/orders/:id/pickup', requireAdmin, async c => {
 
 /** Tells a client, before they order, whether anyone will deliver to them. */
 app.post('/api/shipping/serviceability', async c => {
+  if (!(await withinRate(c, 'serviceability', 60))) {
+    return c.json({ error: TOO_MANY }, 429);
+  }
   const { pincode } = await c.req.json();
   const delivery = String(pincode ?? '').replace(/\D/g, '');
   if (delivery.length !== 6) return c.json({ error: 'Enter a six-digit pin code' }, 400);
@@ -1550,6 +1672,9 @@ app.get('/api/newsletter', requireAdmin, async c => {
 });
 
 app.post('/api/newsletter', async c => {
+  if (!(await withinRate(c, 'newsletter', 5))) {
+    return c.json({ error: TOO_MANY }, 429);
+  }
   const { email } = await c.req.json();
   if (!email || !String(email).includes('@')) return c.json({ error: 'A valid email is required' }, 400);
   const db = getDb(c.env);
@@ -1566,18 +1691,52 @@ app.post('/api/uploads', requireAdmin, async c => {
   const form = await c.req.formData();
   const file = form.get('file');
   if (!(file instanceof File)) return c.json({ error: 'Attach an image as the "file" field' }, 400);
-  if (!file.type.startsWith('image/')) return c.json({ error: 'Only image files are allowed' }, 400);
   if (file.size > 8 * 1024 * 1024) return c.json({ error: 'Image must be under 8 MB' }, 400);
 
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
-  const key = `products/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
-  await c.env.IMAGES.put(key, await file.arrayBuffer(), {
-    httpMetadata: { contentType: file.type },
+  // The browser's own content-type is a claim, not evidence: an SVG announced
+  // as a PNG is a script served from our domain. The first bytes are read
+  // instead, and only formats that cannot carry script are accepted.
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const sniffed = sniffImageType(bytes);
+  if (!sniffed) {
+    return c.json(
+      { error: 'That file is not a JPEG, PNG, WebP or GIF image' },
+      400
+    );
+  }
+
+  const key = `products/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${sniffed.ext}`;
+  await c.env.IMAGES.put(key, bytes, {
+    httpMetadata: { contentType: sniffed.mime },
   });
 
   const url = new URL(c.req.url);
   return c.json({ key, url: `${url.origin}/api/images/${key}` }, 201);
 });
+
+/**
+ * Identifies an image by its first bytes.
+ *
+ * Deliberately excludes SVG, which is a document that can run script, and
+ * would be stored on our own origin if a file claiming to be a PNG were taken
+ * at its word.
+ */
+function sniffImageType(bytes: Uint8Array): { mime: string; ext: string } | null {
+  const starts = (...sig: number[]) => sig.every((byte, i) => bytes[i] === byte);
+
+  if (starts(0xff, 0xd8, 0xff)) return { mime: 'image/jpeg', ext: 'jpg' };
+  if (starts(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a))
+    return { mime: 'image/png', ext: 'png' };
+  if (starts(0x47, 0x49, 0x46, 0x38)) return { mime: 'image/gif', ext: 'gif' };
+  // RIFF....WEBP
+  if (
+    starts(0x52, 0x49, 0x46, 0x46) &&
+    bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
+  ) {
+    return { mime: 'image/webp', ext: 'webp' };
+  }
+  return null;
+}
 
 app.get('/api/images/*', async c => {
   const key = c.req.path.replace('/api/images/', '');
@@ -1586,6 +1745,9 @@ app.get('/api/images/*', async c => {
   return new Response(object.body as ReadableStream, {
     headers: {
       'Content-Type': object.httpMetadata?.contentType ?? 'image/jpeg',
+      // Never let a browser decide these bytes are something more interesting.
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "default-src 'none'; sandbox",
       'Cache-Control': 'public, max-age=31536000, immutable',
       etag: object.httpEtag,
     },
@@ -1597,6 +1759,14 @@ app.get('/api/images/*', async c => {
 // Creates the admin account (from ADMIN_EMAIL / ADMIN_PASSWORD secrets) and seeds
 // the product catalogue if the tables are empty. Safe to call repeatedly.
 app.post('/api/setup/init', async c => {
+  // This route touches the database without a session, so it is closed unless
+  // a secret is both configured and presented. It was open to the world, which
+  // it did not need to be to do its one job.
+  const offered = c.req.header('X-Setup-Secret') ?? c.req.query('secret') ?? '';
+  if (!c.env.SETUP_SECRET || offered !== c.env.SETUP_SECRET) {
+    return c.json({ error: 'Not found' }, 404);
+  }
+
   const db = getDb(c.env);
   const result: Record<string, unknown> = {};
 

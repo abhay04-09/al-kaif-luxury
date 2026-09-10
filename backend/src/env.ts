@@ -22,4 +22,6 @@ export interface Env {
   SHIPMOZO_PICKUP_PINCODE: string;
   ADMIN_EMAIL: string;
   ADMIN_PASSWORD: string;
+  /** Must be presented to run /api/setup/init. Unset means the route is closed. */
+  SETUP_SECRET: string;
 }

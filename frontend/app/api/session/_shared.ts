@@ -3,7 +3,9 @@ import { API_BASE } from "@/lib/api";
 import { SESSION_COOKIE } from "@/lib/session";
 
 // Thirty days, matching how long the Worker's JWT stays valid.
-const MAX_AGE = 60 * 60 * 24 * 30;
+// Matched to the token's own lifetime. A cookie outliving its token leaves a
+// client apparently signed in and refused by every request they make.
+const MAX_AGE = 60 * 60 * 24 * 2;
 
 /**
  * Forwards credentials to the Worker and, on success, keeps the returned token
