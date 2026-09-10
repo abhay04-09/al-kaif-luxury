@@ -10,6 +10,7 @@ import {
   isGoogleSignInConfigured
 } from "@/lib/supabase-browser";
 import styles from "./login-page.module.css";
+import { safeNext } from "@/lib/safe-next";
 
 function GoogleGlyph() {
   return (
@@ -38,7 +39,10 @@ export function LoginClient() {
   const router = useRouter();
   const params = useSearchParams();
   const { refresh } = useSession();
-  const next = params.get("next") ?? undefined;
+  // Only a path inside this site. Without the check, /login?next=//evil.example
+  // would hand someone a genuine AL-KAIF sign-in page that lands them somewhere
+  // else entirely — which is exactly the shape of a phishing link.
+  const next = safeNext(params.get("next"), "");
 
   function handleClose() {
     if (typeof window !== "undefined" && window.history.length > 1) {

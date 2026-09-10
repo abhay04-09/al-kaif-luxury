@@ -8,6 +8,7 @@ import {
   getSupabaseBrowserClient,
   isPhoneSignInEnabled
 } from "@/lib/supabase-browser";
+import { safeNext } from "@/lib/safe-next";
 
 const fieldClass =
   "min-h-12 w-full border border-white/10 bg-obsidian px-4 text-porcelain outline-none transition focus:border-gold-light";
@@ -146,7 +147,7 @@ export function PhoneAuth({
 
       await supabase.auth.signOut();
       await refresh();
-      router.replace(next ?? "/orders");
+      router.replace(safeNext(next));
       router.refresh();
     } catch {
       setBusy(false);

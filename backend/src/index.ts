@@ -955,7 +955,15 @@ async function writeOrder(env: Env, draft: OrderDraft) {
   return order;
 }
 
-app.post('/api/orders', optionalAuth, async c => {
+/**
+ * Placing an order.
+ *
+ * Signed in, always. An order that belongs to nobody cannot be found again,
+ * tracked, or cancelled by the person who placed it, and it leaves the maison
+ * with a parcel and no account to tie it to. The page guards this too; this is
+ * the guard that cannot be walked around.
+ */
+app.post('/api/orders', requireAuth, async c => {
   const body = await c.req.json();
   const { items, shippingAddress, customerName, customerEmail, customerPhone, paymentMethod, giftWrapped, notes } = body;
 
@@ -964,7 +972,7 @@ app.post('/api/orders', optionalAuth, async c => {
   }
 
   const priced = await priceItems(c.env, items);
-  const user = currentUser(c);
+  const user = currentUser(c)!;
 
   // What delivery costs on this order. For a card payment the figure is taken
   // from the parked checkout rather than asked again: courier rates move, and a
@@ -1451,7 +1459,7 @@ app.put('/api/orders/:id/status', requireAdmin, async c => {
 
 // ---------------------------------------------------------------- payments (Razorpay)
 
-app.post('/api/payments/razorpay/order', optionalAuth, async c => {
+app.post('/api/payments/razorpay/order', requireAuth, async c => {
   const body = await c.req.json();
   const { items, shippingAddress, customerName, customerEmail, customerPhone, giftWrapped, notes } = body;
   // Razorpay is asked for the whole amount, delivery included — a payment

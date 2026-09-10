@@ -1,11 +1,21 @@
+import { redirect } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import { CheckoutView } from "@/components/checkout/checkout-view";
+import { getCurrentUser } from "@/lib/session";
 
 export const metadata = {
   title: "Secure Checkout | AL-KAIF"
 };
 
-export default function CheckoutPage() {
+// Checked on the server, before a line of the page is sent. A guard that runs
+// in the browser is a guard that flickers, and one a client can step around.
+export const dynamic = "force-dynamic";
+
+export default async function CheckoutPage() {
+  // An order has to belong to someone: it is how a client finds it again, how
+  // they track it, and how they cancel it. The bag is untouched by the detour.
+  if (!(await getCurrentUser())) redirect("/login?next=/checkout");
+
   return (
     <>
       <Navbar />

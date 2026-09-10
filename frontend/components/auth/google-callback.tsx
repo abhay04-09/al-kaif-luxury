@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useSession } from "@/components/auth/session-provider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { safeNext } from "@/lib/safe-next";
 
 export function GoogleCallback() {
   const router = useRouter();
@@ -66,7 +67,7 @@ export function GoogleCallback() {
       await supabase.auth.signOut();
 
       await refresh();
-      router.replace(params.get("next") ?? "/orders");
+      router.replace(safeNext(params.get("next")));
       router.refresh();
     }
 

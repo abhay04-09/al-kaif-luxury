@@ -7,6 +7,7 @@ import { Loader2, Mail } from "lucide-react";
 import { GoogleButton } from "@/components/auth/google-button";
 import { PhoneAuth } from "@/components/auth/phone-auth";
 import { useSession } from "@/components/auth/session-provider";
+import { safeNext } from "@/lib/safe-next";
 
 const fieldClass =
   "min-h-12 w-full rounded-md border border-graphite bg-onyx px-4 text-sm text-porcelain outline-none transition focus:border-gold-light";
@@ -70,7 +71,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       await refresh();
       // Send people back where they came from, so a nudge to sign in from the
       // bag does not dump them on the home page afterwards.
-      router.replace(next ?? "/orders");
+      router.replace(safeNext(next));
       router.refresh();
     } catch {
       setError("Could not reach the maison. Please try again.");
