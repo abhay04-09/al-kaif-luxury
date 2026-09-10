@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 /**
  * Headers every response carries.
@@ -22,6 +23,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   images: {
     // Every host here can hand bytes to the image optimiser, so the list is
     // exactly the hosts we use and no wildcard beyond them. A "**.workers.dev"

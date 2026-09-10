@@ -90,18 +90,14 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           )}
         </div>
 
-        {/* Price bands, set by the piece's own price rather than chosen by hand.
-            Shown wherever jewellery is being browsed, which is everywhere. */}
+        {/* Tier filter buttons without "Shop by price" label or price amounts */}
         {tiers.length > 0 && (
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <span className="text-[0.65rem] uppercase tracking-luxury text-porcelain/50">
-              Shop by price
-            </span>
+          <div className="mt-8 flex flex-wrap items-center gap-2.5 sm:gap-3">
             <a
-              className={`rounded-full border px-4 py-2 text-[0.65rem] uppercase tracking-luxury transition ${
+              className={`inline-flex items-center justify-center rounded-full border px-5 py-2 text-xs uppercase tracking-luxury font-medium transition-all duration-200 ${
                 tier
-                  ? "border-white/10 text-porcelain/80 hover:border-gold-light hover:text-porcelain"
-                  : "border-gold-light text-porcelain"
+                  ? "border-brand-border bg-brand-bg/60 text-brand-text/80 hover:border-brand-gold hover:text-brand-gold hover:bg-brand-gold/10 hover:shadow-md hover:-translate-y-0.5"
+                  : "border-brand-gold bg-brand-gold/15 text-brand-gold font-semibold shadow-md shadow-brand-gold/10 ring-1 ring-brand-gold/40"
               }`}
               href={`/products${category ? `?category=${category}` : ""}`}
             >
@@ -110,17 +106,14 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             {tiers.map((band) => (
               <a
                 key={band.id}
-                className={`rounded-full border px-4 py-2 text-[0.65rem] uppercase tracking-luxury transition ${
+                className={`inline-flex items-center justify-center rounded-full border px-5 py-2 text-xs uppercase tracking-luxury font-medium transition-all duration-200 ${
                   tier === band.id
-                    ? "border-gold-light text-porcelain"
-                    : "border-white/10 text-porcelain/80 hover:border-gold-light hover:text-porcelain"
+                    ? "border-brand-gold bg-brand-gold/15 text-brand-gold font-semibold shadow-md shadow-brand-gold/10 ring-1 ring-brand-gold/40"
+                    : "border-brand-border bg-brand-bg/60 text-brand-text/80 hover:border-brand-gold hover:text-brand-gold hover:bg-brand-gold/10 hover:shadow-md hover:-translate-y-0.5"
                 }`}
                 href={`/products?tier=${band.id}${category ? `&category=${category}` : ""}`}
               >
                 {band.name}
-                <span className="ml-2 normal-case tracking-normal text-porcelain/45">
-                  {band.description}
-                </span>
               </a>
             ))}
           </div>

@@ -61,7 +61,6 @@ export default function RootLayout({
         <SessionProvider>
           <ThemeProvider>
             <CartDrawerProvider>
-              <AnnouncementBar />
               <SmoothScrollProvider>{children}</SmoothScrollProvider>
               <WhatsAppButton />
               <CartDrawer />
