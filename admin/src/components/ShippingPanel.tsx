@@ -94,17 +94,17 @@ export const ShippingPanel: React.FC<{
   };
 
   return (
-    <div className="border-t border-[#2A2A2a] pt-4 space-y-3">
+    <div className="border-t border-[#EAE5D9] pt-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="text-[10px] uppercase tracking-[0.2em] text-[#A7A7A7] flex items-center gap-2">
-          <Truck className="w-3.5 h-3.5 text-[#C5A059]" />
+        <span className="text-[10px] uppercase tracking-[0.2em] text-[#6B7280] flex items-center gap-2">
+          <Truck className="w-3.5 h-3.5 text-[#B8860B]" />
           Shipping
         </span>
 
         {shipped ? (
           <div className="flex flex-wrap items-center gap-2">
             {order.courierName && (
-              <span className="text-[10px] text-[#A7A7A7]">{order.courierName}</span>
+              <span className="text-[10px] text-[#6B7280]">{order.courierName}</span>
             )}
             {order.awbNumber && (
               <button
@@ -113,7 +113,7 @@ export const ShippingPanel: React.FC<{
                   toast.success('AWB copied');
                 }}
                 title="Copy AWB"
-                className="inline-flex items-center gap-1.5 font-mono text-[11px] text-[#FFD700] border border-[#C5A059]/40 px-2 py-1 rounded-xs hover:border-[#C5A059]"
+                className="inline-flex items-center gap-1.5 font-mono text-[11px] text-[#B8860B] border border-[#B8860B]/40 px-2 py-1 rounded-xs hover:border-[#B8860B]"
               >
                 {order.awbNumber}
                 <Copy className="w-3 h-3" />
@@ -122,7 +122,7 @@ export const ShippingPanel: React.FC<{
             <button
               onClick={track}
               disabled={busy !== null || !order.awbNumber}
-              className="inline-flex items-center gap-1.5 border border-[#2A2A2a] hover:border-[#C5A059] text-[#DFC27C] px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-xs disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 border border-[#EAE5D9] hover:border-[#B8860B] text-[#996515] px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-xs disabled:opacity-40"
             >
               {busy === 'track' ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -135,7 +135,7 @@ export const ShippingPanel: React.FC<{
               <button
                 onClick={pickup}
                 disabled={busy !== null}
-                className="inline-flex items-center gap-1.5 border border-[#2A2A2a] hover:border-[#C5A059] text-[#A7A7A7] px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-xs disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 border border-[#EAE5D9] hover:border-[#B8860B] text-[#6B7280] px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-xs disabled:opacity-40"
               >
                 {busy === 'pickup' ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -151,7 +151,7 @@ export const ShippingPanel: React.FC<{
             <button
               onClick={ship}
               disabled={busy !== null}
-              className="inline-flex items-center gap-2 bg-[#C5A059] hover:bg-[#FFD700] text-black px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider rounded-xs disabled:opacity-40"
+              className="inline-flex items-center gap-2 bg-[#B8860B] hover:bg-[#D19A1C] text-black px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider rounded-xs disabled:opacity-40"
             >
               {busy === 'ship' ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -161,24 +161,24 @@ export const ShippingPanel: React.FC<{
               Ship with Shipmozo
             </button>
 
-            <span className="text-[10px] text-[#A7A7A7]">or</span>
+            <span className="text-[10px] text-[#6B7280]">or</span>
 
             <input
               value={awb}
               onChange={e => setAwb(e.target.value)}
               placeholder="Paste AWB"
-              className="w-32 bg-[#000e07] border border-[#2A2A2a] rounded-xs px-2 py-1.5 text-[11px] font-mono text-[#F5F2EE] placeholder:text-[#A7A7A7]/50 focus:border-[#C5A059] outline-none"
+              className="w-32 bg-[#FBF9F5] border border-[#EAE5D9] rounded-xs px-2 py-1.5 text-[11px] font-mono text-[#18181B] placeholder:text-[#6B7280]/50 focus:border-[#B8860B] outline-none"
             />
             <input
               value={courier}
               onChange={e => setCourier(e.target.value)}
               placeholder="Courier"
-              className="w-24 bg-[#000e07] border border-[#2A2A2a] rounded-xs px-2 py-1.5 text-[11px] text-[#F5F2EE] placeholder:text-[#A7A7A7]/50 focus:border-[#C5A059] outline-none"
+              className="w-24 bg-[#FBF9F5] border border-[#EAE5D9] rounded-xs px-2 py-1.5 text-[11px] text-[#18181B] placeholder:text-[#6B7280]/50 focus:border-[#B8860B] outline-none"
             />
             <button
               onClick={saveAwb}
               disabled={busy !== null || !awb.trim()}
-              className="border border-[#2A2A2a] hover:border-[#C5A059] text-[#DFC27C] px-2.5 py-1.5 text-[10px] uppercase tracking-wider rounded-xs disabled:opacity-40"
+              className="border border-[#EAE5D9] hover:border-[#B8860B] text-[#996515] px-2.5 py-1.5 text-[10px] uppercase tracking-wider rounded-xs disabled:opacity-40"
             >
               {busy === 'awb' ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Save'}
             </button>
@@ -187,18 +187,18 @@ export const ShippingPanel: React.FC<{
       </div>
 
       {(order.trackingStatus || tracking?.status) && (
-        <p className="text-[11px] text-[#F5F2EE]">
-          <span className="text-[#A7A7A7]">Status: </span>
+        <p className="text-[11px] text-[#18181B]">
+          <span className="text-[#6B7280]">Status: </span>
           {tracking?.status ?? order.trackingStatus}
-          {tracking?.stale && <span className="text-[#A7A7A7]"> (last known)</span>}
+          {tracking?.stale && <span className="text-[#6B7280]"> (last known)</span>}
         </p>
       )}
 
       {tracking?.history && tracking.history.length > 0 && (
-        <ol className="space-y-1.5 border-l border-[#2A2A2a] pl-3">
+        <ol className="space-y-1.5 border-l border-[#EAE5D9] pl-3">
           {tracking.history.map((scan, i) => (
-            <li key={i} className="text-[10px] text-[#A7A7A7]">
-              <span className="text-[#F5F2EE]">{scan.status}</span>
+            <li key={i} className="text-[10px] text-[#6B7280]">
+              <span className="text-[#18181B]">{scan.status}</span>
               {scan.location && (
                 <span className="inline-flex items-center gap-1 ml-2">
                   <MapPin className="w-2.5 h-2.5" />

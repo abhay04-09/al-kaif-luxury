@@ -54,7 +54,7 @@ export const App: React.FC = () => {
   if (booting) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-[#C5A059] animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#B8860B] animate-spin" />
       </div>
     );
   }
@@ -66,18 +66,18 @@ export const App: React.FC = () => {
       <Toaster
         position="bottom-right"
         toastOptions={{
-          style: { background: '#00140a', color: '#F5F2EE', border: '1px solid #C5A059', fontSize: '13px' },
-          success: { iconTheme: { primary: '#C5A059', secondary: '#000' } },
+          style: { background: '#FFFFFF', color: '#18181B', border: '1px solid #B8860B', fontSize: '13px' },
+          success: { iconTheme: { primary: '#B8860B', secondary: '#FFFFFF' } },
         }}
       />
       {/* Sidebar */}
-      <aside className="w-56 shrink-0 bg-[#00140a] border-r border-[#2A2A2a] flex flex-col">
-        <div className="p-5 border-b border-[#2A2A2a]">
-          <div className="flex items-center gap-2 text-[#FFD700]">
+      <aside className="w-56 shrink-0 bg-[#FFFFFF] border-r border-[#EAE5D9] flex flex-col">
+        <div className="p-5 border-b border-[#EAE5D9]">
+          <div className="flex items-center gap-2 text-[#B8860B]">
             <Shield className="w-5 h-5" />
             <span className="font-serif text-lg text-gold-gradient">AL-KAIFF</span>
           </div>
-          <span className="text-[10px] uppercase tracking-[0.25em] text-[#DFC27C]">Admin Panel</span>
+          <span className="text-[10px] uppercase tracking-[0.25em] text-[#996515]">Admin Panel</span>
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
@@ -89,8 +89,8 @@ export const App: React.FC = () => {
                 onClick={() => setTab(item.id)}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xs text-xs uppercase tracking-wider transition-colors ${
                   tab === item.id
-                    ? 'bg-[#C5A059] text-black font-semibold'
-                    : 'text-[#A7A7A7] hover:text-white hover:bg-white/5'
+                    ? 'bg-[#B8860B] text-black font-semibold'
+                    : 'text-[#6B7280] hover:text-[#18181B] hover:bg-[#F5F2EB]'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -100,14 +100,14 @@ export const App: React.FC = () => {
           })}
         </nav>
 
-        <div className="p-4 border-t border-[#2A2A2a] space-y-3">
+        <div className="p-4 border-t border-[#EAE5D9] space-y-3">
           <div className="text-xs">
-            <span className="text-[#FFD700] block font-medium">{user.name}</span>
-            <span className="text-[#A7A7A7] text-[10px]">{user.email}</span>
+            <span className="text-[#B8860B] block font-medium">{user.name}</span>
+            <span className="text-[#6B7280] text-[10px]">{user.email}</span>
           </div>
           <button
             onClick={logout}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-950/70 hover:bg-red-900 border border-red-500/40 text-red-200 text-[11px] uppercase tracking-wider rounded-xs"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-50 hover:bg-red-100 border border-red-500/40 text-red-700 text-[11px] uppercase tracking-wider rounded-xs"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Log Out</span>

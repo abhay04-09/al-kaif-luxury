@@ -10,12 +10,12 @@ import { Order } from '../types';
 const STATUSES = ['Placed', 'In Artisan Crafting', 'Quality Assured', 'Shipped via Express', 'Delivered', 'Cancelled'];
 
 const STATUS_BADGES: Record<string, string> = {
-  'Placed': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  'In Artisan Crafting': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  'Quality Assured': 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  'Shipped via Express': 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-  'Delivered': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  'Cancelled': 'bg-red-500/10 text-red-400 border-red-500/20',
+  'Placed': 'bg-amber-500/10 text-amber-700 border-amber-500/20',
+  'In Artisan Crafting': 'bg-blue-500/10 text-blue-700 border-blue-500/20',
+  'Quality Assured': 'bg-purple-500/10 text-purple-700 border-purple-500/20',
+  'Shipped via Express': 'bg-cyan-500/10 text-cyan-700 border-cyan-500/20',
+  'Delivered': 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
+  'Cancelled': 'bg-red-500/10 text-red-700 border-red-500/20',
 };
 
 /** The address as a courier would need to read it, whatever shape it is in. */
@@ -42,7 +42,7 @@ function geoOf(
 }
 
 function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-[#1a2a1f] rounded ${className}`} />;
+  return <div className={`animate-pulse bg-[#F0ECE4] rounded ${className}`} />;
 }
 
 export const OrdersPage: React.FC = () => {
@@ -128,7 +128,7 @@ export const OrdersPage: React.FC = () => {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-serif text-2xl text-gold-gradient uppercase">Orders</h1>
-          <p className="text-[11px] text-[#A7A7A7] mt-1">
+          <p className="text-[11px] text-[#6B7280] mt-1">
             {loading
               ? 'Loading…'
               : `${filtered.length} of ${view === 'cancelled' ? cancelled.length : orders.length} orders`}
@@ -162,8 +162,8 @@ export const OrdersPage: React.FC = () => {
             onClick={() => { setView(tab.key); setStatusFilter('all'); }}
             className={`px-3 py-1.5 text-[11px] uppercase tracking-wider rounded-xs border transition-colors ${
               view === tab.key
-                ? 'border-[#C5A059] bg-[#C5A059]/15 text-[#FFD700]'
-                : 'border-[#2A2A2a] text-[#A7A7A7] hover:border-[#C5A059]/50 hover:text-[#DFC27C]'
+                ? 'border-[#B8860B] bg-[#B8860B]/15 text-[#B8860B]'
+                : 'border-[#EAE5D9] text-[#6B7280] hover:border-[#B8860B]/50 hover:text-[#996515]'
             }`}
           >
             {tab.key === 'cancelled' && <Ban className="w-3 h-3 inline-block mr-1.5 -mt-0.5" />}
@@ -178,14 +178,14 @@ export const OrdersPage: React.FC = () => {
           urgent — a client waiting on a refund is a client writing to you. */}
       {view === 'cancelled' && !loading && refundsDue.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 border border-amber-500/30 bg-amber-500/5 px-4 py-3 rounded-xs">
-          <IndianRupee className="w-4 h-4 text-amber-400" />
-          <span className="text-xs text-[#F5F2EE]">
-            <strong className="text-amber-400">
+          <IndianRupee className="w-4 h-4 text-amber-700" />
+          <span className="text-xs text-[#18181B]">
+            <strong className="text-amber-700">
               {refundsDue.length} refund{refundsDue.length === 1 ? '' : 's'} owed
             </strong>{' '}
             — ₹{refundDueTotal.toLocaleString('en-IN')} taken for orders that will not be delivered.
           </span>
-          <span className="text-[10px] text-[#A7A7A7]">
+          <span className="text-[10px] text-[#6B7280]">
             Refund in Razorpay, then mark it below.
           </span>
         </div>
@@ -194,16 +194,16 @@ export const OrdersPage: React.FC = () => {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-52">
-          <Search className="w-4 h-4 text-[#C5A059] absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#B8860B] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search by order number, customer, phone or email..."
-            className="w-full bg-[#00140a] border border-[#2A2A2a] text-xs p-2.5 pl-9 rounded-xs focus:border-[#C5A059] focus:outline-none"
+            className="w-full bg-[#FFFFFF] border border-[#EAE5D9] text-xs p-2.5 pl-9 rounded-xs focus:border-[#B8860B] focus:outline-none"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A7A7A7] hover:text-white">
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#18181B]">
               <X className="w-3.5 h-3.5" />
             </button>
           )}
@@ -211,7 +211,7 @@ export const OrdersPage: React.FC = () => {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="bg-[#00140a] border border-[#2A2A2a] text-xs text-[#DFC27C] p-2.5 rounded-xs focus:outline-none"
+          className="bg-[#FFFFFF] border border-[#EAE5D9] text-xs text-[#996515] p-2.5 rounded-xs focus:outline-none"
         >
           <option value="all">All statuses</option>
           {(view === 'cancelled' ? [] : view === 'active' ? STATUSES.filter(x => x !== 'Cancelled') : STATUSES)
@@ -222,25 +222,25 @@ export const OrdersPage: React.FC = () => {
       {/* Orders list */}
       <div className="space-y-4">
         {loading && Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="p-5 bg-[#00140a] border border-[#2A2A2a] rounded-xs space-y-4">
+          <div key={i} className="p-5 bg-[#FFFFFF] border border-[#EAE5D9] rounded-xs space-y-4">
             <div className="flex justify-between"><Skeleton className="h-6 w-40" /><Skeleton className="h-8 w-44" /></div>
             <Skeleton className="h-10 w-full" />
           </div>
         ))}
 
         {!loading && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 gap-3 border border-[#2A2A2a] rounded-xs">
-            <div className="w-14 h-14 rounded-xs bg-[#00140a] border border-[#2A2A2a] flex items-center justify-center">
-              <ShoppingBag className="w-6 h-6 text-[#A7A7A7]" />
+          <div className="flex flex-col items-center justify-center py-20 gap-3 border border-[#EAE5D9] rounded-xs">
+            <div className="w-14 h-14 rounded-xs bg-[#FFFFFF] border border-[#EAE5D9] flex items-center justify-center">
+              <ShoppingBag className="w-6 h-6 text-[#6B7280]" />
             </div>
-            <p className="text-white font-medium text-sm">
+            <p className="text-[#18181B] font-medium text-sm">
               {search || statusFilter !== 'all'
                 ? 'No orders match your filters'
                 : view === 'cancelled'
                 ? 'No cancelled orders'
                 : 'No orders yet'}
             </p>
-            <p className="text-[#A7A7A7] text-[11px]">
+            <p className="text-[#6B7280] text-[11px]">
               {search || statusFilter !== 'all'
                 ? 'Try clearing the search or status filter.'
                 : view === 'cancelled'
@@ -251,28 +251,28 @@ export const OrdersPage: React.FC = () => {
         )}
 
         {!loading && filtered.map(o => (
-          <div key={o.id} className="p-5 bg-[#00140a] border border-[#2A2A2a] hover:border-[#C5A059]/40 rounded-xs space-y-4 text-xs transition-colors">
-            <div className="flex flex-wrap justify-between items-start gap-3 pb-3 border-b border-[#2A2A2a]">
+          <div key={o.id} className="p-5 bg-[#FFFFFF] border border-[#EAE5D9] hover:border-[#B8860B]/40 rounded-xs space-y-4 text-xs transition-colors">
+            <div className="flex flex-wrap justify-between items-start gap-3 pb-3 border-b border-[#EAE5D9]">
               <div>
                 <div className="flex items-center gap-3">
-                  <span className="font-serif text-lg text-[#FFD700]">{o.orderNumber}</span>
+                  <span className="font-serif text-lg text-[#B8860B]">{o.orderNumber}</span>
                   <span className={`px-2 py-0.5 text-[10px] rounded-full border ${STATUS_BADGES[o.orderStatus] ?? STATUS_BADGES['Placed']}`}>
                     {o.orderStatus}
                   </span>
                 </div>
-                <span className="text-[10px] text-[#A7A7A7] block mt-1">
+                <span className="text-[10px] text-[#6B7280] block mt-1">
                   {o.customerName} • {o.customerPhone} • {new Date(o.createdAt).toLocaleString('en-IN')}
                 </span>
-                <span className={`text-[10px] block mt-0.5 ${o.paymentStatus === 'Paid' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                <span className={`text-[10px] block mt-0.5 ${o.paymentStatus === 'Paid' ? 'text-emerald-700' : 'text-amber-700'}`}>
                   Payment: {o.paymentStatus} ({o.paymentMethod})
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] text-[#DFC27C] uppercase">Update:</span>
+                <span className="text-[10px] text-[#996515] uppercase">Update:</span>
                 <select
                   value={o.orderStatus}
                   onChange={e => updateStatus(o.id, e.target.value)}
-                  className="bg-[#000e07] border border-[#C5A059] text-xs text-[#FFD700] p-1.5 rounded-xs"
+                  className="bg-[#FBF9F5] border border-[#B8860B] text-xs text-[#B8860B] p-1.5 rounded-xs"
                 >
                   {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -283,28 +283,28 @@ export const OrdersPage: React.FC = () => {
               {o.items.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-3">
                   {item.product.image && (
-                    <img src={item.product.image} alt={item.product.name} className="w-10 h-10 object-cover rounded-xs border border-[#2A2A2a]" />
+                    <img src={item.product.image} alt={item.product.name} className="w-10 h-10 object-cover rounded-xs border border-[#EAE5D9]" />
                   )}
-                  <span className="flex-1 text-[#F5F2EE]">
+                  <span className="flex-1 text-[#18181B]">
                     {item.product.name}
                     {item.selectedSize && (
-                      <span className="ml-2 px-2 py-0.5 bg-[#C5A059]/15 border border-[#C5A059]/40 text-[#FFD700] text-[10px] uppercase tracking-wider rounded-xs">
+                      <span className="ml-2 px-2 py-0.5 bg-[#B8860B]/15 border border-[#B8860B]/40 text-[#B8860B] text-[10px] uppercase tracking-wider rounded-xs">
                         Size: {item.selectedSize}
                       </span>
                     )}
                   </span>
-                  <span className="text-[#A7A7A7]">× {item.quantity}</span>
-                  <span className="font-mono text-[#FFD700]">
+                  <span className="text-[#6B7280]">× {item.quantity}</span>
+                  <span className="font-mono text-[#B8860B]">
                     ₹{(item.product.priceINR * item.quantity).toLocaleString('en-IN')}
                   </span>
                 </div>
               ))}
             </div>
 
-            <div className="pt-3 border-t border-[#2A2A2a] flex flex-wrap justify-between gap-2 text-[#A7A7A7]">
+            <div className="pt-3 border-t border-[#EAE5D9] flex flex-wrap justify-between gap-2 text-[#6B7280]">
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <MapPin className="w-3 h-3 text-[#C5A059] shrink-0" />
-                <span className="text-[#F5F2EE]">{fullAddress(o.shippingAddress)}</span>
+                <MapPin className="w-3 h-3 text-[#B8860B] shrink-0" />
+                <span className="text-[#18181B]">{fullAddress(o.shippingAddress)}</span>
                 {/* Shared by the customer at checkout, and only then. It is how
                     a courier finds a house that has never had a number. */}
                 {geoOf(o.shippingAddress) && (
@@ -313,21 +313,21 @@ export const OrdersPage: React.FC = () => {
                     target="_blank"
                     rel="noreferrer"
                     title={`Shared by the customer, accurate to about ${geoOf(o.shippingAddress)!.accuracy}m`}
-                    className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-[#DFC27C] border border-[#C5A059]/40 px-1.5 py-0.5 rounded-xs hover:border-[#C5A059]"
+                    className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-[#996515] border border-[#B8860B]/40 px-1.5 py-0.5 rounded-xs hover:border-[#B8860B]"
                   >
                     <Crosshair className="w-2.5 h-2.5" />
                     Pinned location
                   </a>
                 )}
               </span>
-              <span className="font-mono text-[#FFD700]">
+              <span className="font-mono text-[#B8860B]">
                 {(o.shippingINR ?? 0) > 0 && (
-                  <span className="text-[10px] text-[#A7A7A7] mr-2">
+                  <span className="text-[10px] text-[#6B7280] mr-2">
                     + ₹{(o.shippingINR ?? 0).toLocaleString('en-IN')} shipping
                   </span>
                 )}
                 {(o.codFeeINR ?? 0) > 0 && (
-                  <span className="text-[10px] text-[#A7A7A7] mr-2">
+                  <span className="text-[10px] text-[#6B7280] mr-2">
                     + ₹{(o.codFeeINR ?? 0).toLocaleString('en-IN')} COD
                   </span>
                 )}
@@ -338,13 +338,13 @@ export const OrdersPage: React.FC = () => {
             {o.orderStatus === 'Cancelled' ? (
               /* A cancelled order is not shipped, it is settled. What matters
                  here is when, who asked, why, and whether the money went back. */
-              <div className="border-t border-[#2A2A2a] pt-4 space-y-3">
+              <div className="border-t border-[#EAE5D9] pt-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-[#A7A7A7] flex items-center gap-2">
-                    <Ban className="w-3.5 h-3.5 text-red-400" />
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-[#6B7280] flex items-center gap-2">
+                    <Ban className="w-3.5 h-3.5 text-red-700" />
                     Cancelled
                     {o.cancelledAt && (
-                      <span className="normal-case tracking-normal text-[#F5F2EE]">
+                      <span className="normal-case tracking-normal text-[#18181B]">
                         {new Date(o.cancelledAt).toLocaleString('en-IN')}
                       </span>
                     )}
@@ -360,7 +360,7 @@ export const OrdersPage: React.FC = () => {
                       <button
                         onClick={() => setRefunded(o.id, false)}
                         title="Recorded as refunded — click if that was a mistake"
-                        className="inline-flex items-center gap-1.5 border border-emerald-500/40 text-emerald-400 px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-xs hover:border-emerald-400"
+                        className="inline-flex items-center gap-1.5 border border-emerald-500/40 text-emerald-700 px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-xs hover:border-emerald-400"
                       >
                         <IndianRupee className="w-3 h-3" />
                         Refunded
@@ -368,7 +368,7 @@ export const OrdersPage: React.FC = () => {
                     ) : (
                       <button
                         onClick={() => setRefunded(o.id, true)}
-                        className="inline-flex items-center gap-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-400 px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-xs hover:border-amber-400"
+                        className="inline-flex items-center gap-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-700 px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-xs hover:border-amber-400"
                       >
                         <IndianRupee className="w-3 h-3" />
                         Refund ₹{o.totalINR.toLocaleString('en-IN')} owed — mark sent
@@ -378,16 +378,16 @@ export const OrdersPage: React.FC = () => {
                 </div>
 
                 {o.cancellationReason && (
-                  <p className="text-[11px] text-[#F5F2EE]">
-                    <span className="text-[#A7A7A7]">Reason: </span>
+                  <p className="text-[11px] text-[#18181B]">
+                    <span className="text-[#6B7280]">Reason: </span>
                     {o.cancellationReason}
                   </p>
                 )}
 
                 {o.awbNumber && (
-                  <p className="text-[10px] text-[#A7A7A7]">
+                  <p className="text-[10px] text-[#6B7280]">
                     A parcel had already gone out on AWB{' '}
-                    <span className="font-mono text-[#DFC27C]">{o.awbNumber}</span> — check the
+                    <span className="font-mono text-[#996515]">{o.awbNumber}</span> — check the
                     courier before considering this closed.
                   </p>
                 )}

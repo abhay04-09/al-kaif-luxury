@@ -35,10 +35,10 @@ export const LoginPage: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin
     <div className="min-h-screen flex items-center justify-center p-6">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm bg-[#00140a] border border-[#C5A059] rounded-sm p-8 space-y-6 shadow-2xl"
+        className="w-full max-w-sm bg-[#FFFFFF] border border-[#B8860B] rounded-sm p-8 space-y-6 shadow-2xl"
       >
         <div className="text-center">
-          <div className="w-14 h-14 rounded-full bg-[#C5A059]/10 border border-[#C5A059]/50 flex items-center justify-center mx-auto text-[#FFD700] mb-3">
+          <div className="w-14 h-14 rounded-full bg-[#B8860B]/10 border border-[#B8860B]/50 flex items-center justify-center mx-auto text-[#B8860B] mb-3">
             <Shield className="w-7 h-7" />
           </div>
           <h1 className="font-serif text-2xl text-gold-gradient uppercase">AL-KAIFF Admin</h1>
@@ -46,36 +46,36 @@ export const LoginPage: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin
 
         <div className="space-y-4 text-xs">
           <div>
-            <label className="text-[#DFC27C] block mb-1 font-medium">ADMIN EMAIL</label>
+            <label className="text-[#996515] block mb-1 font-medium">ADMIN EMAIL</label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-[#C5A059] absolute left-3 top-1/2 -translate-y-1/2" />
+              <Mail className="w-4 h-4 text-[#B8860B] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full bg-black/60 border border-[#2A2A2a] text-white p-2.5 pl-9 rounded-xs focus:border-[#C5A059] focus:outline-none"
+                className="w-full bg-[#FBF9F5] border border-[#EAE5D9] text-[#18181B] p-2.5 pl-9 rounded-xs focus:border-[#B8860B] focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-[#DFC27C] block mb-1 font-medium">PASSWORD</label>
+            <label className="text-[#996515] block mb-1 font-medium">PASSWORD</label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-[#C5A059] absolute left-3 top-1/2 -translate-y-1/2" />
+              <Lock className="w-4 h-4 text-[#B8860B] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full bg-black/60 border border-[#2A2A2a] text-white p-2.5 pl-9 rounded-xs focus:border-[#C5A059] focus:outline-none"
+                className="w-full bg-[#FBF9F5] border border-[#EAE5D9] text-[#18181B] p-2.5 pl-9 rounded-xs focus:border-[#B8860B] focus:outline-none"
               />
             </div>
           </div>
 
           {error && (
-            <div className="p-3 bg-red-950/60 border border-red-500/40 rounded-xs text-red-200 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
+            <div className="p-3 bg-red-50 border border-red-500/40 rounded-xs text-red-700 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-700" />
               <span>{error}</span>
             </div>
           )}
@@ -83,7 +83,7 @@ export const LoginPage: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 bg-[#C5A059] text-black font-bold tracking-widest uppercase rounded-xs hover:bg-[#FFD700] transition-colors disabled:opacity-60"
+            className="w-full py-3 bg-[#B8860B] text-black font-bold tracking-widest uppercase rounded-xs hover:bg-[#D19A1C] transition-colors disabled:opacity-60"
           >
             {isSubmitting ? 'SIGNING IN...' : 'Sign In'}
           </button>

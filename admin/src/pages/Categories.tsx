@@ -75,17 +75,17 @@ export const CategoriesPage: React.FC = () => {
           if (e.key === 'Enter') commitRename();
           if (e.key === 'Escape') setRenamingId(null);
         }}
-        className="bg-black/60 border border-[#C5A059] text-xs p-1.5 rounded-xs focus:outline-none w-44"
+        className="bg-[#FBF9F5] border border-[#B8860B] text-xs p-1.5 rounded-xs focus:outline-none w-44"
       />
-      <button onClick={commitRename} className="p-1 text-emerald-400 hover:text-emerald-300"><Check className="w-3.5 h-3.5" /></button>
-      <button onClick={() => setRenamingId(null)} className="p-1 text-[#A7A7A7] hover:text-white"><X className="w-3.5 h-3.5" /></button>
+      <button onClick={commitRename} className="p-1 text-emerald-700 hover:text-emerald-700"><Check className="w-3.5 h-3.5" /></button>
+      <button onClick={() => setRenamingId(null)} className="p-1 text-[#6B7280] hover:text-[#18181B]"><X className="w-3.5 h-3.5" /></button>
     </span>
   );
 
   return (
     <div className="space-y-6 max-w-3xl">
       <h1 className="font-serif text-2xl text-gold-gradient uppercase flex items-center gap-3">
-        <FolderTree className="w-6 h-6 text-[#C5A059]" />
+        <FolderTree className="w-6 h-6 text-[#B8860B]" />
         Categories
       </h1>
 
@@ -103,11 +103,11 @@ export const CategoriesPage: React.FC = () => {
           value={newTopName}
           onChange={e => setNewTopName(e.target.value)}
           placeholder="New category name (e.g. Accessories)"
-          className="flex-1 bg-black/60 border border-[#2A2A2a] text-xs p-3 rounded-xs focus:border-[#C5A059] focus:outline-none"
+          className="flex-1 bg-[#FBF9F5] border border-[#EAE5D9] text-xs p-3 rounded-xs focus:border-[#B8860B] focus:outline-none"
         />
         <button
           type="submit"
-          className="px-4 py-2.5 bg-[#C5A059] text-black text-xs font-semibold uppercase tracking-wider rounded-xs hover:bg-[#FFD700] flex items-center gap-2"
+          className="px-4 py-2.5 bg-[#B8860B] text-black text-xs font-semibold uppercase tracking-wider rounded-xs hover:bg-[#D19A1C] flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
           <span>Add Category</span>
@@ -117,29 +117,29 @@ export const CategoriesPage: React.FC = () => {
       {/* Category tree */}
       <div className="space-y-4">
         {categories.map(cat => (
-          <div key={cat.id} className="bg-[#00140a] border border-[#2A2A2a] rounded-xs">
-            <div className="p-4 flex items-center justify-between border-b border-[#2A2A2a]">
+          <div key={cat.id} className="bg-[#FFFFFF] border border-[#EAE5D9] rounded-xs">
+            <div className="p-4 flex items-center justify-between border-b border-[#EAE5D9]">
               <div>
                 {renamingId === cat.id ? (
                   renameInput
                 ) : (
                   <>
-                    <span className="font-serif text-lg text-[#FFD700]">{cat.name}</span>
-                    <span className="text-[10px] text-[#A7A7A7] font-mono ml-2">/{cat.id}</span>
+                    <span className="font-serif text-lg text-[#B8860B]">{cat.name}</span>
+                    <span className="text-[10px] text-[#6B7280] font-mono ml-2">/{cat.id}</span>
                   </>
                 )}
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => startRename(cat)}
-                  className="p-1.5 border border-[#2A2A2a] hover:border-[#C5A059] text-[#DFC27C] rounded-xs"
+                  className="p-1.5 border border-[#EAE5D9] hover:border-[#B8860B] text-[#996515] rounded-xs"
                   title="Rename"
                 >
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => deleteCategory(cat, true)}
-                  className="p-1.5 border border-[#2A2A2a] hover:border-red-500 text-red-400 rounded-xs"
+                  className="p-1.5 border border-[#EAE5D9] hover:border-red-500 text-red-700 rounded-xs"
                   title="Delete"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -151,28 +151,28 @@ export const CategoriesPage: React.FC = () => {
             <div className="p-4 space-y-2">
               {(cat.children ?? []).map(sub => (
                 <div key={sub.id} className="flex items-center justify-between text-xs pl-2">
-                  <div className="flex items-center gap-2 text-[#F5F2EE]">
-                    <CornerDownRight className="w-3.5 h-3.5 text-[#C5A059]" />
+                  <div className="flex items-center gap-2 text-[#18181B]">
+                    <CornerDownRight className="w-3.5 h-3.5 text-[#B8860B]" />
                     {renamingId === sub.id ? (
                       renameInput
                     ) : (
                       <>
                         <span>{sub.name}</span>
-                        <span className="text-[10px] text-[#A7A7A7] font-mono">/{sub.id}</span>
+                        <span className="text-[10px] text-[#6B7280] font-mono">/{sub.id}</span>
                       </>
                     )}
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => startRename(sub)}
-                      className="p-1 border border-[#2A2A2a] hover:border-[#C5A059] text-[#DFC27C] rounded-xs"
+                      className="p-1 border border-[#EAE5D9] hover:border-[#B8860B] text-[#996515] rounded-xs"
                       title="Rename"
                     >
                       <Pencil className="w-3 h-3" />
                     </button>
                     <button
                       onClick={() => deleteCategory(sub, false)}
-                      className="p-1 border border-[#2A2A2a] hover:border-red-500 text-red-400 rounded-xs"
+                      className="p-1 border border-[#EAE5D9] hover:border-red-500 text-red-700 rounded-xs"
                       title="Delete"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -181,7 +181,7 @@ export const CategoriesPage: React.FC = () => {
                 </div>
               ))}
               {(cat.children ?? []).length === 0 && (
-                <p className="text-[10px] text-[#A7A7A7] pl-2">No sub-categories yet.</p>
+                <p className="text-[10px] text-[#6B7280] pl-2">No sub-categories yet.</p>
               )}
 
               {/* Add sub-category */}
@@ -198,11 +198,11 @@ export const CategoriesPage: React.FC = () => {
                   value={subInputs[cat.id] ?? ''}
                   onChange={e => setSubInputs(s => ({ ...s, [cat.id]: e.target.value }))}
                   placeholder={`Add sub-category under ${cat.name}...`}
-                  className="flex-1 bg-black/60 border border-[#2A2A2a] text-xs p-2 rounded-xs focus:border-[#C5A059] focus:outline-none"
+                  className="flex-1 bg-[#FBF9F5] border border-[#EAE5D9] text-xs p-2 rounded-xs focus:border-[#B8860B] focus:outline-none"
                 />
                 <button
                   type="submit"
-                  className="px-3 py-1.5 border border-[#C5A059]/60 text-[#DFC27C] hover:text-[#FFD700] hover:border-[#FFD700] text-[10px] uppercase tracking-wider rounded-xs flex items-center gap-1"
+                  className="px-3 py-1.5 border border-[#B8860B]/60 text-[#996515] hover:text-[#B8860B] hover:border-[#B8860B] text-[10px] uppercase tracking-wider rounded-xs flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" />
                   <span>Add</span>
@@ -212,7 +212,7 @@ export const CategoriesPage: React.FC = () => {
           </div>
         ))}
         {categories.length === 0 && (
-          <div className="p-10 text-center text-xs text-[#A7A7A7] border border-[#2A2A2a] rounded-xs">
+          <div className="p-10 text-center text-xs text-[#6B7280] border border-[#EAE5D9] rounded-xs">
             No categories yet — add one above, or run the setup init to seed the defaults.
           </div>
         )}

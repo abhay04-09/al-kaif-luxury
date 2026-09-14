@@ -17,9 +17,9 @@ const formatDate = (value?: string | null) =>
     : '—';
 
 const Stat: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div className="border border-[#2A2A2a] rounded-xs bg-[#000e07] p-4">
-    <span className="text-[10px] uppercase tracking-[0.2em] text-[#A7A7A7]">{label}</span>
-    <p className="mt-2 font-serif text-2xl text-[#F5F2EE]">{value}</p>
+  <div className="border border-[#EAE5D9] rounded-xs bg-[#FBF9F5] p-4">
+    <span className="text-[10px] uppercase tracking-[0.2em] text-[#6B7280]">{label}</span>
+    <p className="mt-2 font-serif text-2xl text-[#18181B]">{value}</p>
   </div>
 );
 
@@ -89,7 +89,7 @@ export const CustomersPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 text-[#C5A059] animate-spin" />
+        <Loader2 className="w-6 h-6 text-[#B8860B] animate-spin" />
       </div>
     );
   }
@@ -115,19 +115,19 @@ export const CustomersPage: React.FC = () => {
             label="Export all orders"
           />
         <div className="relative">
-          <Search className="w-3.5 h-3.5 text-[#A7A7A7] absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 text-[#6B7280] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Search name, email or phone"
-            className="w-72 bg-[#000e07] border border-[#2A2A2a] rounded-xs pl-9 pr-3 py-2 text-xs text-[#F5F2EE] placeholder:text-[#A7A7A7]/60 focus:border-[#C5A059] outline-none"
+            className="w-72 bg-[#FBF9F5] border border-[#EAE5D9] rounded-xs pl-9 pr-3 py-2 text-xs text-[#18181B] placeholder:text-[#6B7280]/60 focus:border-[#B8860B] outline-none"
           />
         </div>
         </div>
       </div>
 
       {error && (
-        <div className="border border-red-500/40 bg-red-950/40 rounded-xs p-4 text-xs text-red-200">
+        <div className="border border-red-500/40 bg-red-50 rounded-xs p-4 text-xs text-red-700">
           {error}
         </div>
       )}
@@ -138,10 +138,10 @@ export const CustomersPage: React.FC = () => {
         <Stat label="Have ordered" value={String(withOrders)} />
       </div>
 
-      <div className="border border-[#2A2A2a] rounded-xs bg-[#000e07] overflow-x-auto">
+      <div className="border border-[#EAE5D9] rounded-xs bg-[#FBF9F5] overflow-x-auto">
         <table className="w-full text-xs min-w-[900px]">
           <thead>
-            <tr className="text-left text-[10px] uppercase tracking-[0.2em] text-[#A7A7A7] border-b border-[#2A2A2a]">
+            <tr className="text-left text-[10px] uppercase tracking-[0.2em] text-[#6B7280] border-b border-[#EAE5D9]">
               <th className="p-4 font-normal">Customer</th>
               <th className="p-4 font-normal">Phone</th>
               <th className="p-4 font-normal hidden lg:table-cell">Saved address</th>
@@ -152,14 +152,14 @@ export const CustomersPage: React.FC = () => {
               <th className="p-4 font-normal">Last order</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#2A2A2a]">
+          <tbody className="divide-y divide-[#EAE5D9]">
             {visible.map(person => {
               const theirOrders = ordersByCustomer.get(person.id) ?? [];
               const isOpen = expanded === person.id;
               return (
               <React.Fragment key={person.id}>
               <tr
-                className={`hover:bg-white/[0.02] ${theirOrders.length ? 'cursor-pointer' : ''}`}
+                className={`hover:bg-[#FBF9F5] ${theirOrders.length ? 'cursor-pointer' : ''}`}
                 onClick={() =>
                   theirOrders.length && setExpanded(isOpen ? null : person.id)
                 }
@@ -170,18 +170,18 @@ export const CustomersPage: React.FC = () => {
                       <img
                         src={person.avatar}
                         alt=""
-                        className="w-8 h-8 rounded-full object-cover border border-[#2A2A2a]"
+                        className="w-8 h-8 rounded-full object-cover border border-[#EAE5D9]"
                       />
                     ) : (
-                      <span className="w-8 h-8 rounded-full border border-[#2A2A2a] flex items-center justify-center">
-                        <UserRound className="w-4 h-4 text-[#C5A059]" />
+                      <span className="w-8 h-8 rounded-full border border-[#EAE5D9] flex items-center justify-center">
+                        <UserRound className="w-4 h-4 text-[#B8860B]" />
                       </span>
                     )}
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[#F5F2EE]">{person.name}</span>
+                        <span className="text-[#18181B]">{person.name}</span>
                         {person.role === 'admin' && (
-                          <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider text-[#FFD700] border border-[#C5A059]/50 px-1.5 py-0.5">
+                          <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider text-[#B8860B] border border-[#B8860B]/50 px-1.5 py-0.5">
                             <Shield className="w-2.5 h-2.5" />
                             Admin
                           </span>
@@ -189,16 +189,16 @@ export const CustomersPage: React.FC = () => {
                       </div>
                       <a
                         href={`mailto:${person.email}`}
-                        className="text-[10px] text-[#A7A7A7] hover:text-[#C5A059]"
+                        className="text-[10px] text-[#6B7280] hover:text-[#B8860B]"
                       >
                         {person.email}
                       </a>
                     </div>
                   </div>
                 </td>
-                <td className="p-4 text-[#A7A7A7]">
+                <td className="p-4 text-[#6B7280]">
                   {person.phone ? (
-                    <a href={`tel:${person.phone}`} className="hover:text-[#C5A059]">
+                    <a href={`tel:${person.phone}`} className="hover:text-[#B8860B]">
                       {person.phone}
                     </a>
                   ) : (
@@ -207,70 +207,70 @@ export const CustomersPage: React.FC = () => {
                 </td>
                 {/* What they saved to their account, which is what checkout
                     fills in for them next time. */}
-                <td className="p-4 text-[#A7A7A7] hidden lg:table-cell max-w-64">
+                <td className="p-4 text-[#6B7280] hidden lg:table-cell max-w-64">
                   {person.address ? (
                     <span className="block whitespace-pre-line leading-relaxed" title={person.address}>
                       {person.address}
                     </span>
                   ) : (
-                    <span className="text-[#A7A7A7]/50">Not saved</span>
+                    <span className="text-[#6B7280]/50">Not saved</span>
                   )}
                 </td>
                 <td className="p-4">
                   <span
                     className={`text-[10px] uppercase tracking-wider px-2 py-1 border ${
                       person.signUpMethod === 'Google'
-                        ? 'border-[#4285F4]/50 text-[#8AB4F8]'
-                        : 'border-[#C5A059]/40 text-[#DFC27C]'
+                        ? 'border-[#4285F4]/50 text-[#1A73E8]'
+                        : 'border-[#B8860B]/40 text-[#996515]'
                     }`}
                   >
                     {person.signUpMethod}
                   </span>
                 </td>
-                <td className="p-4 text-[#A7A7A7]">{formatDate(person.createdAt)}</td>
+                <td className="p-4 text-[#6B7280]">{formatDate(person.createdAt)}</td>
                 <td className="p-4">
                   {person.orderCount > 0 ? (
-                    <span className="inline-flex items-center gap-1.5 text-[#F5F2EE]">
-                      <ShoppingBag className="w-3 h-3 text-[#C5A059]" />
+                    <span className="inline-flex items-center gap-1.5 text-[#18181B]">
+                      <ShoppingBag className="w-3 h-3 text-[#B8860B]" />
                       {person.orderCount}
                       {theirOrders.length > 0 && (
                         <ChevronDown
-                          className={`w-3 h-3 text-[#A7A7A7] transition-transform ${
+                          className={`w-3 h-3 text-[#6B7280] transition-transform ${
                             isOpen ? 'rotate-180' : ''
                           }`}
                         />
                       )}
                     </span>
                   ) : (
-                    <span className="text-[#A7A7A7]">—</span>
+                    <span className="text-[#6B7280]">—</span>
                   )}
                 </td>
-                <td className="p-4 text-[#F5F2EE]">
+                <td className="p-4 text-[#18181B]">
                   {person.totalSpentINR > 0 ? inr(person.totalSpentINR) : '—'}
                 </td>
-                <td className="p-4 text-[#A7A7A7]">{formatDate(person.lastOrderAt)}</td>
+                <td className="p-4 text-[#6B7280]">{formatDate(person.lastOrderAt)}</td>
               </tr>
 
               {isOpen && (
-                <tr className="bg-black/30">
+                <tr className="bg-[#F5F2EB]">
                   <td colSpan={7} className="p-0">
-                    <div className="px-4 py-4 border-l-2 border-[#C5A059]">
-                      <p className="text-[10px] uppercase tracking-[0.2em] text-[#A7A7A7] mb-3">
+                    <div className="px-4 py-4 border-l-2 border-[#B8860B]">
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-[#6B7280] mb-3">
                         {person.name}&rsquo;s orders
                       </p>
                       <div className="space-y-2">
                         {theirOrders.map(order => (
                           <div
                             key={order.id}
-                            className="flex flex-wrap items-center gap-x-6 gap-y-2 border border-[#2A2A2a] bg-[#000e07] px-4 py-3"
+                            className="flex flex-wrap items-center gap-x-6 gap-y-2 border border-[#EAE5D9] bg-[#FBF9F5] px-4 py-3"
                           >
-                            <span className="font-serif text-sm text-[#DFC27C] w-32">
+                            <span className="font-serif text-sm text-[#996515] w-32">
                               {order.orderNumber}
                             </span>
-                            <span className="text-[10px] text-[#A7A7A7] w-24">
+                            <span className="text-[10px] text-[#6B7280] w-24">
                               {formatDate(order.createdAt)}
                             </span>
-                            <span className="text-[11px] text-[#F5F2EE] flex-1 min-w-[12rem]">
+                            <span className="text-[11px] text-[#18181B] flex-1 min-w-[12rem]">
                               {(order.items ?? [])
                                 .map(item => `${item.product?.name ?? 'Piece'} x${item.quantity}`)
                                 .join(', ') || '—'}
@@ -278,18 +278,18 @@ export const CustomersPage: React.FC = () => {
                             <span
                               className={`text-[9px] uppercase tracking-wider px-2 py-1 border ${
                                 order.paymentStatus === 'Paid'
-                                  ? 'border-emerald-500/40 text-emerald-300'
+                                  ? 'border-emerald-500/40 text-emerald-700'
                                   : order.paymentStatus === 'Failed'
-                                    ? 'border-red-500/40 text-red-300'
-                                    : 'border-[#C5A059]/40 text-[#DFC27C]'
+                                    ? 'border-red-500/40 text-red-700'
+                                    : 'border-[#B8860B]/40 text-[#996515]'
                               }`}
                             >
                               {order.paymentStatus}
                             </span>
-                            <span className="text-[9px] uppercase tracking-wider px-2 py-1 border border-[#2A2A2a] text-[#A7A7A7]">
+                            <span className="text-[9px] uppercase tracking-wider px-2 py-1 border border-[#EAE5D9] text-[#6B7280]">
                               {order.orderStatus}
                             </span>
-                            <span className="text-sm text-[#F5F2EE] w-20 text-right">
+                            <span className="text-sm text-[#18181B] w-20 text-right">
                               {inr(order.totalINR)}
                             </span>
                           </div>
@@ -305,7 +305,7 @@ export const CustomersPage: React.FC = () => {
         </table>
 
         {visible.length === 0 && (
-          <div className="p-10 text-center text-xs text-[#A7A7A7]">
+          <div className="p-10 text-center text-xs text-[#6B7280]">
             {customers.length === 0
               ? 'Nobody has signed up yet.'
               : 'No customer matches that search.'}

@@ -21,20 +21,20 @@ export const SubscribersPage: React.FC = () => {
         Newsletter Subscribers ({subscribers.length})
       </h1>
 
-      <div className="border border-[#2A2A2a] rounded-xs divide-y divide-[#2A2A2a] bg-[#000e07] max-w-2xl">
+      <div className="border border-[#EAE5D9] rounded-xs divide-y divide-[#EAE5D9] bg-[#FBF9F5] max-w-2xl">
         {subscribers.map(s => (
           <div key={s.id} className="p-4 flex items-center justify-between text-xs">
             <div className="flex items-center gap-3">
-              <Mail className="w-4 h-4 text-[#C5A059]" />
-              <span className="text-[#F5F2EE]">{s.email}</span>
+              <Mail className="w-4 h-4 text-[#B8860B]" />
+              <span className="text-[#18181B]">{s.email}</span>
             </div>
-            <span className="text-[10px] text-[#A7A7A7]">
+            <span className="text-[10px] text-[#6B7280]">
               {new Date(s.subscribed_at).toLocaleDateString()}
             </span>
           </div>
         ))}
         {subscribers.length === 0 && (
-          <div className="p-10 text-center text-xs text-[#A7A7A7]">No subscribers yet.</div>
+          <div className="p-10 text-center text-xs text-[#6B7280]">No subscribers yet.</div>
         )}
       </div>
     </div>

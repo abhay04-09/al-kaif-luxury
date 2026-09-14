@@ -31,11 +31,11 @@ export function ExportButton<T>({
           : `Download ${rows.length} row${rows.length === 1 ? '' : 's'} as CSV`
       }
       onClick={() => downloadCsv(`${filename}-${stamp()}.csv`, toCsv(rows, columns))}
-      className="inline-flex items-center gap-2 border border-[#2A2A2a] hover:border-[#C5A059] text-[#DFC27C] px-3 py-2 text-[10px] uppercase tracking-[0.2em] rounded-xs transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#2A2A2a]"
+      className="inline-flex items-center gap-2 border border-[#EAE5D9] hover:border-[#B8860B] text-[#996515] px-3 py-2 text-[10px] uppercase tracking-[0.2em] rounded-xs transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#EAE5D9]"
     >
       <Download className="w-3.5 h-3.5" />
       {label}
-      {!disabled && <span className="text-[#A7A7A7]">({rows.length})</span>}
+      {!disabled && <span className="text-[#6B7280]">({rows.length})</span>}
     </button>
   );
 }

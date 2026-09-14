@@ -1,17 +1,21 @@
 @import "tailwindcss";
 
+/* Matched to the storefront's light theme (frontend/app/globals.css), so the
+   panel and the shop read as one house rather than two. */
 body {
   font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-  background: #011a0d;
-  color: #f5f2ee;
+  background: #fbf9f5;
+  color: #18181b;
 }
 
 .font-serif {
   font-family: "Cinzel", serif;
 }
 
+/* Deeper golds than the dark theme used: the bright yellow end of the old
+   gradient all but disappears against white. */
 .text-gold-gradient {
-  background: linear-gradient(120deg, #c5a059, #ffd700, #dfc27c);
+  background: linear-gradient(120deg, #8a6d1f, #b8860b, #996515);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

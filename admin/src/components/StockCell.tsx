@@ -66,8 +66,8 @@ export const StockCell: React.FC<{
         <span
           className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] rounded-full border ${
             product.inStock
-              ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30'
-              : 'bg-red-950/60 text-red-400 border-red-500/30'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-500/30'
+              : 'bg-red-50 text-red-700 border-red-500/30'
           }`}
         >
           <span
@@ -80,7 +80,7 @@ export const StockCell: React.FC<{
           disabled={saving}
           onClick={() => save(0)}
           title="Start counting this piece"
-          className="text-[10px] uppercase tracking-wider text-[#A7A7A7] hover:text-[#C5A059] disabled:opacity-40"
+          className="text-[10px] uppercase tracking-wider text-[#6B7280] hover:text-[#B8860B] disabled:opacity-40"
         >
           {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Count'}
         </button>
@@ -91,10 +91,10 @@ export const StockCell: React.FC<{
   const quantity = Number(product.stockQuantity ?? 0);
   const low = quantity > 0 && quantity <= (product.lowStockThreshold ?? 3);
   const tone = quantity === 0
-    ? 'text-red-400 border-red-500/40'
+    ? 'text-red-700 border-red-500/40'
     : low
-      ? 'text-[#FFD700] border-[#C5A059]/50'
-      : 'text-emerald-400 border-emerald-500/30';
+      ? 'text-[#B8860B] border-[#B8860B]/50'
+      : 'text-emerald-700 border-emerald-500/30';
 
   return (
     <div className="flex items-center gap-1.5">
@@ -103,7 +103,7 @@ export const StockCell: React.FC<{
         disabled={saving || quantity === 0}
         onClick={() => step(-1)}
         title="One fewer"
-        className="grid h-6 w-6 place-items-center border border-[#2A2A2a] text-[#A7A7A7] hover:border-[#C5A059] hover:text-[#C5A059] rounded-xs disabled:opacity-30"
+        className="grid h-6 w-6 place-items-center border border-[#EAE5D9] text-[#6B7280] hover:border-[#B8860B] hover:text-[#B8860B] rounded-xs disabled:opacity-30"
       >
         <Minus className="w-3 h-3" />
       </button>
@@ -119,7 +119,7 @@ export const StockCell: React.FC<{
         }}
         inputMode="numeric"
         title="Pieces on the shelf — clear the field to stop counting"
-        className={`w-14 bg-[#000e07] border rounded-xs px-2 py-1 text-center text-xs font-mono outline-none focus:border-[#C5A059] ${tone}`}
+        className={`w-14 bg-[#FBF9F5] border rounded-xs px-2 py-1 text-center text-xs font-mono outline-none focus:border-[#B8860B] ${tone}`}
       />
 
       <button
@@ -127,17 +127,17 @@ export const StockCell: React.FC<{
         disabled={saving}
         onClick={() => step(1)}
         title="One more"
-        className="grid h-6 w-6 place-items-center border border-[#2A2A2a] text-[#A7A7A7] hover:border-[#C5A059] hover:text-[#C5A059] rounded-xs disabled:opacity-30"
+        className="grid h-6 w-6 place-items-center border border-[#EAE5D9] text-[#6B7280] hover:border-[#B8860B] hover:text-[#B8860B] rounded-xs disabled:opacity-30"
       >
         <Plus className="w-3 h-3" />
       </button>
 
-      {saving && <Loader2 className="w-3 h-3 text-[#C5A059] animate-spin" />}
+      {saving && <Loader2 className="w-3 h-3 text-[#B8860B] animate-spin" />}
       {!saving && quantity === 0 && (
-        <span className="text-[9px] uppercase tracking-wider text-red-400">Out</span>
+        <span className="text-[9px] uppercase tracking-wider text-red-700">Out</span>
       )}
       {!saving && low && (
-        <span className="text-[9px] uppercase tracking-wider text-[#FFD700]">Low</span>
+        <span className="text-[9px] uppercase tracking-wider text-[#B8860B]">Low</span>
       )}
     </div>
   );

@@ -54,9 +54,9 @@ function tierOf(
 }
 
 const TIER_STYLES: Record<string, string> = {
-  Classic: 'border-[#8AB4F8]/40 text-[#8AB4F8]',
-  Standard: 'border-[#C5A059]/50 text-[#DFC27C]',
-  Premium: 'border-[#FFD700]/60 text-[#FFD700]',
+  Classic: 'border-[#1A73E8]/40 text-[#1A73E8]',
+  Standard: 'border-[#B8860B]/50 text-[#996515]',
+  Premium: 'border-[#B8860B]/60 text-[#B8860B]',
 };
 
 const TierBadge: React.FC<{ tier?: string }> = ({ tier }) =>
@@ -116,20 +116,20 @@ function CharBar({ count, limit }: { count: number; limit: number }) {
   const isWarn = count > limit * 0.85;
   return (
     <div className="space-y-1 mt-1.5">
-      <div className="h-[3px] rounded-full bg-[#1a2a1f] overflow-hidden">
+      <div className="h-[3px] rounded-full bg-[#F0ECE4] overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all duration-300 ${isOver ? 'bg-red-500' : isWarn ? 'bg-amber-500' : 'bg-[#C5A059]'}`}
+          className={`h-full rounded-full transition-all duration-300 ${isOver ? 'bg-red-500' : isWarn ? 'bg-amber-500' : 'bg-[#B8860B]'}`}
           style={{ width: `${pct}%` }}
         />
       </div>
       <div className="flex items-center justify-between text-[10px]">
-        <span className={count === 0 ? 'text-[#3a3a3a]' : isOver ? 'text-red-400' : isWarn ? 'text-amber-400' : 'text-[#A7A7A7]'}>
+        <span className={count === 0 ? 'text-[#9CA3AF]' : isOver ? 'text-red-700' : isWarn ? 'text-amber-700' : 'text-[#6B7280]'}>
           {count} / {limit}
         </span>
         {isOver ? (
-          <span className="text-red-400">{count - limit} over limit</span>
+          <span className="text-red-700">{count - limit} over limit</span>
         ) : count > 0 ? (
-          <span className="text-[#3a3a3a]">{limit - count} remaining</span>
+          <span className="text-[#9CA3AF]">{limit - count} remaining</span>
         ) : null}
       </div>
     </div>
@@ -138,23 +138,23 @@ function CharBar({ count, limit }: { count: number; limit: number }) {
 
 function SkeletonRow() {
   return (
-    <tr className="border-b border-[#2A2A2a]/60 animate-pulse">
+    <tr className="border-b border-[#EAE5D9]/60 animate-pulse">
       <td className="p-4">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xs bg-[#1a2a1f] shrink-0" />
+          <div className="w-11 h-11 rounded-xs bg-[#F0ECE4] shrink-0" />
           <div className="space-y-2">
-            <div className="h-3.5 bg-[#1a2a1f] rounded w-40" />
-            <div className="h-2.5 bg-[#1a2a1f] rounded w-24" />
+            <div className="h-3.5 bg-[#F0ECE4] rounded w-40" />
+            <div className="h-2.5 bg-[#F0ECE4] rounded w-24" />
           </div>
         </div>
       </td>
-      <td className="p-4"><div className="h-5 bg-[#1a2a1f] rounded-full w-20" /></td>
-      <td className="p-4"><div className="h-3.5 bg-[#1a2a1f] rounded w-20" /></td>
-      <td className="p-4 hidden lg:table-cell"><div className="h-3.5 bg-[#1a2a1f] rounded w-16" /></td>
-      <td className="p-4 hidden xl:table-cell"><div className="h-3.5 bg-[#1a2a1f] rounded w-20" /></td>
-      <td className="p-4"><div className="h-5 bg-[#1a2a1f] rounded-full w-16" /></td>
-      <td className="p-4"><div className="w-4 h-4 bg-[#1a2a1f] rounded-full ml-1" /></td>
-      <td className="p-4"><div className="h-7 w-7 bg-[#1a2a1f] rounded-xs ml-auto" /></td>
+      <td className="p-4"><div className="h-5 bg-[#F0ECE4] rounded-full w-20" /></td>
+      <td className="p-4"><div className="h-3.5 bg-[#F0ECE4] rounded w-20" /></td>
+      <td className="p-4 hidden lg:table-cell"><div className="h-3.5 bg-[#F0ECE4] rounded w-16" /></td>
+      <td className="p-4 hidden xl:table-cell"><div className="h-3.5 bg-[#F0ECE4] rounded w-20" /></td>
+      <td className="p-4"><div className="h-5 bg-[#F0ECE4] rounded-full w-16" /></td>
+      <td className="p-4"><div className="w-4 h-4 bg-[#F0ECE4] rounded-full ml-1" /></td>
+      <td className="p-4"><div className="h-7 w-7 bg-[#F0ECE4] rounded-xs ml-auto" /></td>
     </tr>
   );
 }
@@ -467,7 +467,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
           <h1 className="font-serif text-2xl text-gold-gradient uppercase">
             {archived ? 'Archived' : 'Products'}
           </h1>
-          <p className="text-[11px] text-[#A7A7A7] mt-1">
+          <p className="text-[11px] text-[#6B7280] mt-1">
             {loading
               ? 'Loading…'
               : archived
@@ -485,7 +485,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
         {!archived && (
           <button
             onClick={openAdd}
-            className="px-4 py-2.5 bg-[#C5A059] text-black text-xs font-semibold uppercase tracking-wider rounded-xs hover:bg-[#FFD700] flex items-center gap-2"
+            className="px-4 py-2.5 bg-[#B8860B] text-black text-xs font-semibold uppercase tracking-wider rounded-xs hover:bg-[#D19A1C] flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             <span>Add Product</span>
@@ -510,8 +510,8 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
               onClick={() => setStockFilter(tab.id)}
               className={`px-3.5 py-2 text-xs uppercase tracking-wider rounded-xs border transition-colors flex items-center gap-2 ${
                 active
-                  ? 'bg-[#C5A059] border-[#C5A059] text-black font-semibold'
-                  : 'bg-[#00140a] border-[#2A2A2a] text-[#DFC27C] hover:border-[#C5A059]'
+                  ? 'bg-[#B8860B] border-[#B8860B] text-black font-semibold'
+                  : 'bg-[#FFFFFF] border-[#EAE5D9] text-[#996515] hover:border-[#B8860B]'
               }`}
             >
               {tab.label}
@@ -520,8 +520,8 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                   active
                     ? 'bg-black/20 text-black'
                     : tab.id === 'out' && count > 0
-                      ? 'bg-red-500/15 text-red-400'
-                      : 'bg-[#1a2a1f] text-[#A7A7A7]'
+                      ? 'bg-red-500/15 text-red-700'
+                      : 'bg-[#F0ECE4] text-[#6B7280]'
                 }`}
               >
                 {count}
@@ -534,16 +534,16 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-52">
-          <Search className="w-4 h-4 text-[#C5A059] absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#B8860B] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search by name, SKU or subtitle..."
-            className="w-full bg-[#00140a] border border-[#2A2A2a] text-xs p-2.5 pl-9 rounded-xs focus:border-[#C5A059] focus:outline-none"
+            className="w-full bg-[#FFFFFF] border border-[#EAE5D9] text-xs p-2.5 pl-9 rounded-xs focus:border-[#B8860B] focus:outline-none"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A7A7A7] hover:text-white">
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#18181B]">
               <X className="w-3.5 h-3.5" />
             </button>
           )}
@@ -552,7 +552,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
         <select
           value={categoryFilter}
           onChange={e => setCategoryFilter(e.target.value)}
-          className="bg-[#00140a] border border-[#2A2A2a] text-xs text-[#DFC27C] p-2.5 rounded-xs focus:outline-none"
+          className="bg-[#FFFFFF] border border-[#EAE5D9] text-xs text-[#996515] p-2.5 rounded-xs focus:outline-none"
         >
           <option value="all">All categories</option>
           {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -561,7 +561,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
         <select
           value={tierFilter}
           onChange={e => setTierFilter(e.target.value as typeof tierFilter)}
-          className="bg-[#00140a] border border-[#2A2A2a] text-xs text-[#DFC27C] p-2.5 rounded-xs focus:outline-none"
+          className="bg-[#FFFFFF] border border-[#EAE5D9] text-xs text-[#996515] p-2.5 rounded-xs focus:outline-none"
         >
           <option value="all">All sections</option>
           <option value="Classic">Classic — under ₹{tiers.classicUnder}</option>
@@ -569,22 +569,22 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
           <option value="Premium">Premium — above ₹{tiers.premiumAbove}</option>
         </select>
 
-        <div className="flex items-center gap-2 bg-[#00140a] border border-[#2A2A2a] px-3 py-2.5 rounded-xs">
-          <SlidersHorizontal className="w-3.5 h-3.5 text-[#C5A059]" />
+        <div className="flex items-center gap-2 bg-[#FFFFFF] border border-[#EAE5D9] px-3 py-2.5 rounded-xs">
+          <SlidersHorizontal className="w-3.5 h-3.5 text-[#B8860B]" />
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as SortOpt)}
-            className="bg-transparent text-xs text-[#DFC27C] focus:outline-none cursor-pointer"
+            className="bg-transparent text-xs text-[#996515] focus:outline-none cursor-pointer"
           >
-            {SORT_OPTS.map(o => <option key={o.value} value={o.value} className="bg-[#00140a]">{o.label}</option>)}
+            {SORT_OPTS.map(o => <option key={o.value} value={o.value} className="bg-[#FFFFFF]">{o.label}</option>)}
           </select>
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto border border-[#2A2A2a] rounded-xs">
+      <div className="overflow-x-auto border border-[#EAE5D9] rounded-xs">
         <table className="w-full text-xs text-left">
-          <thead className="bg-[#00140a] text-[#DFC27C] uppercase tracking-wider border-b border-[#2A2A2a]">
+          <thead className="bg-[#FFFFFF] text-[#996515] uppercase tracking-wider border-b border-[#EAE5D9]">
             <tr>
               <th className="p-4">Product</th>
               <th className="p-4">Category</th>
@@ -596,21 +596,21 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
               <th className="p-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#2A2A2a] bg-[#000e07]">
+          <tbody className="divide-y divide-[#EAE5D9] bg-[#FBF9F5]">
             {loading && Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
 
             {!loading && pageItems.length === 0 && (
               <tr>
                 <td colSpan={8}>
                   <div className="flex flex-col items-center justify-center py-16 gap-3">
-                    <div className="w-14 h-14 rounded-xs bg-[#00140a] border border-[#2A2A2a] flex items-center justify-center">
+                    <div className="w-14 h-14 rounded-xs bg-[#FFFFFF] border border-[#EAE5D9] flex items-center justify-center">
                       {search || categoryFilter !== 'all' || stockFilter !== 'all'
-                        ? <Search className="w-6 h-6 text-[#A7A7A7]" />
+                        ? <Search className="w-6 h-6 text-[#6B7280]" />
                         : archived
-                          ? <Archive className="w-6 h-6 text-[#A7A7A7]" />
-                          : <Package className="w-6 h-6 text-[#A7A7A7]" />}
+                          ? <Archive className="w-6 h-6 text-[#6B7280]" />
+                          : <Package className="w-6 h-6 text-[#6B7280]" />}
                     </div>
-                    <p className="text-white font-medium">
+                    <p className="text-[#18181B] font-medium">
                       {search
                         ? `No results for "${search}"`
                         : stockFilter === 'out'
@@ -623,7 +623,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                                 ? 'Nothing archived'
                                 : 'No products yet'}
                     </p>
-                    <p className="text-[#A7A7A7] text-[11px]">
+                    <p className="text-[#6B7280] text-[11px]">
                       {search || categoryFilter !== 'all' || stockFilter !== 'all'
                         ? 'Try different keywords or clear the filters.'
                         : archived
@@ -631,7 +631,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                           : 'Start building your luxury catalogue.'}
                     </p>
                     {!archived && !search && categoryFilter === 'all' && stockFilter === 'all' && (
-                      <button onClick={openAdd} className="mt-1 px-4 py-2 bg-[#C5A059] text-black rounded-xs font-semibold flex items-center gap-2 hover:bg-[#FFD700]">
+                      <button onClick={openAdd} className="mt-1 px-4 py-2 bg-[#B8860B] text-black rounded-xs font-semibold flex items-center gap-2 hover:bg-[#D19A1C]">
                         <Plus className="w-3.5 h-3.5" /> Add first product
                       </button>
                     )}
@@ -641,19 +641,19 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
             )}
 
             {!loading && pageItems.map(p => (
-              <tr key={p.id} className="hover:bg-[#00140a]/60 group">
+              <tr key={p.id} className="hover:bg-[#FFFFFF]/60 group">
                 <td className="p-4">
                   <div className="flex items-center gap-3">
-                    <img src={p.image} alt={p.name} className="w-11 h-11 object-cover rounded-xs border border-[#2A2A2a]" />
+                    <img src={p.image} alt={p.name} className="w-11 h-11 object-cover rounded-xs border border-[#EAE5D9]" />
                     <div className="min-w-0">
-                      <span className="font-serif text-white block">{p.name}</span>
-                      <span className="text-[10px] text-[#A7A7A7]">{p.subtitle}</span>
+                      <span className="font-serif text-[#18181B] block">{p.name}</span>
+                      <span className="text-[10px] text-[#6B7280]">{p.subtitle}</span>
                       {(p.sizes ?? []).length > 0 && (
                         <span className="flex flex-wrap gap-1 mt-1.5">
                           {(p.sizes ?? []).map(size => (
                             <span
                               key={size}
-                              className="px-1.5 py-px bg-[#C5A059]/10 border border-[#C5A059]/30 text-[#DFC27C] text-[9px] uppercase tracking-wider rounded-xs"
+                              className="px-1.5 py-px bg-[#B8860B]/10 border border-[#B8860B]/30 text-[#996515] text-[9px] uppercase tracking-wider rounded-xs"
                             >
                               {size}
                             </span>
@@ -664,27 +664,27 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                   </div>
                 </td>
                 <td className="p-4">
-                  <span className="text-[#DFC27C]">{categoryName(p.category)}</span>
+                  <span className="text-[#996515]">{categoryName(p.category)}</span>
                   {p.subcategory && (
-                    <span className="block text-[10px] text-[#A7A7A7]">↳ {categoryName(p.subcategory)}</span>
+                    <span className="block text-[10px] text-[#6B7280]">↳ {categoryName(p.subcategory)}</span>
                   )}
                 </td>
-                <td className="p-4 font-mono text-[#FFD700]">
+                <td className="p-4 font-mono text-[#B8860B]">
                   ₹{p.priceINR.toLocaleString('en-IN')}
                   <span className="block mt-1">
                     <TierBadge tier={p.priceTier ?? tierOf(p.priceINR, tiers)} />
                   </span>
                   {p.mrpINR && p.mrpINR > p.priceINR ? (
-                    <span className="block text-[10px] text-[#A7A7A7]">
+                    <span className="block text-[10px] text-[#6B7280]">
                       <span className="line-through">₹{p.mrpINR.toLocaleString('en-IN')}</span>
-                      <span className="ml-1.5 text-[#DFC27C]">
+                      <span className="ml-1.5 text-[#996515]">
                         {Math.round(((p.mrpINR - p.priceINR) / p.mrpINR) * 100)}% off
                       </span>
                     </span>
                   ) : null}
                 </td>
-                <td className="p-4 font-mono text-[#A7A7A7] hidden lg:table-cell">{p.sku || '—'}</td>
-                <td className="p-4 hidden xl:table-cell text-[#A7A7A7] whitespace-nowrap" title={exactDate(p.createdAt)}>
+                <td className="p-4 font-mono text-[#6B7280] hidden lg:table-cell">{p.sku || '—'}</td>
+                <td className="p-4 hidden xl:table-cell text-[#6B7280] whitespace-nowrap" title={exactDate(p.createdAt)}>
                   {relativeDate(p.createdAt)}
                 </td>
                 <td className="p-4">
@@ -701,14 +701,14 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                     title={p.featured ? 'Remove from featured' : 'Mark as featured'}
                     className="p-1 cursor-pointer"
                   >
-                    <Star className={`w-4 h-4 transition-colors ${p.featured ? 'text-[#FFD700] fill-[#FFD700]' : 'text-[#3a3a3a] hover:text-[#C5A059]'}`} />
+                    <Star className={`w-4 h-4 transition-colors ${p.featured ? 'text-[#B8860B] fill-[#B8860B]' : 'text-[#9CA3AF] hover:text-[#B8860B]'}`} />
                   </button>
                 </td>
                 <td className="p-4 text-right">
                   <button
                     onClick={e => openMenu(p.id, e.currentTarget)}
                     aria-label={`Actions for ${p.name}`}
-                    className="p-1.5 border border-[#2A2A2a] hover:border-[#C5A059] text-[#DFC27C] rounded-xs"
+                    className="p-1.5 border border-[#EAE5D9] hover:border-[#B8860B] text-[#996515] rounded-xs"
                   >
                     <MoreHorizontal className="w-4 h-4" />
                   </button>
@@ -716,26 +716,26 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                     <div
                       ref={menuRef}
                       style={{ top: menuPos.top, right: menuPos.right }}
-                      className="fixed z-50 w-40 bg-[#00140a] border border-[#C5A059]/50 rounded-xs shadow-2xl text-left overflow-hidden"
+                      className="fixed z-50 w-40 bg-[#FFFFFF] border border-[#B8860B]/50 rounded-xs shadow-2xl text-left overflow-hidden"
                     >
-                      <button onClick={() => openEdit(p)} className="w-full px-4 py-2.5 text-left hover:bg-[#C5A059]/10 flex items-center gap-2 text-[#F5F2EE]">
-                        <Edit2 className="w-3.5 h-3.5 text-[#DFC27C]" /> Edit
+                      <button onClick={() => openEdit(p)} className="w-full px-4 py-2.5 text-left hover:bg-[#D19A1C]/10 flex items-center gap-2 text-[#18181B]">
+                        <Edit2 className="w-3.5 h-3.5 text-[#996515]" /> Edit
                       </button>
                       {archived ? (
-                        <button onClick={() => handleArchive(p, true)} className="w-full px-4 py-2.5 text-left hover:bg-[#C5A059]/10 flex items-center gap-2 text-[#F5F2EE]">
-                          <ArchiveRestore className="w-3.5 h-3.5 text-[#DFC27C]" /> Restore
+                        <button onClick={() => handleArchive(p, true)} className="w-full px-4 py-2.5 text-left hover:bg-[#D19A1C]/10 flex items-center gap-2 text-[#18181B]">
+                          <ArchiveRestore className="w-3.5 h-3.5 text-[#996515]" /> Restore
                         </button>
                       ) : (
                         <>
-                          <button onClick={() => handleDuplicate(p)} className="w-full px-4 py-2.5 text-left hover:bg-[#C5A059]/10 flex items-center gap-2 text-[#F5F2EE]">
-                            <Copy className="w-3.5 h-3.5 text-[#DFC27C]" /> Duplicate
+                          <button onClick={() => handleDuplicate(p)} className="w-full px-4 py-2.5 text-left hover:bg-[#D19A1C]/10 flex items-center gap-2 text-[#18181B]">
+                            <Copy className="w-3.5 h-3.5 text-[#996515]" /> Duplicate
                           </button>
-                          <button onClick={() => handleArchive(p, false)} className="w-full px-4 py-2.5 text-left hover:bg-[#C5A059]/10 flex items-center gap-2 text-[#F5F2EE]">
-                            <Archive className="w-3.5 h-3.5 text-[#DFC27C]" /> Archive
+                          <button onClick={() => handleArchive(p, false)} className="w-full px-4 py-2.5 text-left hover:bg-[#D19A1C]/10 flex items-center gap-2 text-[#18181B]">
+                            <Archive className="w-3.5 h-3.5 text-[#996515]" /> Archive
                           </button>
                         </>
                       )}
-                      <button onClick={() => handleDelete(p)} className="w-full px-4 py-2.5 text-left hover:bg-red-950/40 flex items-center gap-2 text-red-300 border-t border-[#2A2A2a]">
+                      <button onClick={() => handleDelete(p)} className="w-full px-4 py-2.5 text-left hover:bg-red-50 flex items-center gap-2 text-red-700 border-t border-[#EAE5D9]">
                         <Trash2 className="w-3.5 h-3.5" /> Delete
                       </button>
                     </div>
@@ -749,7 +749,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
 
       {/* Pagination */}
       {!loading && filtered.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[#A7A7A7]">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[#6B7280]">
           <div className="flex items-center gap-3">
             <span>
               Showing {(pageSafe - 1) * perPage + 1}–{Math.min(pageSafe * perPage, filtered.length)} of {filtered.length}
@@ -759,9 +759,9 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
               <select
                 value={perPage}
                 onChange={e => setPerPage(Number(e.target.value))}
-                className="bg-[#00140a] border border-[#2A2A2a] text-[#DFC27C] px-2 py-1 rounded-xs focus:outline-none focus:border-[#C5A059] cursor-pointer"
+                className="bg-[#FFFFFF] border border-[#EAE5D9] text-[#996515] px-2 py-1 rounded-xs focus:outline-none focus:border-[#B8860B] cursor-pointer"
               >
-                {PER_PAGE_OPTS.map(n => <option key={n} value={n} className="bg-[#00140a]">{n}</option>)}
+                {PER_PAGE_OPTS.map(n => <option key={n} value={n} className="bg-[#FFFFFF]">{n}</option>)}
               </select>
             </span>
           </div>
@@ -771,14 +771,14 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={pageSafe === 1}
               aria-label="Previous page"
-              className="p-2 border border-[#2A2A2a] rounded-xs hover:border-[#C5A059] disabled:opacity-30 disabled:hover:border-[#2A2A2a]"
+              className="p-2 border border-[#EAE5D9] rounded-xs hover:border-[#B8860B] disabled:opacity-30 disabled:hover:border-[#EAE5D9]"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
 
             {pageNumbers(pageSafe, totalPages).map((n, i) =>
               n === null ? (
-                <span key={`gap-${i}`} className="px-1.5 text-[#3a3a3a]">…</span>
+                <span key={`gap-${i}`} className="px-1.5 text-[#9CA3AF]">…</span>
               ) : (
                 <button
                   key={n}
@@ -786,8 +786,8 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                   aria-current={n === pageSafe ? 'page' : undefined}
                   className={`min-w-8 px-2.5 py-1.5 border rounded-xs transition-colors ${
                     n === pageSafe
-                      ? 'bg-[#C5A059] border-[#C5A059] text-black font-semibold'
-                      : 'bg-[#00140a] border-[#2A2A2a] text-[#DFC27C] hover:border-[#C5A059]'
+                      ? 'bg-[#B8860B] border-[#B8860B] text-black font-semibold'
+                      : 'bg-[#FFFFFF] border-[#EAE5D9] text-[#996515] hover:border-[#B8860B]'
                   }`}
                 >
                   {n}
@@ -799,7 +799,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={pageSafe === totalPages}
               aria-label="Next page"
-              className="p-2 border border-[#2A2A2a] rounded-xs hover:border-[#C5A059] disabled:opacity-30 disabled:hover:border-[#2A2A2a]"
+              className="p-2 border border-[#EAE5D9] rounded-xs hover:border-[#B8860B] disabled:opacity-30 disabled:hover:border-[#EAE5D9]"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -809,13 +809,13 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
 
       {/* Add / Edit modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="bg-[#00140a] border border-[#C5A059] p-8 max-w-3xl w-full rounded-sm space-y-4 max-h-[92vh] overflow-y-auto">
-            <div className="flex justify-between items-center pb-3 border-b border-[#2A2A2a]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+          <div className="bg-[#FFFFFF] border border-[#B8860B] p-8 max-w-3xl w-full rounded-sm space-y-4 max-h-[92vh] overflow-y-auto">
+            <div className="flex justify-between items-center pb-3 border-b border-[#EAE5D9]">
               <h3 className="font-serif text-xl text-gold-gradient uppercase">
                 {editing ? 'Edit Product' : 'Add Product'}
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-[#A7A7A7] hover:text-white">
+              <button onClick={() => setIsModalOpen(false)} className="text-[#6B7280] hover:text-[#18181B]">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -823,53 +823,53 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
             <form onSubmit={handleSave} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[#DFC27C] block mb-1">NAME *</label>
+                  <label className="text-[#996515] block mb-1">NAME *</label>
                   <input
                     type="text" required value={form.name || ''}
                     onChange={e => setForm({ ...form, name: e.target.value })}
-                    className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
+                    className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs focus:border-[#B8860B] focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-[#DFC27C] block mb-1">SUBTITLE / MATERIALS</label>
+                  <label className="text-[#996515] block mb-1">SUBTITLE / MATERIALS</label>
                   <input
                     type="text" value={form.subtitle || ''}
                     onChange={e => setForm({ ...form, subtitle: e.target.value })}
-                    className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
+                    className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs focus:border-[#B8860B] focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[#DFC27C] block mb-1">SKU / PRODUCT CODE</label>
+                <label className="text-[#996515] block mb-1">SKU / PRODUCT CODE</label>
                 <input
                   type="text"
                   value={form.sku ?? ''}
                   onChange={e => setForm({ ...form, sku: e.target.value })}
                   placeholder="e.g. ALK-EAR-001 — leave blank to generate one automatically"
-                  className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs font-mono focus:border-[#C5A059] focus:outline-none"
+                  className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs font-mono focus:border-[#B8860B] focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[#DFC27C] block mb-1">CATEGORY</label>
+                  <label className="text-[#996515] block mb-1">CATEGORY</label>
                   <select
                     value={form.category}
                     onChange={e => setForm({ ...form, category: e.target.value, subcategory: '' })}
-                    className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs text-[#F5F2EE]"
+                    className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs text-[#18181B]"
                   >
                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     {categories.length === 0 && <option value="jewellery">Jewellery</option>}
                   </select>
                 </div>
                 <div>
-                  <label className="text-[#DFC27C] block mb-1">SUB-CATEGORY</label>
+                  <label className="text-[#996515] block mb-1">SUB-CATEGORY</label>
                   <select
                     value={form.subcategory ?? ''}
                     onChange={e => setForm({ ...form, subcategory: e.target.value })}
                     disabled={subOptions.length === 0}
-                    className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs text-[#F5F2EE] disabled:opacity-50"
+                    className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs text-[#18181B] disabled:opacity-50"
                   >
                     <option value="">— None —</option>
                     {subOptions.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -882,17 +882,17 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                   shown at its price, with no strikethrough and no badge. */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[#DFC27C] block mb-1">SELLING PRICE (INR) *</label>
+                  <label className="text-[#996515] block mb-1">SELLING PRICE (INR) *</label>
                   <input
                     type="number" required value={form.priceINR ?? ''}
                     onChange={e => setForm({ ...form, priceINR: Number(e.target.value) })}
-                    className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
+                    className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs focus:border-[#B8860B] focus:outline-none"
                   />
-                  <p className="mt-1 text-[10px] text-[#A7A7A7]">What the client is charged. GST included.</p>
+                  <p className="mt-1 text-[10px] text-[#6B7280]">What the client is charged. GST included.</p>
                   {/* The band follows the price by itself; there is nothing to
                       choose, and nothing that can be set to disagree with it. */}
                   {form.priceINR ? (
-                    <p className="mt-2 flex items-center gap-2 text-[10px] text-[#A7A7A7]">
+                    <p className="mt-2 flex items-center gap-2 text-[10px] text-[#6B7280]">
                       Section:
                       <TierBadge tier={tierOf(Number(form.priceINR), tiers)} />
                       <span className="opacity-70">set automatically</span>
@@ -900,7 +900,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                   ) : null}
                 </div>
                 <div>
-                  <label className="text-[#DFC27C] block mb-1">MRP (INR)</label>
+                  <label className="text-[#996515] block mb-1">MRP (INR)</label>
                   <input
                     type="number" value={form.mrpINR ?? ''}
                     placeholder="Leave blank — no discount"
@@ -910,38 +910,38 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                         mrpINR: e.target.value === '' ? null : Number(e.target.value),
                       })
                     }
-                    className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs placeholder:text-[#A7A7A7]/50 focus:border-[#C5A059] focus:outline-none"
+                    className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs placeholder:text-[#6B7280]/50 focus:border-[#B8860B] focus:outline-none"
                   />
                   {form.mrpINR && form.priceINR && form.mrpINR > form.priceINR ? (
-                    <p className="mt-1 text-[10px] text-[#DFC27C]">
+                    <p className="mt-1 text-[10px] text-[#996515]">
                       Shows as <span className="line-through">₹{form.mrpINR.toLocaleString('en-IN')}</span>{' '}
                       and a {Math.round(((form.mrpINR - form.priceINR) / form.mrpINR) * 100)}% OFF badge.
                     </p>
                   ) : form.mrpINR ? (
-                    <p className="mt-1 text-[10px] text-red-400">
+                    <p className="mt-1 text-[10px] text-red-700">
                       The MRP must be higher than the selling price.
                     </p>
                   ) : (
-                    <p className="mt-1 text-[10px] text-[#A7A7A7]">Struck through on the storefront.</p>
+                    <p className="mt-1 text-[10px] text-[#6B7280]">Struck through on the storefront.</p>
                   )}
                 </div>
               </div>
 
               {/* Sizes */}
               <div>
-                <label className="text-[#DFC27C] block mb-1">SIZE OPTIONS</label>
+                <label className="text-[#996515] block mb-1">SIZE OPTIONS</label>
                 <div className="flex flex-wrap items-center gap-2">
                   {(form.sizes ?? []).map((size, i) => (
                     <span
                       key={`${size}-${i}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#C5A059]/15 border border-[#C5A059]/50 text-[#FFD700] rounded-xs"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#B8860B]/15 border border-[#B8860B]/50 text-[#B8860B] rounded-xs"
                     >
                       {size}
                       <button
                         type="button"
                         title={`Remove size ${size}`}
                         onClick={() => setForm(f => ({ ...f, sizes: (f.sizes ?? []).filter((_, j) => j !== i) }))}
-                        className="text-[#DFC27C] hover:text-red-400"
+                        className="text-[#996515] hover:text-red-700"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -958,17 +958,17 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                       }
                     }}
                     placeholder="Type a size and press Enter"
-                    className="flex-1 min-w-44 bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
+                    className="flex-1 min-w-44 bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs focus:border-[#B8860B] focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={addSize}
-                    className="px-3 py-2.5 border border-[#C5A059]/60 text-[#DFC27C] hover:text-[#FFD700] hover:border-[#FFD700] rounded-xs uppercase tracking-wider text-[10px]"
+                    className="px-3 py-2.5 border border-[#B8860B]/60 text-[#996515] hover:text-[#B8860B] hover:border-[#B8860B] rounded-xs uppercase tracking-wider text-[10px]"
                   >
                     Add
                   </button>
                 </div>
-                <p className="mt-1.5 text-[10px] text-[#A7A7A7]">
+                <p className="mt-1.5 text-[10px] text-[#6B7280]">
                   Customers pick one of these on the product page, and their choice appears on the order.
                   Leave empty if the piece has no sizes.
                 </p>
@@ -976,14 +976,14 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
 
               {/* Main image */}
               <div>
-                <label className="text-[#DFC27C] block mb-1">MAIN IMAGE</label>
+                <label className="text-[#996515] block mb-1">MAIN IMAGE</label>
                 <div className="flex items-start gap-4">
                   {form.image && (
                     <div className="relative shrink-0">
                       <img
                         src={form.image}
                         alt="Main product"
-                        className="w-36 h-36 object-cover rounded-xs border border-[#2A2A2a]"
+                        className="w-36 h-36 object-cover rounded-xs border border-[#EAE5D9]"
                       />
                       <button
                         type="button"
@@ -1004,14 +1004,14 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                       handleDroppedImages(Array.from(e.dataTransfer.files));
                     }}
                     className={`flex-1 self-stretch min-h-36 flex flex-col items-center justify-center gap-1 p-4 border border-dashed rounded-xs cursor-pointer transition-colors ${
-                      isDragging ? 'border-[#FFD700] bg-[#C5A059]/10 text-[#FFD700]' : 'border-[#C5A059]/60 hover:border-[#FFD700] text-[#DFC27C]'
+                      isDragging ? 'border-[#B8860B] bg-[#B8860B]/10 text-[#B8860B]' : 'border-[#B8860B]/60 hover:border-[#B8860B] text-[#996515]'
                     }`}
                   >
                     <span className="flex items-center gap-2">
                       <Upload className="w-4 h-4" />
                       <span>{isUploading ? 'UPLOADING…' : 'Upload photo'}</span>
                     </span>
-                    <span className="text-[10px] text-[#A7A7A7]">
+                    <span className="text-[10px] text-[#6B7280]">
                       or drag an image here, or press Ctrl+V to paste
                     </span>
                     <input
@@ -1023,20 +1023,20 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                 <input
                   type="text" placeholder="...or paste an image URL" value={form.image || ''}
                   onChange={e => setForm({ ...form, image: e.target.value })}
-                  className="w-full mt-2 bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs font-mono text-[10px]"
+                  className="w-full mt-2 bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs font-mono text-[10px]"
                 />
               </div>
 
               {/* Gallery */}
               <div>
-                <label className="text-[#DFC27C] block mb-1">GALLERY IMAGES</label>
+                <label className="text-[#996515] block mb-1">GALLERY IMAGES</label>
                 <div className="flex flex-wrap gap-3">
                   {(form.secondaryImages ?? []).map((url, i) => (
                     <div key={i} className="relative">
                       <img
                         src={url}
                         alt={`Gallery ${i + 1}`}
-                        className="w-24 h-24 object-cover rounded-xs border border-[#2A2A2a]"
+                        className="w-24 h-24 object-cover rounded-xs border border-[#EAE5D9]"
                       />
                       <button
                         type="button"
@@ -1054,7 +1054,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                       e.preventDefault();
                       handleGalleryUpload(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
                     }}
-                    className="w-24 h-24 flex flex-col items-center justify-center gap-1 border border-dashed border-[#C5A059]/60 rounded-xs cursor-pointer hover:border-[#FFD700] text-[#DFC27C]"
+                    className="w-24 h-24 flex flex-col items-center justify-center gap-1 border border-dashed border-[#B8860B]/60 rounded-xs cursor-pointer hover:border-[#B8860B] text-[#996515]"
                     title="Click, drop images here, or paste with Ctrl+V"
                   >
                     <Plus className="w-5 h-5" />
@@ -1065,26 +1065,26 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                     />
                   </label>
                 </div>
-                <p className="mt-1.5 text-[10px] text-[#A7A7A7]">
+                <p className="mt-1.5 text-[10px] text-[#6B7280]">
                   Drop several images at once, or paste with Ctrl+V.
                 </p>
               </div>
 
               <div>
-                <label className="text-[#DFC27C] block mb-1">DESCRIPTION</label>
+                <label className="text-[#996515] block mb-1">DESCRIPTION</label>
                 <textarea
                   rows={3} value={form.description || ''}
                   onChange={e => setForm({ ...form, description: e.target.value })}
-                  className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
+                  className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs focus:border-[#B8860B] focus:outline-none"
                 />
               </div>
 
               {/* SEO section */}
-              <div className="border border-[#2A2A2a] rounded-xs">
+              <div className="border border-[#EAE5D9] rounded-xs">
                 <button
                   type="button"
                   onClick={() => setSeoOpen(o => !o)}
-                  className="w-full flex items-center justify-between p-3 text-[#DFC27C] hover:text-[#FFD700]"
+                  className="w-full flex items-center justify-between p-3 text-[#996515] hover:text-[#B8860B]"
                 >
                   <span className="flex items-center gap-2 uppercase tracking-wider">
                     <Globe className="w-4 h-4" />
@@ -1094,51 +1094,51 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                 </button>
 
                 {seoOpen && (
-                  <div className="p-4 pt-1 space-y-4 border-t border-[#2A2A2a]">
+                  <div className="p-4 pt-1 space-y-4 border-t border-[#EAE5D9]">
                     {/* Google preview */}
-                    <div className="p-3 bg-black/50 border border-[#2A2A2a] rounded-xs space-y-0.5">
-                      <span className="text-[10px] text-[#A7A7A7] uppercase tracking-wider block mb-1.5">Google preview</span>
-                      <p className="text-[#8ab4f8] text-sm leading-snug line-clamp-1">
+                    <div className="p-3 bg-[#F5F2EB] border border-[#EAE5D9] rounded-xs space-y-0.5">
+                      <span className="text-[10px] text-[#6B7280] uppercase tracking-wider block mb-1.5">Google preview</span>
+                      <p className="text-[#1A73E8] text-sm leading-snug line-clamp-1">
                         {form.seoTitle || (form.name ? `${form.name} | AL-KAIFF` : 'Product Name | AL-KAIFF')}
                       </p>
-                      <p className="text-emerald-500 text-[10px]">al-kaiff.com › product › {form.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'your-product'}</p>
-                      <p className="text-[#A7A7A7] text-[11px] leading-snug line-clamp-2">
+                      <p className="text-emerald-700 text-[10px]">al-kaiff.com › product › {form.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'your-product'}</p>
+                      <p className="text-[#6B7280] text-[11px] leading-snug line-clamp-2">
                         {form.seoDescription || form.description || 'Add a meta description to control how this product appears in Google search results.'}
                       </p>
                     </div>
 
                     <div>
-                      <label className="text-[#DFC27C] block mb-1">SEO TITLE</label>
+                      <label className="text-[#996515] block mb-1">SEO TITLE</label>
                       <input
                         type="text"
                         value={form.seoTitle ?? ''}
                         onChange={e => setForm({ ...form, seoTitle: e.target.value })}
                         placeholder={form.name ? `${form.name} | AL-KAIFF` : 'e.g. Royal Diamond Necklace | AL-KAIFF'}
-                        className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
+                        className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs focus:border-[#B8860B] focus:outline-none"
                       />
                       <CharBar count={(form.seoTitle ?? '').length} limit={60} />
                     </div>
 
                     <div>
-                      <label className="text-[#DFC27C] block mb-1">SEO DESCRIPTION</label>
+                      <label className="text-[#996515] block mb-1">SEO DESCRIPTION</label>
                       <textarea
                         rows={3}
                         value={form.seoDescription ?? ''}
                         onChange={e => setForm({ ...form, seoDescription: e.target.value })}
                         placeholder="A compelling 1–2 sentence summary shown in Google search results..."
-                        className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
+                        className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs focus:border-[#B8860B] focus:outline-none"
                       />
                       <CharBar count={(form.seoDescription ?? '').length} limit={160} />
                     </div>
 
                     <div>
-                      <label className="text-[#DFC27C] block mb-1">SEO KEYWORDS</label>
+                      <label className="text-[#996515] block mb-1">SEO KEYWORDS</label>
                       <input
                         type="text"
                         value={form.seoKeywords ?? ''}
                         onChange={e => setForm({ ...form, seoKeywords: e.target.value })}
                         placeholder="gold necklace, diamond jewellery, luxury jaipur (comma separated)"
-                        className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs focus:border-[#C5A059] focus:outline-none"
+                        className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs focus:border-[#B8860B] focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1149,7 +1149,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                   how many are on the shelf, and what is in each box. */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[#DFC27C] block mb-1">STOCK QUANTITY</label>
+                  <label className="text-[#996515] block mb-1">STOCK QUANTITY</label>
                   <input
                     type="number"
                     min={0}
@@ -1161,9 +1161,9 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                         stockQuantity: e.target.value === '' ? null : Math.max(0, Number(e.target.value)),
                       })
                     }
-                    className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs placeholder:text-[#A7A7A7]/50 focus:border-[#C5A059] focus:outline-none"
+                    className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs placeholder:text-[#6B7280]/50 focus:border-[#B8860B] focus:outline-none"
                   />
-                  <p className="mt-1 text-[10px] text-[#A7A7A7]">
+                  <p className="mt-1 text-[10px] text-[#6B7280]">
                     {form.stockQuantity === null || form.stockQuantity === undefined
                       ? 'Not counted: sells until you mark it out of stock.'
                       : form.stockQuantity === 0
@@ -1172,22 +1172,22 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                   </p>
                 </div>
                 <div>
-                  <label className="text-[#DFC27C] block mb-1">NET QUANTITY</label>
+                  <label className="text-[#996515] block mb-1">NET QUANTITY</label>
                   <input
                     type="text"
                     maxLength={60}
                     value={form.netQuantity ?? ''}
                     placeholder="1 pair · Set of 4 · 50 ml"
                     onChange={e => setForm({ ...form, netQuantity: e.target.value })}
-                    className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs placeholder:text-[#A7A7A7]/50 focus:border-[#C5A059] focus:outline-none"
+                    className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs placeholder:text-[#6B7280]/50 focus:border-[#B8860B] focus:outline-none"
                   />
-                  <p className="mt-1 text-[10px] text-[#A7A7A7]">
+                  <p className="mt-1 text-[10px] text-[#6B7280]">
                     What is in the box. Listings are required to state it.
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-6 text-[#DFC27C]">
+              <div className="flex gap-6 text-[#996515]">
                 {([
                   ['inStock', 'In Stock'],
                   ['featured', 'Featured'],
@@ -1197,7 +1197,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                     <input
                       type="checkbox" checked={!!form[key]}
                       onChange={e => setForm({ ...form, [key]: e.target.checked })}
-                      className="accent-[#C5A059]"
+                      className="accent-[#B8860B]"
                     />
                     <span>{label}</span>
                   </label>
@@ -1207,7 +1207,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
               <button
                 type="submit"
                 disabled={isUploading || isSaving}
-                className="w-full py-3 bg-[#C5A059] text-black font-semibold uppercase tracking-widest rounded-xs hover:bg-[#FFD700] disabled:opacity-60"
+                className="w-full py-3 bg-[#B8860B] text-black font-semibold uppercase tracking-widest rounded-xs hover:bg-[#D19A1C] disabled:opacity-60"
               >
                 {isSaving ? 'SAVING…' : 'Save Product'}
               </button>

@@ -19,18 +19,18 @@ const Field: React.FC<{
   onChange: (value: number) => void;
 }> = ({ label, hint, value, onChange }) => (
   <div>
-    <label className="text-[#DFC27C] block mb-1 text-xs uppercase tracking-wider">{label}</label>
+    <label className="text-[#996515] block mb-1 text-xs uppercase tracking-wider">{label}</label>
     <div className="flex items-center gap-2">
-      <span className="text-[#A7A7A7]">₹</span>
+      <span className="text-[#6B7280]">₹</span>
       <input
         type="number"
         min={0}
         value={value}
         onChange={e => onChange(Math.max(0, Number(e.target.value) || 0))}
-        className="w-32 bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs text-[#F5F2EE] focus:border-[#C5A059] focus:outline-none"
+        className="w-32 bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs text-[#18181B] focus:border-[#B8860B] focus:outline-none"
       />
     </div>
-    <p className="mt-1.5 text-[11px] text-[#A7A7A7] leading-relaxed">{hint}</p>
+    <p className="mt-1.5 text-[11px] text-[#6B7280] leading-relaxed">{hint}</p>
   </div>
 );
 
@@ -89,8 +89,8 @@ export const SettingsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-3 text-[#A7A7A7] text-sm">
-        <Loader2 className="w-4 h-4 animate-spin text-[#C5A059]" />
+      <div className="flex items-center gap-3 text-[#6B7280] text-sm">
+        <Loader2 className="w-4 h-4 animate-spin text-[#B8860B]" />
         Loading…
       </div>
     );
@@ -100,19 +100,19 @@ export const SettingsPage: React.FC = () => {
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="font-serif text-2xl text-gold-gradient uppercase">Settings</h1>
-        <p className="text-[11px] text-[#A7A7A7] mt-1">
+        <p className="text-[11px] text-[#6B7280] mt-1">
           Changes here take effect on the next checkout. Orders already placed keep what they were
           charged.
         </p>
       </div>
 
-      <div className="p-6 bg-[#00140a] border border-[#2A2A2a] rounded-xs space-y-6">
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[#A7A7A7]">
-          <Layers className="w-3.5 h-3.5 text-[#C5A059]" />
+      <div className="p-6 bg-[#FFFFFF] border border-[#EAE5D9] rounded-xs space-y-6">
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[#6B7280]">
+          <Layers className="w-3.5 h-3.5 text-[#B8860B]" />
           Jewellery sections
         </div>
 
-        <p className="text-[11px] text-[#A7A7A7] leading-relaxed">
+        <p className="text-[11px] text-[#6B7280] leading-relaxed">
           Every piece falls into a section by its price alone. There is nothing to pick when
           adding a product, and nothing that can be set to disagree with the price beside it —
           change a price and the piece moves section on save.
@@ -134,23 +134,23 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-[11px]">
-          <span className="px-2 py-1 border border-[#8AB4F8]/40 text-[#8AB4F8] rounded-xs">
+          <span className="px-2 py-1 border border-[#1A73E8]/40 text-[#1A73E8] rounded-xs">
             Classic — under ₹{tiers.classicUnder.toLocaleString('en-IN')}
           </span>
-          <span className="px-2 py-1 border border-[#C5A059]/50 text-[#DFC27C] rounded-xs">
+          <span className="px-2 py-1 border border-[#B8860B]/50 text-[#996515] rounded-xs">
             Standard — ₹{tiers.classicUnder.toLocaleString('en-IN')} to ₹
             {tiers.premiumAbove.toLocaleString('en-IN')}
           </span>
-          <span className="px-2 py-1 border border-[#FFD700]/60 text-[#FFD700] rounded-xs">
+          <span className="px-2 py-1 border border-[#B8860B]/60 text-[#B8860B] rounded-xs">
             Premium — above ₹{tiers.premiumAbove.toLocaleString('en-IN')}
           </span>
         </div>
 
-        <div className="border-t border-[#2A2A2a] pt-5">
+        <div className="border-t border-[#EAE5D9] pt-5">
           <button
             onClick={saveTiers}
             disabled={savingTiers}
-            className="inline-flex items-center gap-2 bg-[#C5A059] hover:bg-[#FFD700] text-black px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xs disabled:opacity-40"
+            className="inline-flex items-center gap-2 bg-[#B8860B] hover:bg-[#D19A1C] text-black px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xs disabled:opacity-40"
           >
             {savingTiers ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
             Save sections
@@ -158,9 +158,9 @@ export const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="p-6 bg-[#00140a] border border-[#2A2A2a] rounded-xs space-y-6">
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[#A7A7A7]">
-          <Truck className="w-3.5 h-3.5 text-[#C5A059]" />
+      <div className="p-6 bg-[#FFFFFF] border border-[#EAE5D9] rounded-xs space-y-6">
+        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[#6B7280]">
+          <Truck className="w-3.5 h-3.5 text-[#B8860B]" />
           Delivery charges
         </div>
 
@@ -169,11 +169,11 @@ export const SettingsPage: React.FC = () => {
             type="checkbox"
             checked={form.liveRates}
             onChange={e => setForm({ ...form, liveRates: e.target.checked })}
-            className="mt-1 accent-[#C5A059]"
+            className="mt-1 accent-[#B8860B]"
           />
           <span>
-            <span className="text-[#F5F2EE] text-sm">Ask the courier for a live rate</span>
-            <p className="text-[11px] text-[#A7A7A7] mt-0.5 leading-relaxed">
+            <span className="text-[#18181B] text-sm">Ask the courier for a live rate</span>
+            <p className="text-[11px] text-[#6B7280] mt-0.5 leading-relaxed">
               The customer is charged what the parcel actually costs to their pin code. Turn this
               off to charge the flat rate below on every order.
             </p>
@@ -207,16 +207,16 @@ export const SettingsPage: React.FC = () => {
           />
         </div>
 
-        <div className="border-t border-[#2A2A2a] pt-5 flex flex-wrap items-center gap-4">
+        <div className="border-t border-[#EAE5D9] pt-5 flex flex-wrap items-center gap-4">
           <button
             onClick={save}
             disabled={saving}
-            className="inline-flex items-center gap-2 bg-[#C5A059] hover:bg-[#FFD700] text-black px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xs disabled:opacity-40"
+            className="inline-flex items-center gap-2 bg-[#B8860B] hover:bg-[#D19A1C] text-black px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xs disabled:opacity-40"
           >
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
             Save
           </button>
-          <p className="text-[11px] text-[#A7A7A7]">
+          <p className="text-[11px] text-[#6B7280]">
             {form.liveRates
               ? `Live rates on. Each customer is charged the real cost to their pin code; ₹${form.flatINR} only if the courier does not answer.`
               : `Live rates off — every order is charged ₹${form.flatINR}.`}
