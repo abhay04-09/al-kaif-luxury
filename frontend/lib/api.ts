@@ -21,6 +21,9 @@ export type ApiProduct = {
   featured?: boolean;
   isNewArrival?: boolean;
   inStock: boolean;
+  stockQuantity?: number | null;
+  lowStockThreshold?: number;
+  netQuantity?: string | null;
   specifications?: Record<string, unknown>;
   artisanStory?: string;
   sku: string;

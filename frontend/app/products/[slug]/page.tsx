@@ -74,11 +74,28 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
               </ul>
             </div>
             <p className="mt-5 text-sm text-porcelain/60">Material: {product.material}</p>
+            {product.netQuantity ? (
+              <p className="mt-2 text-sm text-porcelain/60">
+                Net quantity: <span className="text-porcelain/85">{product.netQuantity}</span>
+              </p>
+            ) : null}
+            {/* The shop's own count when it keeps one. A piece it does not count
+                simply reads "In stock" — no number is invented to fill the gap. */}
             <p className="mt-2 text-sm text-porcelain/60">
               Availability:{" "}
-              <span className={product.inStock ? "text-gold-light" : "text-porcelain/45"}>
-                {product.inStock ? "In stock" : "Sold out"}
-              </span>
+              {!product.inStock || product.stockQuantity === 0 ? (
+                <span className="text-porcelain/45">Sold out</span>
+              ) : product.stockQuantity === null ? (
+                <span className="text-gold-light">In stock</span>
+              ) : product.stockQuantity <= product.lowStockThreshold ? (
+                <span className="text-[#FF6B81]">
+                  Only {product.stockQuantity} left
+                </span>
+              ) : (
+                <span className="text-gold-light">
+                  In stock · {product.stockQuantity} available
+                </span>
+              )}
             </p>
           </div>
         </section>

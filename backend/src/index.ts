@@ -1021,6 +1021,28 @@ async function writeOrder(env: Env, draft: OrderDraft) {
  * with a parcel and no account to tie it to. The page guards this too; this is
  * the guard that cannot be walked around.
  */
+/**
+ * Refuses an address a courier could not deliver to.
+ *
+ * The checkout asks for the house number, the area and the pin code as separate
+ * fields, but the page is only a courtesy — the API is what a parcel is actually
+ * booked from, so it checks the same things. Older one-line addresses are still
+ * accepted, since orders already on file were written that way.
+ */
+function addressProblem(address: unknown): string | null {
+  if (!address) return 'A delivery address is required';
+  if (typeof address !== 'object') return null;
+  const a = address as Record<string, unknown>;
+  const text = (key: string) => String(a[key] ?? '').trim();
+
+  if (text('addressLine1').length < 2) return 'Please enter your house or flat number and building';
+  if ('addressLine2' in a && text('addressLine2').length < 3) {
+    return 'Please enter your area, street or locality';
+  }
+  if (!/^\d{6}$/.test(text('pincode'))) return 'Please enter a six-digit PIN code';
+  return null;
+}
+
 app.post('/api/orders', requireAuth, async c => {
   const body = await c.req.json();
   const { items, shippingAddress, customerName, customerEmail, customerPhone, paymentMethod, giftWrapped, notes } = body;
@@ -1028,6 +1050,8 @@ app.post('/api/orders', requireAuth, async c => {
   if (!shippingAddress || !customerName || !customerPhone) {
     return c.json({ error: 'Shipping address, name and phone are required' }, 400);
   }
+  const badAddress = addressProblem(shippingAddress);
+  if (badAddress) return c.json({ error: badAddress }, 400);
 
   const priced = await priceItems(c.env, items);
   const user = currentUser(c)!;
@@ -1520,6 +1544,10 @@ app.put('/api/orders/:id/status', requireAdmin, async c => {
 app.post('/api/payments/razorpay/order', requireAuth, async c => {
   const body = await c.req.json();
   const { items, shippingAddress, customerName, customerEmail, customerPhone, giftWrapped, notes } = body;
+  // Checked before Razorpay is asked for anything: a client charged for an
+  // order that is then refused over its address is the worst of both.
+  const badAddress = addressProblem(shippingAddress);
+  if (badAddress) return c.json({ error: badAddress }, 400);
   // Razorpay is asked for the whole amount, delivery included — a payment
   // window showing less than the order costs is a shortfall nobody can fix
   // afterwards.

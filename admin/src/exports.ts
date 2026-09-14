@@ -7,7 +7,7 @@ const address = (value: Order['shippingAddress']): string => {
   // The address is JSON on some orders and a plain line on others, depending on
   // when it was placed.
   const a = value as unknown as Partial<Record<string, string>>;
-  return [a.addressLine1, a.addressLine2, a.city, a.state, a.pincode, a.country]
+  return [a.addressLine1, a.addressLine2, a.landmark && `Near ${a.landmark}`, a.city, a.state, a.pincode, a.country]
     .filter(Boolean)
     .join(', ');
 };
@@ -109,6 +109,7 @@ export const productColumns: Column<Product>[] = [
   { header: 'Subcategory', value: p => p.subcategory ?? '' },
   { header: 'Price (INR)', value: p => p.priceINR },
   { header: 'Section', value: p => p.priceTier ?? '' },
+  { header: 'Net quantity', value: p => p.netQuantity ?? '' },
   { header: 'MRP (INR)', value: p => p.mrpINR ?? '' },
   {
     header: 'Discount (%)',

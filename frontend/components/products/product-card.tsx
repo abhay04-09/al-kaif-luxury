@@ -52,12 +52,15 @@ export function ProductCard({ product }: ProductCardProps) {
             <div className="absolute inset-x-0 bottom-0 bg-black/85 py-1.5 text-center text-[9px] font-bold uppercase tracking-widest text-white backdrop-blur-xs">
               Sold Out
             </div>
-          ) : (
-            /* Low Stock Warning */
+          ) : product.stockQuantity !== null &&
+            product.stockQuantity <= product.lowStockThreshold ? (
+            /* Low Stock Warning — shown only when the shop's own count is low.
+               It used to read "Only 3 Left in Stock!" on every piece, which is
+               a scarcity claim nobody had made. */
             <div className="absolute inset-x-0 bottom-0 bg-black/60 px-2 py-1 text-center text-[#8B0000] dark:text-[#FF6B81] text-[10px] font-semibold backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity">
-              Only 3 Left in Stock!
+              Only {product.stockQuantity} Left in Stock!
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Action Button: "Select Model" / "Select Variant" button: border border-brand-border hover:bg-brand-gold hover:text-black transition */}

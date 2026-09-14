@@ -13,6 +13,7 @@ export function formatAddress(address: unknown): string {
   return [
     parts.addressLine1,
     parts.addressLine2,
+    parts.landmark ? `Near ${parts.landmark}` : "",
     parts.city,
     parts.state,
     parts.pincode,

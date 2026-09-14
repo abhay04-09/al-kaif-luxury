@@ -85,7 +85,13 @@ export function CheckoutView() {
   const [giftWrapped, setGiftWrapped] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPlacing, setIsPlacing] = useState(false);
-  const [street, setStreet] = useState(user?.address ?? "");
+  // The address in the parts a courier reads it in. One box let a client type
+  // "Bardoli" and nothing else, and let the location button fill a street that
+  // looked like a whole address. The flat is its own field now, and it is the
+  // one field the location button never touches.
+  const [flat, setFlat] = useState(user?.address ?? "");
+  const [area, setArea] = useState("");
+  const [landmark, setLandmark] = useState("");
   const [city, setCity] = useState("");
   const [addressState, setAddressState] = useState("");
   // A saved address is one line of text, so the only part that can be read back
@@ -97,7 +103,6 @@ export function CheckoutView() {
   const [quoting, setQuoting] = useState(false);
   // What the location button filled in, kept so the client cannot submit an
   // address that is only what a satellite guessed.
-  const [autofilled, setAutofilled] = useState("");
   const [geo, setGeo] = useState<{
     latitude: number;
     longitude: number;
@@ -120,7 +125,7 @@ export function CheckoutView() {
   const savedAddress = user?.address ?? "";
   useEffect(() => {
     if (!savedAddress) return;
-    setStreet((current) => current || savedAddress);
+    setFlat((current) => current || savedAddress);
     setPincode(
       (current) => current || savedAddress.match(/\b(\d{6})\b/)?.[1] || ""
     );
@@ -214,21 +219,17 @@ export function CheckoutView() {
       return;
     }
 
-    // A satellite fix finds a street, never a doorway. If the address is still
-    // only what the button filled in, the parcel has nowhere to be handed over,
-    // so this is refused here rather than discovered by a courier.
-    const typedAddress = street.trim();
-    const beyondAutofill = autofilled
-      ? typedAddress.replace(autofilled.trim(), "").replace(/[,\s]+/g, " ").trim()
-      : typedAddress;
-
-    if (beyondAutofill.length < 4) {
-      setError(
-        autofilled
-          ? "Please add your flat or house number and building name — we only found your street."
-          : "Please enter your full address, including your flat or house number."
-      );
-      document.getElementById("shippingAddress")?.focus();
+    // A satellite fix finds a street, never a doorway, so the flat is the one
+    // field the location button leaves empty — and the one refused if it is
+    // still empty, rather than discovered by a courier at the right road.
+    if (flat.trim().length < 2) {
+      setError("Please enter your house or flat number and building name.");
+      document.getElementById("addressFlat")?.focus();
+      return;
+    }
+    if (area.trim().length < 3) {
+      setError("Please enter your area, street or locality.");
+      document.getElementById("addressArea")?.focus();
       return;
     }
 
@@ -240,7 +241,9 @@ export function CheckoutView() {
       // Sent as parts, not one line: the courier needs a pin code it can read,
       // and guessing one out of free text is how parcels go to the wrong city.
       shippingAddress: {
-        addressLine1: String(form.get("shippingAddress") ?? "").trim(),
+        addressLine1: flat.trim(),
+        addressLine2: area.trim(),
+        ...(landmark.trim() ? { landmark: landmark.trim() } : {}),
         city: String(form.get("city") ?? "").trim(),
         state: String(form.get("state") ?? "").trim(),
         pincode: String(form.get("pincode") ?? "").replace(/\D/g, ""),
@@ -462,43 +465,66 @@ export function CheckoutView() {
           <UseMyLocation
             className="mb-5"
             onResolved={(location) => {
-              // The street is appended rather than substituted: whatever the
-              // client has already typed is likely their flat and building,
-              // which is exactly the part a satellite cannot know.
-              setStreet((current) => {
-                const typed = current.trim();
-                if (!location.street) return typed;
-                return typed && !typed.includes(location.street)
-                  ? `${typed}, ${location.street}`
-                  : location.street;
-              });
+              // Only the area is filled. The flat is left exactly as the client
+              // typed it, because a satellite cannot know it and must not look
+              // as though it did.
+              if (location.street) setArea(location.street);
               if (location.city) setCity(location.city);
               if (location.state) setAddressState(location.state);
               if (location.pincode) setPincode(location.pincode);
-              setAutofilled(location.street);
               setGeo({
                 latitude: location.latitude,
                 longitude: location.longitude,
                 accuracy: location.accuracy,
                 at: new Date().toISOString()
               });
-              document.getElementById("shippingAddress")?.focus();
+              document.getElementById("addressFlat")?.focus();
             }}
           />
 
           <div>
-            <label className={labelClass} htmlFor="shippingAddress">
-              Shipping address
+            <label className={labelClass} htmlFor="addressFlat">
+              House / Flat no., Building
             </label>
-            <textarea
-              autoComplete="street-address"
-              className={`${fieldClass} min-h-32 resize-y py-3`}
-              id="shippingAddress"
-              name="shippingAddress"
-              onChange={(event) => setStreet(event.target.value)}
-              placeholder="Flat, building, street"
+            <input
+              autoComplete="address-line1"
+              className={fieldClass}
+              id="addressFlat"
+              name="addressFlat"
+              onChange={(event) => setFlat(event.target.value)}
+              placeholder="B-18, Rajnigandha Society"
               required
-              value={street}
+              value={flat}
+            />
+          </div>
+
+          <div className="mt-5">
+            <label className={labelClass} htmlFor="addressArea">
+              Area, Street, Locality
+            </label>
+            <input
+              autoComplete="address-line2"
+              className={fieldClass}
+              id="addressArea"
+              name="addressArea"
+              onChange={(event) => setArea(event.target.value)}
+              placeholder="Shastri Road, Near Station"
+              required
+              value={area}
+            />
+          </div>
+
+          <div className="mt-5">
+            <label className={labelClass} htmlFor="addressLandmark">
+              Landmark <span className="text-mist">(optional)</span>
+            </label>
+            <input
+              className={fieldClass}
+              id="addressLandmark"
+              name="addressLandmark"
+              onChange={(event) => setLandmark(event.target.value)}
+              placeholder="Opposite City Hospital"
+              value={landmark}
             />
           </div>
 

@@ -27,6 +27,8 @@ const EMPTY_FORM: Partial<Product> = {
   sizes: [],
   priceINR: 100000,
   mrpINR: null,
+  stockQuantity: null,
+  netQuantity: '',
   image: '',
   secondaryImages: [],
   description: '',
@@ -1141,6 +1143,48 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Quantity. Two different things that both get called that:
+                  how many are on the shelf, and what is in each box. */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[#DFC27C] block mb-1">STOCK QUANTITY</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.stockQuantity ?? ''}
+                    placeholder="Leave blank — not counted"
+                    onChange={e =>
+                      setForm({
+                        ...form,
+                        stockQuantity: e.target.value === '' ? null : Math.max(0, Number(e.target.value)),
+                      })
+                    }
+                    className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs placeholder:text-[#A7A7A7]/50 focus:border-[#C5A059] focus:outline-none"
+                  />
+                  <p className="mt-1 text-[10px] text-[#A7A7A7]">
+                    {form.stockQuantity === null || form.stockQuantity === undefined
+                      ? 'Not counted: sells until you mark it out of stock.'
+                      : form.stockQuantity === 0
+                        ? 'Shows as sold out.'
+                        : `Shown to customers; "only ${form.stockQuantity} left" at ${form.lowStockThreshold ?? 3} or fewer.`}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-[#DFC27C] block mb-1">NET QUANTITY</label>
+                  <input
+                    type="text"
+                    maxLength={60}
+                    value={form.netQuantity ?? ''}
+                    placeholder="1 pair · Set of 4 · 50 ml"
+                    onChange={e => setForm({ ...form, netQuantity: e.target.value })}
+                    className="w-full bg-black/60 border border-[#2A2A2a] p-2.5 rounded-xs placeholder:text-[#A7A7A7]/50 focus:border-[#C5A059] focus:outline-none"
+                  />
+                  <p className="mt-1 text-[10px] text-[#A7A7A7]">
+                    What is in the box. Listings are required to state it.
+                  </p>
+                </div>
               </div>
 
               <div className="flex gap-6 text-[#DFC27C]">

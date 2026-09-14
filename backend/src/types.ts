@@ -35,6 +35,8 @@ export interface Product {
   /** null when the piece is not counted. */
   stockQuantity?: number | null;
   lowStockThreshold?: number;
+  /** What is in the box — "1 pair", "Set of 4", "50 ml". Required on listings by Legal Metrology. */
+  netQuantity?: string | null;
   specifications: {
     material?: string; // e.g. 18K Yellow Gold, Platinum 950
     karat?: string; // e.g. 24K Gold, 18K Rose Gold

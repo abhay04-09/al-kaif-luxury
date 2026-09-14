@@ -30,6 +30,7 @@ export function rowToProduct(r: any): Product {
     // null means the piece is not counted; it is governed by inStock alone.
     stockQuantity: r.stock_quantity ?? null,
     lowStockThreshold: r.low_stock_threshold ?? 3,
+    netQuantity: r.net_quantity ?? null,
     specifications: r.specifications ?? {},
     artisanStory: r.artisan_story ?? undefined,
     sku: r.sku ?? '',
@@ -86,6 +87,9 @@ export function productToRow(p: Partial<Product>): Record<string, unknown> {
   if (p.artisanStory !== undefined) row.artisan_story = p.artisanStory;
   if (p.sku !== undefined) row.sku = p.sku;
   if (p.sizes !== undefined) row.sizes = p.sizes;
+  if (p.netQuantity !== undefined) {
+    row.net_quantity = String(p.netQuantity ?? '').trim().slice(0, 60) || null;
+  }
   if (p.seoTitle !== undefined) row.seo_title = p.seoTitle || null;
   if (p.seoDescription !== undefined) row.seo_description = p.seoDescription || null;
   if (p.seoKeywords !== undefined) row.seo_keywords = p.seoKeywords || null;

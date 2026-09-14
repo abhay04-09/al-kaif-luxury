@@ -76,7 +76,9 @@ function addressParts(order: Order): {
     const a = raw as Record<string, string>;
     return {
       line1: a.addressLine1 ?? '',
-      line2: a.addressLine2 ?? '',
+      // Shipmozo has two address lines; the landmark rides on the second so
+      // the courier still sees it.
+      line2: [a.addressLine2, a.landmark].filter(Boolean).join(', '),
       city: a.city ?? '',
       state: a.state ?? '',
       pincode: a.pincode ?? '',

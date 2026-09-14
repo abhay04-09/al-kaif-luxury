@@ -24,7 +24,7 @@ function fullAddress(value: Order['shippingAddress']): string {
   if (typeof value === 'string') return value;
   const a = value as unknown as Record<string, string>;
   return (
-    [a.addressLine1, a.addressLine2, a.city, a.state, a.pincode, a.country]
+    [a.addressLine1, a.addressLine2, a.landmark && `Near ${a.landmark}`, a.city, a.state, a.pincode, a.country]
       .filter(Boolean)
       .join(', ') || '—'
   );
