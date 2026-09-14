@@ -1221,7 +1221,7 @@ app.post('/api/orders/:id/ship', requireAdmin, async c => {
       courier_name: result.courierName,
       shipped_at: new Date().toISOString(),
       // Only claim it has shipped once a parcel actually has a number.
-      order_status: result.awbNumber ? 'Shipped via Express' : row.order_status,
+      order_status: result.awbNumber ? 'Shipped' : row.order_status,
     })
     .eq('id', orderId)
     .select('*, order_items(*)')
@@ -1243,7 +1243,7 @@ app.put('/api/orders/:id/awb', requireAdmin, async c => {
       awb_number: awb,
       courier_name: courierName ? String(courierName).trim() : null,
       shipped_at: new Date().toISOString(),
-      order_status: 'Shipped via Express',
+      order_status: 'Shipped',
     })
     .eq('id', c.req.param('id'))
     .select('*, order_items(*)')
@@ -1300,6 +1300,22 @@ app.get('/api/orders/:orderNumber/tracking', requireAuth, async c => {
         tracking_updated_at: new Date().toISOString(),
       })
       .eq('id', row.id);
+
+    // The courier knows before the shop does when a parcel is out for delivery
+    // or has arrived. Only ever forward, and never out of Cancelled.
+    const implied = statusFromCourier(update.status);
+    if (implied) {
+      const { data: current } = await db
+        .from('orders')
+        .select('order_status')
+        .eq('id', row.id)
+        .maybeSingle();
+      const from = ORDER_STATUSES.indexOf(current?.order_status);
+      const to = ORDER_STATUSES.indexOf(implied);
+      if (current?.order_status !== 'Cancelled' && from < to) {
+        await db.from('orders').update({ order_status: implied }).eq('id', row.id);
+      }
+    }
 
     return c.json({
       awbNumber: row.awb_number,
@@ -1417,8 +1433,33 @@ async function settleCancellation(
   if (error) console.error(`Could not record the cancellation: ${error.message}`);
 }
 
+/** Every status an order can be in, in the order a parcel moves through them. */
+const ORDER_STATUSES = [
+  'Placed',
+  'Accepted',
+  'In Process',
+  'Shipped',
+  'Out for Delivery',
+  'Delivered',
+  'Cancelled',
+] as const;
+
+/**
+ * The status a courier's own scan implies, if it implies one.
+ *
+ * Only the last two steps are taken from the courier — they are the ones the
+ * shop cannot see from the atelier. "Undelivered" and "not delivered" are
+ * courier language for a failed attempt, and must not read as delivered.
+ */
+function statusFromCourier(scan: string | null | undefined): 'Out for Delivery' | 'Delivered' | null {
+  const text = String(scan ?? '').toLowerCase();
+  if (/\bout for delivery\b/.test(text)) return 'Out for Delivery';
+  if (/\bdelivered\b/.test(text) && !/\b(un|not |non[- ]?)delivered\b/.test(text)) return 'Delivered';
+  return null;
+}
+
 /** Statuses a client may still cancel from. Once it is with the courier, no. */
-const CANCELLABLE = ['Placed', 'In Artisan Crafting', 'Quality Assured'];
+const CANCELLABLE = ['Placed', 'Accepted', 'In Process'];
 
 /**
  * A client cancelling their own order.
@@ -1503,7 +1544,7 @@ app.put('/api/orders/:id/refund', requireAdmin, async c => {
 
 app.put('/api/orders/:id/status', requireAdmin, async c => {
   const { status } = await c.req.json();
-  const allowed = ['Placed', 'In Artisan Crafting', 'Quality Assured', 'Shipped via Express', 'Delivered', 'Cancelled'];
+  const allowed = ORDER_STATUSES as readonly string[];
   if (!allowed.includes(status)) return c.json({ error: 'Invalid status' }, 400);
 
   const db = getDb(c.env);

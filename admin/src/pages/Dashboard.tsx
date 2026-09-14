@@ -5,9 +5,10 @@ import { Order, Product } from '../types';
 
 const ORDER_BADGES: Record<string, string> = {
   'Placed': 'bg-amber-500/10 text-amber-700 border-amber-500/20',
-  'In Artisan Crafting': 'bg-blue-500/10 text-blue-700 border-blue-500/20',
-  'Quality Assured': 'bg-purple-500/10 text-purple-700 border-purple-500/20',
-  'Shipped via Express': 'bg-cyan-500/10 text-cyan-700 border-cyan-500/20',
+  'Accepted': 'bg-blue-500/10 text-blue-700 border-blue-500/20',
+  'In Process': 'bg-purple-500/10 text-purple-700 border-purple-500/20',
+  'Shipped': 'bg-cyan-500/10 text-cyan-700 border-cyan-500/20',
+  'Out for Delivery': 'bg-indigo-500/10 text-indigo-700 border-indigo-500/20',
   'Delivered': 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
   'Cancelled': 'bg-red-500/10 text-red-700 border-red-500/20',
 };

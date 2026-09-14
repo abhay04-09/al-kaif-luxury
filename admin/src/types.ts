@@ -113,7 +113,7 @@ export interface Order {
   totalUSD: number;
   paymentMethod: 'Razorpay' | 'Card' | 'UPI' | 'COD';
   paymentStatus: 'Pending' | 'Paid' | 'Failed';
-  orderStatus: 'Placed' | 'In Artisan Crafting' | 'Quality Assured' | 'Shipped via Express' | 'Delivered' | 'Cancelled';
+  orderStatus: 'Placed' | 'Accepted' | 'In Process' | 'Shipped' | 'Out for Delivery' | 'Delivered' | 'Cancelled';
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
   giftWrapped?: boolean;

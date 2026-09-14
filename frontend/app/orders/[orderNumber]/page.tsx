@@ -55,17 +55,29 @@ type Order = {
 };
 
 /** Statuses a client may still cancel from — mirrors the rule the API enforces. */
-const CANCELLABLE = ["Placed", "In Artisan Crafting", "Quality Assured"];
+const CANCELLABLE = ["Placed", "Accepted", "In Process"];
 
 const inr = (value: number) => `₹${(value ?? 0).toLocaleString("en-IN")}`;
 
 const JOURNEY = [
   "Placed",
-  "In Artisan Crafting",
-  "Quality Assured",
-  "Shipped via Express",
+  "Accepted",
+  "In Process",
+  "Shipped",
+  "Out for Delivery",
   "Delivered"
 ];
+
+// Names orders carried before the statuses were renamed. Read as their nearest
+// new step, so an older order never shows an empty progress track.
+const RENAMED: Record<string, string> = {
+  "in artisan crafting": "In Process",
+  "quality assured": "In Process",
+  "shipped via express": "Shipped"
+};
+
+const currentStep = (status: string) =>
+  RENAMED[(status ?? "").toLowerCase()] ?? status;
 
 function tone(status: string) {
   const s = (status ?? "").toLowerCase();
@@ -120,9 +132,9 @@ export default async function OrderPage({
   const canCancel =
     !isCancelled &&
     !order.awbNumber &&
-    CANCELLABLE.includes(order.orderStatus);
+    CANCELLABLE.includes(currentStep(order.orderStatus));
   const stepIndex = JOURNEY.findIndex(
-    (step) => step.toLowerCase() === (order.orderStatus ?? "").toLowerCase()
+    (step) => step.toLowerCase() === currentStep(order.orderStatus).toLowerCase()
   );
 
   return (
@@ -225,7 +237,7 @@ export default async function OrderPage({
               <Package aria-hidden="true" className="h-4 w-4 text-gold" strokeWidth={1.5} />
               Progress
             </h2>
-            <ol className="mt-6 grid gap-4 sm:grid-cols-5">
+            <ol className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
               {JOURNEY.map((step, index) => {
                 const done = stepIndex >= index;
                 return (
