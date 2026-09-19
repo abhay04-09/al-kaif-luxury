@@ -1,6 +1,5 @@
 import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
-import { LuxuryPreloader } from "@/components/motion/luxury-preloader";
 import { CollectionsSection } from "@/components/sections/collections-section";
 import { ShopByAreaSection } from "@/components/sections/shop-by-area-section";
 import { HeroSection } from "@/components/sections/hero-section";
@@ -13,7 +12,6 @@ export default async function Home() {
 
   return (
     <>
-      <LuxuryPreloader />
       <Navbar />
       <main>
         <HeroSection />

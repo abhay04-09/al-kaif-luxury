@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Sparkles, 
   RefreshCw, 
   PackageCheck, 
   Truck, 
@@ -97,12 +96,7 @@ export function HeroSection() {
           </AnimatePresence>
 
           {/* Top Controls Overlay */}
-          <div className="relative z-10 p-6 flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-gold/40 bg-black/70 px-3.5 py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-brand-gold backdrop-blur-md">
-              <Sparkles className="h-3 w-3 text-brand-gold animate-spin" />
-              AL-KAIF JEWELLERY COLLECTION 2026
-            </span>
-
+          <div className="relative z-10 p-6 flex items-center justify-end">
             {/* Slider Arrow Controls */}
             <div className="flex items-center gap-2">
               <button
@@ -133,11 +127,6 @@ export function HeroSection() {
                 transition={{ duration: 0.6 }}
                 className="space-y-4 sm:space-y-6 text-center flex flex-col items-center"
               >
-                {/* Sub-brand / Tagline Badge */}
-                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.5em] text-brand-gold">
-                  {slide.tagline}
-                </p>
-
                 {/* Main Headline (Big & Bold) */}
                 <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold uppercase tracking-tight text-white leading-none drop-shadow-md">
                   {slide.headline}

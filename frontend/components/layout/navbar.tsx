@@ -109,13 +109,13 @@ export function Navbar() {
 
                 {/* Sub-Items Luxury Dropdown Menu */}
                 {hasSub && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 hidden group-hover:block pt-1 z-50 w-52">
-                    <div className="rounded-xl border border-brand-border bg-brand-surface/95 backdrop-blur-xl p-2 shadow-xl animate-in fade-in-50 slide-in-from-top-1">
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 hidden group-hover:block pt-2 z-50 w-56">
+                    <div className="rounded-xl border border-brand-gold/30 bg-brand-surface p-2 shadow-2xl shadow-black/20 animate-in fade-in-50 slide-in-from-top-2 duration-150">
                       {item.subItems?.map((sub) => (
                         <Link
                           key={sub.href}
                           href={sub.href}
-                          className="block rounded-lg px-3.5 py-2.5 text-xs font-medium text-brand-text transition hover:bg-brand-bg hover:text-brand-gold"
+                          className="block rounded-lg px-4 py-2.5 text-xs font-semibold tracking-wide text-brand-text transition-all duration-200 hover:bg-brand-gold/10 hover:text-brand-gold hover:translate-x-1"
                         >
                           {sub.label}
                         </Link>
