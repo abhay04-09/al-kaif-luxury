@@ -53,10 +53,21 @@
 .logoBlock {
   position: relative;
   z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   padding-top: 52px;
+  width: 100%;
 }
-.logoImg { width: 200px; }
+.logoImg {
+  display: block;
+  margin: 0 auto;
+  width: 220px;
+  max-width: 100%;
+  height: auto;
+}
 
 .brandLine { display: flex; align-items: center; gap: 14px; justify-content: center; margin-top: 6px; }
 .brandLine .bar { width: 36px; height: 1px; background: #8a6a3f; }
@@ -374,7 +385,8 @@
   .loginWrapper { flex-direction: column; min-height: auto; border-radius: 0; box-shadow: none; }
   .loginLeft { min-height: 320px; padding-top: 8px; }
   .jewelStage { height: 300px; transform: scale(0.72); transform-origin: top center; }
-  .logoBlock { padding-top: 28px; }
-  .logoImg { width: 150px; }
+  .logoBlock { padding-top: 24px; align-items: center; justify-content: center; }
+  .logoImg { width: 160px; margin: 0 auto; display: block; }
+  .formLogoImg { width: 150px; margin: 0 auto; display: block; }
   .loginRight { padding: 32px 20px; }
 }
