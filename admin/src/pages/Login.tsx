@@ -3,7 +3,10 @@ import { Shield, Mail, Lock, AlertCircle } from 'lucide-react';
 import { apiJson, setToken } from '../api';
 import { User } from '../types';
 
-export const LoginPage: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin }) => {
+export const LoginPage: React.FC<{ onLogin: (user: User) => void; notice?: string | null }> = ({
+  onLogin,
+  notice,
+}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +75,13 @@ export const LoginPage: React.FC<{ onLogin: (user: User) => void }> = ({ onLogin
               />
             </div>
           </div>
+
+          {!error && notice && (
+            <div className="p-3 bg-[#FDF6E3] border border-[#B8860B]/40 rounded-xs text-[#7A5C05] flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#B8860B]" />
+              <span>{notice}</span>
+            </div>
+          )}
 
           {error && (
             <div className="p-3 bg-red-50 border border-red-500/40 rounded-xs text-red-700 flex items-start gap-2">

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { Shield, LayoutDashboard, Package, ShoppingBag, Mail, LogOut, Loader2, FolderTree, Archive, Users, SlidersHorizontal } from 'lucide-react';
-import { apiJson, getToken, setToken } from './api';
+import { apiJson, getToken, setToken, SESSION_EXPIRED_EVENT } from './api';
 import { User } from './types';
 import { LoginPage } from './pages/Login';
 import { DashboardPage } from './pages/Dashboard';
@@ -29,6 +29,7 @@ export const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [booting, setBooting] = useState(true);
   const [tab, setTab] = useState<Tab>('dashboard');
+  const [signedOutNotice, setSignedOutNotice] = useState<string | null>(null);
 
   useEffect(() => {
     const boot = async () => {
@@ -48,8 +49,20 @@ export const App: React.FC = () => {
 
   const logout = () => {
     setToken(null);
+    setSignedOutNotice(null);
     setUser(null);
   };
+
+  // A session that runs out while the panel is open used to leave a form that
+  // simply refused to save. Now the sign-in screen comes back and says why.
+  useEffect(() => {
+    const expired = () => {
+      setSignedOutNotice('Your session has expired, so that last change was not saved. Please sign in again and repeat it.');
+      setUser(null);
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, expired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, expired);
+  }, []);
 
   if (booting) {
     return (
@@ -59,7 +72,17 @@ export const App: React.FC = () => {
     );
   }
 
-  if (!user) return <LoginPage onLogin={setUser} />;
+  if (!user) {
+    return (
+      <LoginPage
+        notice={signedOutNotice}
+        onLogin={next => {
+          setSignedOutNotice(null);
+          setUser(next);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex">

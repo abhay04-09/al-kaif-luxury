@@ -20,6 +20,17 @@ export function setToken(token: string | null) {
   else localStorage.removeItem(TOKEN_KEY);
 }
 
+/**
+ * Fired when the server rejects a signed-in call as unauthenticated.
+ *
+ * A session lasts two days, and the panel only checked it at page load. A tab
+ * left open past that point still looked signed in, so every save came back
+ * "Please sign in first" with nothing on screen explaining it and no way back
+ * but a reload. The token is dropped here and the app is told, so the login
+ * screen appears instead of a form that cannot save.
+ */
+export const SESSION_EXPIRED_EVENT = 'alkaiff:session-expired';
+
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
   const headers = new Headers(options.headers);
   const token = getToken();
@@ -27,7 +38,15 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
   if (options.body && typeof options.body === 'string' && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  return fetch(`${API_BASE}${path}`, { ...options, headers });
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+
+  // A 401 on the login route means the wrong password, not a dead session, so
+  // it is left alone to be reported where it was typed.
+  if (res.status === 401 && token && !path.startsWith('/api/auth/login')) {
+    setToken(null);
+    window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT));
+  }
+  return res;
 }
 
 /** JSON helper that throws a readable Error when the server returns an error payload. */
