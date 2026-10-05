@@ -1,15 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { ZoomIn } from "lucide-react";
 import { formatPrice } from "@/lib/products";
 import type { Product } from "@/types/product";
+import { ProductZoomModal } from "./product-zoom-modal";
 
 type ProductCardProps = {
   product: Product;
 };
 
 export function ProductCard({ product }: ProductCardProps) {
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+
   // Deterministic badge label
   const badgeLabel = 
     product.category === "jewellery"
@@ -18,35 +23,49 @@ export function ProductCard({ product }: ProductCardProps) {
       ? "⭐ MUST TRY"
       : "♥ FAN FAVORITE";
 
-  // The MRP is set per product in the admin panel. It used to be invented here
-  // as price x 1.35 with a flat "25% OFF" badge on every card, which advertised
-  // a reduction that had never happened. A piece with no MRP now simply shows
-  // its price.
   const mrp = product.mrp;
   const discountPercent =
     mrp && mrp > product.price
       ? Math.round(((mrp - product.price) / mrp) * 100)
       : 0;
 
-  return (
-    <article className="group h-full flex flex-col justify-between rounded-2xl border border-brand-border bg-brand-card p-3 shadow-sm hover:shadow-xl transition-all duration-300">
-      <Link href={`/products/${product.slug}`} className="block flex-1 flex flex-col">
-        {/* Product Image Container with Top Badge */}
-        <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-brand-bg/50 p-2 flex items-center justify-center">
-          {/* Product Badge ("FAN FAVORITE", "BESTSELLER", "HOT"): bg-[#8B0000] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm */}
-          <span className="absolute left-2.5 top-2.5 z-10 bg-[#8B0000] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
-            {badgeLabel}
-          </span>
+  const cardImages = [...new Set([product.image, ...(product.gallery || [])])];
 
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            sizes="(min-width: 768px) 25vw, 50vw"
-            className={`object-contain transition-transform duration-500 group-hover:scale-105 ${
-              product.inStock ? "" : "opacity-45 grayscale"
-            }`}
-          />
+  return (
+    <>
+      <article className="group h-full flex flex-col justify-between rounded-2xl border border-brand-border bg-brand-card p-3 shadow-sm hover:shadow-xl transition-all duration-300">
+        <Link href={`/products/${product.slug}`} className="block flex-1 flex flex-col">
+          {/* Product Image Container with Top Badge */}
+          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-brand-bg/50 p-2 flex items-center justify-center">
+            {/* Product Badge */}
+            <span className="absolute left-2.5 top-2.5 z-10 bg-[#8B0000] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+              {badgeLabel}
+            </span>
+
+            {/* Quick Zoom Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsZoomOpen(true);
+              }}
+              aria-label="Quick Zoom Image"
+              title="Quick Zoom Image"
+              className="absolute right-2.5 top-2.5 z-20 grid h-7 w-7 place-items-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md transition opacity-80 hover:opacity-100 hover:bg-gold-light hover:text-black shadow-sm"
+            >
+              <ZoomIn className="h-3.5 w-3.5" />
+            </button>
+
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              sizes="(min-width: 768px) 25vw, 50vw"
+              className={`object-contain transition-transform duration-500 group-hover:scale-105 ${
+                product.inStock ? "" : "opacity-45 grayscale"
+              }`}
+            />
 
           {!product.inStock ? (
             <div className="absolute inset-x-0 bottom-0 bg-black/85 py-1.5 text-center text-[9px] font-bold uppercase tracking-widest text-white backdrop-blur-xs">
@@ -105,5 +124,13 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </Link>
     </article>
+
+    <ProductZoomModal
+      alt={product.name}
+      images={cardImages}
+      isOpen={isZoomOpen}
+      onClose={() => setIsZoomOpen(false)}
+    />
+  </>
   );
 }

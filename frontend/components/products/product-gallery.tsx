@@ -1,12 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
+import { ZoomableProductImage } from "./zoomable-product-image";
+import { ProductZoomModal } from "./product-zoom-modal";
 
 export function ProductGallery({ images, alt }: { images: string[]; alt: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   function handleScroll() {
     const el = scrollRef.current;
@@ -30,16 +32,18 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
         >
           {images.map((image, index) => (
             <div
-              className="relative aspect-[4/5] w-full shrink-0 snap-center overflow-hidden border border-white/10 bg-onyx"
+              className="relative aspect-[4/5] w-full shrink-0 snap-center border border-white/10 bg-onyx rounded-2xl overflow-hidden"
               key={image}
             >
-              <Image
+              <ZoomableProductImage
                 alt={alt}
-                className="object-cover"
-                fill
+                src={image}
                 priority={index === 0}
                 sizes="(min-width: 1024px) 40vw, 100vw"
-                src={image}
+                onOpenModal={() => {
+                  setActiveIndex(index);
+                  setIsModalOpen(true);
+                }}
               />
             </div>
           ))}
@@ -68,6 +72,16 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
             </button>
           </>
         ) : null}
+
+        {/* Global Expand Fullscreen Trigger */}
+        <button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          className="absolute right-3 bottom-5 z-10 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-gold-light hover:text-black shadow-lg"
+        >
+          <Maximize2 className="h-3.5 w-3.5 text-gold-light group-hover:text-black" />
+          <span>Fullscreen Zoom</span>
+        </button>
       </div>
 
       {images.length > 1 ? (
@@ -87,6 +101,16 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
           ))}
         </div>
       ) : null}
+
+      {/* Fullscreen Zoom Lightbox Modal */}
+      <ProductZoomModal
+        alt={alt}
+        images={images}
+        initialIndex={activeIndex}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }
+
