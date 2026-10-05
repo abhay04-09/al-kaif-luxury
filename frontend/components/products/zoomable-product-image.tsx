@@ -228,7 +228,11 @@ export function ZoomableProductImage({
   return (
     <div
       ref={containerRef}
-      className={`group relative overflow-hidden select-none ${
+      // h-full w-full is what makes this box exist: the image inside is
+      // absolutely positioned (next/image fill), so it contributes no height,
+      // and without these the wrapper collapsed to zero and every product
+      // photo rendered 0px tall.
+      className={`group relative h-full w-full overflow-hidden select-none ${
         scale > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-zoom-in"
       }`}
       onMouseDown={handleMouseDown}
