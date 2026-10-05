@@ -3,6 +3,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { AddToCartButton } from "@/components/products/add-to-cart-button";
 import { ProductCard } from "@/components/products/product-card";
 import { ProductGallery } from "@/components/products/product-gallery";
+import { ScrollToTopOnOpen } from "@/components/products/scroll-to-top-on-open";
 import { formatPrice } from "@/lib/products";
 import { getStoreProductBySlug, getStoreProducts } from "@/lib/product-service";
 
@@ -34,6 +35,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
   return (
     <>
+      <ScrollToTopOnOpen />
       <Navbar />
       <main className="mx-auto min-h-screen max-w-7xl px-5 pb-24 pt-16 sm:px-8 lg:px-10">
         <section className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
