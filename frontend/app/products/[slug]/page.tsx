@@ -1,4 +1,5 @@
 ﻿import { notFound } from "next/navigation";
+import { Sparkles } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { AddToCartButton } from "@/components/products/add-to-cart-button";
 import { ProductCard } from "@/components/products/product-card";
@@ -6,6 +7,7 @@ import { ProductGallery } from "@/components/products/product-gallery";
 import { ScrollToTopOnOpen } from "@/components/products/scroll-to-top-on-open";
 import { formatPrice } from "@/lib/products";
 import { getStoreProductBySlug, getStoreProducts } from "@/lib/product-service";
+import { getFestiveOffer, qualifiesForOffer } from "@/lib/festive";
 
 type ProductDetailPageProps = {
   params: Promise<{
@@ -26,6 +28,13 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   }
 
   const products = await getStoreProducts(product.category);
+  // The same rule the Worker prices by, so the page never promises a discount
+  // the checkout would then decline to give.
+  const festive = await getFestiveOffer();
+  const inOffer = festive ? qualifiesForOffer(product, festive.keyword) : false;
+  const bestPercent = inOffer
+    ? Math.max(...festive!.tiers.map((t) => t.percent))
+    : 0;
   const relatedProducts = products
     .filter((item) => item.category === product.category && item.id !== product.id)
     .slice(0, 3);
@@ -63,6 +72,12 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
               ) : null}
             </div>
             <p className="mt-2 text-xs text-mist">Inclusive of all taxes</p>
+            {inOffer && bestPercent > 0 ? (
+              <p className="mt-4 inline-flex w-fit items-center gap-2 border border-gold/50 bg-gold/10 px-3.5 py-1.5 text-xs text-gold-light">
+                <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
+                In the {festive!.title} — up to {bestPercent}% off at checkout
+              </p>
+            ) : null}
             <p className="mt-6 text-base leading-8 text-porcelain/72">{product.description}</p>
             <div className="mt-8">
               <AddToCartButton product={product} />

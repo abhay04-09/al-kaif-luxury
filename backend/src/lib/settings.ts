@@ -157,3 +157,163 @@ export async function savePriceTierSettings(
   if (error) throw new Error(error.message);
   return next;
 }
+
+
+/**
+ * The festive offer: a percentage off by basket size, plus free gifts.
+ *
+ * Only pieces whose name or description carries the keyword ("traditional")
+ * take part, and only those pieces count towards the basket that decides the
+ * tier. A client cannot reach the 55% band by filling a bag with perfume and
+ * then have a single traditional earring discounted by it.
+ *
+ * Every figure here is editable from the panel, because a season's offer is a
+ * shopkeeper's decision and should not need a deploy.
+ */
+export interface FestiveTier {
+  /** The smallest eligible basket that earns this row. */
+  minINR: number;
+  percent: number;
+  gifts: number;
+}
+
+export interface FestiveSettings {
+  enabled: boolean;
+  title: string;
+  subtitle: string;
+  keyword: string;
+  tiers: FestiveTier[];
+}
+
+export const FESTIVE_DEFAULTS: FestiveSettings = {
+  enabled: false,
+  title: 'Navratri Festive Season Sale',
+  subtitle: 'Offers on all traditional products',
+  keyword: 'traditional',
+  tiers: [
+    { minINR: 0, percent: 20, gifts: 0 },
+    { minINR: 1001, percent: 25, gifts: 1 },
+    { minINR: 2001, percent: 30, gifts: 1 },
+    { minINR: 3000, percent: 40, gifts: 2 },
+    { minINR: 5000, percent: 55, gifts: 3 },
+  ],
+};
+
+/** A whole percentage between 0 and 90. Nothing here may give the shop away. */
+const percent = (value: unknown, fallback: number): number => {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 && n <= 90 ? Math.round(n) : fallback;
+};
+
+const count = (value: unknown, fallback: number): number => {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 && n <= 10 ? Math.round(n) : fallback;
+};
+
+function cleanTiers(raw: unknown): FestiveTier[] {
+  if (!Array.isArray(raw) || raw.length === 0) return FESTIVE_DEFAULTS.tiers;
+  const tiers = raw
+    .map(t => ({
+      minINR: money((t as FestiveTier)?.minINR, 0),
+      percent: percent((t as FestiveTier)?.percent, 0),
+      gifts: count((t as FestiveTier)?.gifts, 0),
+    }))
+    // Richest basket first, so the first row that fits is the best one earned.
+    .sort((a, b) => b.minINR - a.minINR);
+  return tiers.length ? tiers : FESTIVE_DEFAULTS.tiers;
+}
+
+const text = (value: unknown, fallback: string): string => {
+  const s = typeof value === 'string' ? value.trim() : '';
+  return s ? s.slice(0, 120) : fallback;
+};
+
+export async function getFestiveSettings(env: Env): Promise<FestiveSettings> {
+  try {
+    const { data } = await getDb(env)
+      .from('settings')
+      .select('value')
+      .eq('key', 'festive')
+      .maybeSingle();
+    const raw = (data?.value ?? {}) as Partial<FestiveSettings>;
+    return {
+      enabled: raw.enabled === true,
+      title: text(raw.title, FESTIVE_DEFAULTS.title),
+      subtitle: text(raw.subtitle, FESTIVE_DEFAULTS.subtitle),
+      keyword: text(raw.keyword, FESTIVE_DEFAULTS.keyword).toLowerCase(),
+      tiers: cleanTiers(raw.tiers),
+    };
+  } catch {
+    // An unreachable settings table must never discount an order by accident.
+    return { ...FESTIVE_DEFAULTS, tiers: [...FESTIVE_DEFAULTS.tiers] };
+  }
+}
+
+export async function saveFestiveSettings(
+  env: Env,
+  patch: Partial<FestiveSettings>
+): Promise<FestiveSettings> {
+  const current = await getFestiveSettings(env);
+  const next: FestiveSettings = {
+    enabled: patch.enabled === undefined ? current.enabled : patch.enabled === true,
+    title: text(patch.title, current.title),
+    subtitle: text(patch.subtitle, current.subtitle),
+    keyword: text(patch.keyword, current.keyword).toLowerCase(),
+    tiers: patch.tiers === undefined ? current.tiers : cleanTiers(patch.tiers),
+  };
+
+  const { error } = await getDb(env)
+    .from('settings')
+    .upsert({ key: 'festive', value: next, updated_at: new Date().toISOString() });
+  if (error) throw new Error(error.message);
+  return next;
+}
+
+/** Whether a piece takes part: the keyword in its name or its description. */
+export function isFestiveItem(
+  item: { name?: string | null; description?: string | null },
+  keyword: string
+): boolean {
+  if (!keyword) return false;
+  const haystack = `${item.name ?? ''} ${item.description ?? ''}`.toLowerCase();
+  return haystack.includes(keyword);
+}
+
+export interface FestiveResult {
+  /** The part of the basket the offer applies to. */
+  eligibleINR: number;
+  discountINR: number;
+  percent: number;
+  gifts: number;
+  /** What to print on the order: "30% off + 1 gift". Empty when nothing applies. */
+  label: string;
+}
+
+export const NO_FESTIVE: FestiveResult = {
+  eligibleINR: 0,
+  discountINR: 0,
+  percent: 0,
+  gifts: 0,
+  label: '',
+};
+
+/** The best tier an eligible basket has earned, and what it is worth. */
+export function festiveFor(eligibleINR: number, settings: FestiveSettings): FestiveResult {
+  if (!settings.enabled || eligibleINR <= 0) return NO_FESTIVE;
+
+  const tier = settings.tiers.find(t => eligibleINR >= t.minINR);
+  if (!tier || tier.percent <= 0) return NO_FESTIVE;
+
+  const discountINR = Math.round((eligibleINR * tier.percent) / 100);
+  // A discount can never exceed what it is discounting.
+  const capped = Math.min(discountINR, eligibleINR);
+  return {
+    eligibleINR,
+    discountINR: capped,
+    percent: tier.percent,
+    gifts: tier.gifts,
+    label: tier.gifts
+      ? `${tier.percent}% off + ${tier.gifts} free gift${tier.gifts > 1 ? 's' : ''}`
+      : `${tier.percent}% off`,
+  };
+}

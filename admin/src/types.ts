@@ -105,6 +105,10 @@ export interface Order {
   subtotalINR: number;
   taxINR: number;
   discountINR: number;
+  /** The festive offer as it was given: "30% off + 1 free gift". */
+  festiveTier?: string | null;
+  /** Free gifts to pack with this order. */
+  giftCount?: number;
   /** Delivery, as quoted when the order was placed. */
   shippingINR?: number;
   /** Charged on cash-on-delivery orders only. */
@@ -131,6 +135,22 @@ export interface Order {
   trackingStatus?: string | null;
   trackingUpdatedAt?: string | null;
   shippedAt?: string | null;
+}
+
+export interface FestiveTier {
+  /** The smallest qualifying basket that earns this row. */
+  minINR: number;
+  percent: number;
+  gifts: number;
+}
+
+export interface FestiveSettings {
+  enabled: boolean;
+  title: string;
+  subtitle: string;
+  /** A piece qualifies when its name or description contains this. */
+  keyword: string;
+  tiers: FestiveTier[];
 }
 
 export interface PriceTierSettings {

@@ -36,6 +36,10 @@ type ShippingQuote = {
   courier: string | null;
   estimatedDelivery: string | null;
   freeAboveINR: number;
+  /** The festive offer, worked out by the maison from the catalogue. */
+  discountINR?: number;
+  festiveLabel?: string;
+  festiveGifts?: number;
 };
 
 declare global {
@@ -208,7 +212,11 @@ export function CheckoutView() {
 
   const shipping = quote?.shippingINR ?? 0;
   const codFee = quote?.codFeeINR ?? 0;
-  const total = goods + shipping + codFee;
+  // Shown, never computed here: the Worker decides the discount from the
+  // catalogue, and prices the order again when it is placed.
+  const discount = quote?.discountINR ?? 0;
+  const gifts = quote?.festiveGifts ?? 0;
+  const total = goods - discount + shipping + codFee;
 
   async function placeOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -733,6 +741,23 @@ export function CheckoutView() {
               <dt>GST ({Math.round(GST_RATE * 100)}%, included)</dt>
               <dd>{inr(tax)}</dd>
             </div>
+            {discount > 0 ? (
+              <div className="flex justify-between text-gold-light">
+                <dt>
+                  Festive offer
+                  {quote?.festiveLabel ? (
+                    <span className="ml-2 text-xs text-mist">{quote.festiveLabel}</span>
+                  ) : null}
+                </dt>
+                <dd>− {inr(discount)}</dd>
+              </div>
+            ) : null}
+            {gifts > 0 ? (
+              <div className="flex justify-between text-gold-light">
+                <dt>Free gift{gifts > 1 ? "s" : ""}</dt>
+                <dd className="text-xs text-mist">{gifts} in your parcel</dd>
+              </div>
+            ) : null}
             <div className="flex justify-between text-porcelain/70">
               <dt>
                 Shipping

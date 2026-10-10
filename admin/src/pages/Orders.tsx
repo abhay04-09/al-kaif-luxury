@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Ban, Crosshair, IndianRupee, MapPin, Search, ShoppingBag, X } from 'lucide-react';
+import { Ban, Crosshair, Gift, IndianRupee, MapPin, Search, ShoppingBag, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { apiJson } from '../api';
 import { ExportButton } from '../components/ExportButton';
@@ -280,6 +280,14 @@ export const OrdersPage: React.FC = () => {
               </div>
             </div>
 
+            {/* The packer has to see this before the parcel is sealed. */}
+            {(o.giftCount ?? 0) > 0 && (
+              <div className="flex items-center gap-2 bg-[#FDF6E3] border border-[#B8860B]/40 text-[#7A5C05] px-3 py-2 rounded-xs text-[11px] font-semibold uppercase tracking-wider">
+                <Gift className="w-3.5 h-3.5 text-[#B8860B]" />
+                Pack {o.giftCount} free gift{(o.giftCount ?? 0) > 1 ? 's' : ''} with this order
+              </div>
+            )}
+
             <div className="space-y-2">
               {o.items.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-3">
@@ -322,6 +330,12 @@ export const OrdersPage: React.FC = () => {
                 )}
               </span>
               <span className="font-mono text-[#B8860B]">
+                {(o.discountINR ?? 0) > 0 && (
+                  <span className="text-[10px] text-[#996515] mr-2">
+                    − ₹{(o.discountINR ?? 0).toLocaleString('en-IN')}
+                    {o.festiveTier ? ` (${o.festiveTier})` : ' offer'}
+                  </span>
+                )}
                 {(o.shippingINR ?? 0) > 0 && (
                   <span className="text-[10px] text-[#6B7280] mr-2">
                     + ₹{(o.shippingINR ?? 0).toLocaleString('en-IN')} shipping

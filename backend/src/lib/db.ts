@@ -150,6 +150,10 @@ export function rowToOrder(r: any): Order {
     subtotalINR: Number(r.subtotal_inr),
     taxINR: Number(r.tax_inr),
     discountINR: Number(r.discount_inr),
+    /** What the offer was called when it was given: "30% off + 1 free gift". */
+    festiveTier: r.festive_tier ?? null,
+    /** Free gifts to pack with this order. */
+    giftCount: Number(r.gift_count ?? 0),
     shippingINR: Number(r.shipping_inr ?? 0),
     codFeeINR: Number(r.cod_fee_inr ?? 0),
     totalINR: Number(r.total_inr),

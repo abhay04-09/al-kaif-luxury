@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Layers, Loader2, Save, Truck } from 'lucide-react';
+import { Gift, Layers, Loader2, Save, Sparkles, Truck } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { apiJson } from '../api';
-import { PriceTierSettings, ShippingSettings } from '../types';
+import { FestiveSettings, FestiveTier, PriceTierSettings, ShippingSettings } from '../types';
 
 const DEFAULTS: ShippingSettings = {
   liveRates: true,
@@ -46,6 +46,8 @@ export const SettingsPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [tiers, setTiers] = useState<PriceTierSettings>({ classicUnder: 299, premiumAbove: 1299 });
   const [savingTiers, setSavingTiers] = useState(false);
+  const [festive, setFestive] = useState<FestiveSettings | null>(null);
+  const [savingFestive, setSavingFestive] = useState(false);
 
   useEffect(() => {
     apiJson<ShippingSettings>('/api/settings/shipping')
@@ -53,6 +55,7 @@ export const SettingsPage: React.FC = () => {
       .catch((err: any) => toast.error(err?.message || 'Could not load the shipping settings'))
       .finally(() => setLoading(false));
     apiJson<PriceTierSettings>('/api/settings/tiers').then(setTiers).catch(() => {});
+    apiJson<FestiveSettings>('/api/settings/festive').then(setFestive).catch(() => {});
   }, []);
 
   const save = async () => {
@@ -87,6 +90,31 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
+  const saveFestive = async () => {
+    if (!festive) return;
+    setSavingFestive(true);
+    try {
+      const saved = await apiJson<FestiveSettings>('/api/settings/festive', {
+        method: 'PUT',
+        body: JSON.stringify(festive),
+      });
+      setFestive(saved);
+      toast.success(saved.enabled ? 'Festive offer is live' : 'Festive offer is off');
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not save');
+    } finally {
+      setSavingFestive(false);
+    }
+  };
+
+  const editTier = (index: number, patch: Partial<FestiveTier>) => {
+    if (!festive) return;
+    setFestive({
+      ...festive,
+      tiers: festive.tiers.map((t, i) => (i === index ? { ...t, ...patch } : t)),
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center gap-3 text-[#6B7280] text-sm">
@@ -105,6 +133,133 @@ export const SettingsPage: React.FC = () => {
           charged.
         </p>
       </div>
+
+      {/* The festive offer: off until the shop switches it on. */}
+      {festive && (
+        <div className="p-6 bg-[#FFFFFF] border border-[#EAE5D9] rounded-xs space-y-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[#6B7280]">
+              <Sparkles className="w-3.5 h-3.5 text-[#B8860B]" />
+              Festive offer
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={festive.enabled}
+                onChange={e => setFestive({ ...festive, enabled: e.target.checked })}
+                className="w-4 h-4 accent-[#B8860B]"
+              />
+              <span className={`text-[11px] font-semibold uppercase tracking-wider ${festive.enabled ? 'text-[#B8860B]' : 'text-[#6B7280]'}`}>
+                {festive.enabled ? 'Live on the website' : 'Off'}
+              </span>
+            </label>
+          </div>
+
+          <p className="text-[11px] text-[#6B7280] leading-relaxed">
+            While this is on, a customer whose basket of qualifying pieces reaches a row below is
+            charged that much less, and the pop-up appears on the home page. A piece qualifies when
+            the word below appears in its name or description — nothing to tick per product.
+          </p>
+
+          <div className="grid sm:grid-cols-2 gap-5">
+            <div>
+              <label className="text-[#996515] block mb-1 text-xs uppercase tracking-wider">Pop-up heading</label>
+              <input
+                value={festive.title}
+                onChange={e => setFestive({ ...festive, title: e.target.value })}
+                className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs text-[#18181B] focus:border-[#B8860B] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-[#996515] block mb-1 text-xs uppercase tracking-wider">Line underneath</label>
+              <input
+                value={festive.subtitle}
+                onChange={e => setFestive({ ...festive, subtitle: e.target.value })}
+                className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs text-[#18181B] focus:border-[#B8860B] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-[#996515] block mb-1 text-xs uppercase tracking-wider">Word that puts a piece in the offer</label>
+              <input
+                value={festive.keyword}
+                onChange={e => setFestive({ ...festive, keyword: e.target.value })}
+                className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs text-[#18181B] focus:border-[#B8860B] focus:outline-none"
+              />
+              <p className="mt-1.5 text-[11px] text-[#6B7280] leading-relaxed">
+                Matched in the product name or description, upper or lower case.
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t border-[#EAE5D9] pt-5">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[#6B7280] mb-3">
+              <Gift className="w-3.5 h-3.5 text-[#B8860B]" />
+              Tiers
+            </div>
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-3 text-[10px] uppercase tracking-wider text-[#996515]">
+                <span>Basket from</span>
+                <span>Discount</span>
+                <span>Free gifts</span>
+              </div>
+              {festive.tiers.map((tier, i) => (
+                <div className="grid grid-cols-3 gap-3" key={i}>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[#6B7280]">₹</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={tier.minINR}
+                      onChange={e => editTier(i, { minINR: Math.max(0, Number(e.target.value) || 0) })}
+                      className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2 rounded-xs text-[#18181B] focus:border-[#B8860B] focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min={0}
+                      max={90}
+                      value={tier.percent}
+                      onChange={e => editTier(i, { percent: Math.max(0, Math.min(90, Number(e.target.value) || 0)) })}
+                      className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2 rounded-xs text-[#18181B] focus:border-[#B8860B] focus:outline-none"
+                    />
+                    <span className="text-[#6B7280]">%</span>
+                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={10}
+                    value={tier.gifts}
+                    onChange={e => editTier(i, { gifts: Math.max(0, Math.min(10, Number(e.target.value) || 0)) })}
+                    className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2 rounded-xs text-[#18181B] focus:border-[#B8860B] focus:outline-none"
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-[11px] text-[#6B7280] leading-relaxed">
+              A basket earns the best row it reaches. Only qualifying pieces count towards it, and
+              only they are discounted. Free gifts are a packing note on the order — no stock is
+              reserved for them.
+            </p>
+          </div>
+
+          <div className="border-t border-[#EAE5D9] pt-5 flex flex-wrap items-center gap-4">
+            <button
+              onClick={saveFestive}
+              disabled={savingFestive}
+              className="inline-flex items-center gap-2 bg-[#B8860B] hover:bg-[#D19A1C] text-black px-4 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-xs disabled:opacity-40"
+            >
+              {savingFestive ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Save
+            </button>
+            <p className="text-[11px] text-[#6B7280]">
+              {festive.enabled
+                ? 'Customers are being given this discount right now.'
+                : 'Nothing is being discounted. Tick the box above to start the offer.'}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="p-6 bg-[#FFFFFF] border border-[#EAE5D9] rounded-xs space-y-6">
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[#6B7280]">

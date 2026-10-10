@@ -1,6 +1,6 @@
 "use client";
 
-import { ShoppingBag, Zap, Heart, Tag } from "lucide-react";
+import { ShoppingBag, Zap, Heart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { CartItem, Product } from "@/types/product";
@@ -73,12 +73,6 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
 
   return (
     <div className="grid gap-5">
-      {/* Requirement 4: "Offer / Coupon Applied" chip: border border-[#8B0000] text-[#8B0000] bg-[#8B0000]/10 */}
-      <div className="inline-flex items-center gap-2 rounded-full border border-[#8B0000] text-[#8B0000] bg-[#8B0000]/10 px-3.5 py-1.5 text-xs font-bold w-fit shadow-xs">
-        <Tag className="h-3.5 w-3.5" />
-        <span>FESTIVE25 Offer Applied: Extra 25% OFF at Checkout</span>
-      </div>
-
       {sizes.length > 0 && (
         <div>
           <p className="text-[0.65rem] uppercase tracking-luxury text-brand-muted">

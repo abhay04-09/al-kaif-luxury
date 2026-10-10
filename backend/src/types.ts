@@ -108,6 +108,10 @@ export interface Order {
   subtotalINR: number;
   taxINR: number;
   discountINR: number;
+  /** The festive offer as it was given: "30% off + 1 free gift". */
+  festiveTier?: string | null;
+  /** How many free gifts to pack with this order. */
+  giftCount?: number;
   /** Delivery, as quoted when the order was placed. */
   shippingINR?: number;
   /** Charged on cash-on-delivery orders only. */

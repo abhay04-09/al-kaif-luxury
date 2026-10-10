@@ -19,6 +19,12 @@ import {
   savePriceTierSettings,
   priceTierOf,
   TIER_IDS,
+  getFestiveSettings,
+  saveFestiveSettings,
+  isFestiveItem,
+  festiveFor,
+  NO_FESTIVE,
+  type FestiveResult,
 } from './lib/settings';
 import { quoteShipping } from './lib/shipping';
 import {
@@ -645,6 +651,17 @@ interface IncomingItem {
  */
 const GST_RATE = 0.03;
 
+/**
+ * Backs GST out of a tax-inclusive total.
+ *
+ * Catalogue prices already include it, so the listed sum is what the client
+ * pays — adding 3% on top would overcharge every order.
+ */
+function splitTax(totalINR: number) {
+  const taxINR = totalINR - Math.round(totalINR / (1 + GST_RATE));
+  return { subtotalINR: totalINR - taxINR, taxINR };
+}
+
 async function priceItems(env: Env, items: IncomingItem[]) {
   if (!Array.isArray(items) || items.length === 0) throw new CartError('Cart is empty');
   const db = getDb(env);
@@ -678,10 +695,7 @@ async function priceItems(env: Env, items: IncomingItem[]) {
     return { product, quantity, selectedMetal: i.selectedMetal, selectedSize: i.selectedSize };
   });
 
-  // Catalogue prices already include GST, so the listed sum is what the client
-  // pays — tax is backed out of it for the invoice rather than added on top.
-  // Charging 3% over a tax-inclusive price would overcharge every order.
-  const taxINR = subtotalINR - Math.round(subtotalINR / (1 + GST_RATE));
+  const { taxINR } = splitTax(subtotalINR);
   const taxUSD = subtotalUSD - Math.round(subtotalUSD / (1 + GST_RATE));
   return {
     lines,
@@ -719,23 +733,56 @@ async function priceOrder(
 ) {
   const priced = await priceItems(env, items);
   const pieces = priced.lines.reduce((n, l) => n + l.quantity, 0);
+  const festive = await festiveForCart(env, priced.lines);
+  const goodsAfterOfferINR = priced.totalINR - festive.discountINR;
 
   const quote = await quoteShipping(env, {
     pincode: options.pincode ?? pincodeOf(options.address),
     cod: options.cod,
-    goodsINR: priced.totalINR,
+    // The courier is told what the parcel is worth now, which is what a
+    // cash-on-delivery agent will actually collect for the goods.
+    goodsINR: goodsAfterOfferINR,
     pieces,
   });
 
   return {
     ...priced,
+    // GST is inside the price, so a discount reduces the tax within it. Left
+    // alone, an invoice would declare tax on money nobody paid.
+    ...splitTax(goodsAfterOfferINR),
+    festive,
+    discountINR: festive.discountINR,
     shippingINR: quote.shippingINR,
     codFeeINR: quote.codFeeINR,
     shippingSource: quote.source,
     courier: quote.courier,
     /** What the client actually pays. */
-    grandTotalINR: priced.totalINR + quote.shippingINR + quote.codFeeINR,
+    grandTotalINR: goodsAfterOfferINR + quote.shippingINR + quote.codFeeINR,
   };
+}
+
+/**
+ * The offer a cart has earned.
+ *
+ * The keyword is matched against the pieces as the database has them, never
+ * against anything the browser sent: a cart is a list of ids and quantities,
+ * and every price and name behind it is looked up here.
+ */
+async function festiveForCart(
+  env: Env,
+  lines: PricedLine[]
+): Promise<FestiveResult> {
+  const settings = await getFestiveSettings(env);
+  if (!settings.enabled) return NO_FESTIVE;
+
+  const eligibleINR = lines.reduce(
+    (sum, line) =>
+      isFestiveItem(line.product, settings.keyword)
+        ? sum + line.product.priceINR * line.quantity
+        : sum,
+    0
+  );
+  return festiveFor(eligibleINR, settings);
 }
 
 /**
@@ -764,11 +811,15 @@ app.post('/api/shipping/quote', async c => {
   // cannot be reached by a browser claiming a larger basket than it has.
   let goodsINR = 0;
   let pieces = 1;
+  let festive: FestiveResult = NO_FESTIVE;
   if (Array.isArray(body.items) && body.items.length > 0) {
     try {
       const priced = await priceItems(c.env, body.items);
       goodsINR = priced.totalINR;
       pieces = priced.lines.reduce((n, l) => n + l.quantity, 0);
+      // Worked out from the catalogue, never from what the browser claims the
+      // basket is worth — this is the figure the checkout will show.
+      festive = await festiveForCart(c.env, priced.lines);
     } catch {
       // An unpriceable cart still deserves a delivery estimate.
       goodsINR = 0;
@@ -778,7 +829,7 @@ app.post('/api/shipping/quote', async c => {
   const quote = await quoteShipping(c.env, {
     pincode: body.pincode,
     cod,
-    goodsINR,
+    goodsINR: goodsINR - festive.discountINR,
     pieces,
     settings,
   });
@@ -790,6 +841,36 @@ app.post('/api/shipping/quote', async c => {
     courier: quote.courier ?? null,
     estimatedDelivery: quote.estimatedDelivery ?? null,
     freeAboveINR: settings.freeAboveINR,
+    discountINR: festive.discountINR,
+    festiveLabel: festive.label,
+    festiveGifts: festive.gifts,
+  });
+});
+
+app.get('/api/settings/festive', requireAdmin, async c =>
+  c.json(await getFestiveSettings(c.env))
+);
+
+app.put('/api/settings/festive', requireAdmin, async c => {
+  const body = await c.req.json();
+  return c.json(await saveFestiveSettings(c.env, body));
+});
+
+/**
+ * The offer, for the storefront's banner and pop-up.
+ *
+ * Public, and deliberately thin: it is what the shop is advertising in its
+ * window. While the offer is off it says so and carries no tiers at all.
+ */
+app.get('/api/festive', async c => {
+  const f = await getFestiveSettings(c.env);
+  if (!f.enabled) return c.json({ enabled: false });
+  return c.json({
+    enabled: true,
+    title: f.title,
+    subtitle: f.subtitle,
+    keyword: f.keyword,
+    tiers: [...f.tiers].sort((a, b) => a.minINR - b.minINR),
   });
 });
 
@@ -864,12 +945,15 @@ app.get('/api/orders/:orderNumber', requireAuth, async c => {
 });
 
 type PricedCart = Awaited<ReturnType<typeof priceItems>>;
+type PricedLine = PricedCart['lines'][number];
 
 interface OrderDraft {
   priced: PricedCart;
   /** What the client was quoted, not what the courier would say now. */
   shippingINR?: number;
   codFeeINR?: number;
+  /** The festive offer as it stood when the client agreed to pay. */
+  festive?: FestiveResult;
   userId: string | null;
   customerName: string;
   customerEmail: string;
@@ -927,6 +1011,14 @@ async function writeOrder(env: Env, draft: OrderDraft) {
   const orderNumber = await nextOrderNumber(db);
   const shippingINR = Math.max(0, Math.round(Number(draft.shippingINR) || 0));
   const codFeeINR = Math.max(0, Math.round(Number(draft.codFeeINR) || 0));
+  const festive = draft.festive ?? NO_FESTIVE;
+  // Never more than the goods themselves, whatever the settings say.
+  const discountINR = Math.min(
+    Math.max(0, Math.round(festive.discountINR)),
+    draft.priced.totalINR
+  );
+  const goodsAfterOfferINR = draft.priced.totalINR - discountINR;
+  const { subtotalINR, taxINR } = splitTax(goodsAfterOfferINR);
 
   const { data: orderRow, error: orderErr } = await db
     .from('orders')
@@ -938,13 +1030,16 @@ async function writeOrder(env: Env, draft: OrderDraft) {
       customer_email: draft.customerEmail,
       customer_phone: draft.customerPhone,
       shipping_address: draft.shippingAddress,
-      subtotal_inr: draft.priced.subtotalINR,
-      tax_inr: draft.priced.taxINR,
-      discount_inr: 0,
+      subtotal_inr: subtotalINR,
+      tax_inr: taxINR,
+      discount_inr: discountINR,
+      festive_tier: discountINR > 0 || festive.gifts > 0 ? festive.label : null,
+      gift_count: festive.gifts,
       shipping_inr: shippingINR,
       cod_fee_inr: codFeeINR,
-      // What was actually charged: the goods, the delivery, and the cash fee.
-      total_inr: draft.priced.totalINR + shippingINR + codFeeINR,
+      // What was actually charged: the goods less the offer, the delivery, and
+      // the cash fee.
+      total_inr: goodsAfterOfferINR + shippingINR + codFeeINR,
       total_usd: draft.priced.totalUSD,
       payment_method: draft.paymentMethod,
       payment_status: draft.paymentStatus,
@@ -1067,27 +1162,40 @@ app.post('/api/orders', requireAuth, async c => {
     ? (
         await getDb(c.env)
           .from('pending_checkouts')
-          .select('shipping_inr, cod_fee_inr')
+          .select('shipping_inr, cod_fee_inr, discount_inr, festive_tier, gift_count')
           .eq('razorpay_order_id', parkedId)
           .maybeSingle()
       ).data
     : null;
 
+  // The offer is taken from the parked checkout for the same reason: the
+  // client paid a figure that included it, and recomputing it here — against
+  // settings the shop may have changed in the meantime — would reject their
+  // own payment as a mismatch.
+  let festive: FestiveResult;
+
   if (parked) {
     shippingINR = Math.round(Number(parked.shipping_inr) || 0);
     codFeeINR = Math.round(Number(parked.cod_fee_inr) || 0);
+    festive = {
+      ...NO_FESTIVE,
+      discountINR: Math.max(0, Math.round(Number(parked.discount_inr) || 0)),
+      gifts: Math.max(0, Math.round(Number(parked.gift_count) || 0)),
+      label: typeof parked.festive_tier === 'string' ? parked.festive_tier : '',
+    };
   } else {
+    festive = await festiveForCart(c.env, priced.lines);
     const quote = await quoteShipping(c.env, {
       pincode: pincodeOf(shippingAddress),
       cod: paymentMethod === 'COD',
-      goodsINR: priced.totalINR,
+      goodsINR: priced.totalINR - festive.discountINR,
       pieces: priced.lines.reduce((n, l) => n + l.quantity, 0),
     });
     shippingINR = quote.shippingINR;
     codFeeINR = quote.codFeeINR;
   }
 
-  const payableINR = priced.totalINR + shippingINR + codFeeINR;
+  const payableINR = priced.totalINR - festive.discountINR + shippingINR + codFeeINR;
 
   let paymentStatus: 'Pending' | 'Paid' = 'Pending';
   let razorpayOrderId: string | null = null;
@@ -1155,6 +1263,7 @@ app.post('/api/orders', requireAuth, async c => {
     priced,
     shippingINR,
     codFeeINR,
+    festive,
     userId: user?.sub ?? null,
     customerName,
     customerEmail: customerEmail ?? user?.email ?? '',
@@ -1617,6 +1726,9 @@ app.post('/api/payments/razorpay/order', requireAuth, async c => {
       notes: notes ?? null,
       shipping_inr: priced.shippingINR,
       cod_fee_inr: priced.codFeeINR,
+      discount_inr: priced.festive.discountINR,
+      festive_tier: priced.festive.label || null,
+      gift_count: priced.festive.gifts,
     });
     // Never block the payment over this — losing recovery is far better than
     // refusing a client who is ready to pay.
@@ -1689,7 +1801,16 @@ app.post('/api/payments/razorpay/webhook', async c => {
   // a courier would say now.
   const shippingINR = Math.round(Number(parked.shipping_inr) || 0);
   const codFeeINR = Math.round(Number(parked.cod_fee_inr) || 0);
-  const expectedPaise = Math.round((priced.totalINR + shippingINR + codFeeINR) * 100);
+  // The offer as it was when the window opened, for the same reason.
+  const festive: FestiveResult = {
+    ...NO_FESTIVE,
+    discountINR: Math.max(0, Math.round(Number(parked.discount_inr) || 0)),
+    gifts: Math.max(0, Math.round(Number(parked.gift_count) || 0)),
+    label: typeof parked.festive_tier === 'string' ? parked.festive_tier : '',
+  };
+  const expectedPaise = Math.round(
+    (priced.totalINR - festive.discountINR + shippingINR + codFeeINR) * 100
+  );
   if (payment.amount !== expectedPaise || payment.currency !== 'INR') {
     console.error(
       `Captured payment ${payment.id} is ${payment.amount} ${payment.currency}, parked basket is ${expectedPaise} INR — not recording`
@@ -1701,6 +1822,7 @@ app.post('/api/payments/razorpay/webhook', async c => {
     priced,
     shippingINR,
     codFeeINR,
+    festive,
     userId: parked.user_id,
     customerName: parked.customer_name,
     customerEmail: parked.customer_email,
