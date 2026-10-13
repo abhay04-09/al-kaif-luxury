@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { apiFetch, apiJson } from '../api';
+import { makeVariants } from '../lib/make-variants';
 import { Product, Category } from '../types';
 import { ExportButton } from '../components/ExportButton';
 import { productColumns } from '../exports';
@@ -390,6 +391,10 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
       toast.error(data?.error || 'Upload failed');
       return null;
     }
+    // The storefront serves its own resized photographs, so the smaller copies
+    // are made here, as the piece is uploaded. Failing to make them costs a
+    // little bandwidth, never the upload itself.
+    await makeVariants(file, data.url as string);
     return data.url as string;
   };
 

@@ -28,15 +28,16 @@ const nextConfig: NextConfig = {
   },
   images: {
     // Vercel's image optimiser answers 402 Payment Required on this account:
-    // the plan's transformation allowance is spent, so every size it had not
-    // already cached came back broken — across the whole catalogue, and worse
-    // with each product added. Serving the originals needs no allowance and no
-    // plan. They come from Cloudflare R2 with a year-long immutable cache, so
-    // a browser fetches each one once.
-    //
-    // Turn this back off once the account is on a plan that permits the
-    // optimiser (and that permits a shop at all — Hobby does not).
-    unoptimized: true,
+    // the plan's allowance is spent, so every size it had not already cached
+    // came back broken. The maison resizes its own photographs instead — the
+    // copies live in R2 beside the originals and are served by the Worker, so
+    // there is no allowance to spend and nothing that can run out.
+    loader: "custom",
+    loaderFile: "./lib/image-loader.ts",
+    // The widths the Worker actually keeps a copy at. Asking for anything else
+    // only makes a browser download more than it can show.
+    deviceSizes: [320, 640, 1080],
+    imageSizes: [320],
     // Every host here can hand bytes to the image optimiser, so the list is
     // exactly the hosts we use and no wildcard beyond them. A "**.workers.dev"
     // entry used to sit here, which let anyone with a free Cloudflare

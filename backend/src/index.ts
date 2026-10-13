@@ -1033,8 +1033,11 @@ async function writeOrder(env: Env, draft: OrderDraft) {
       subtotal_inr: subtotalINR,
       tax_inr: taxINR,
       discount_inr: discountINR,
-      festive_tier: discountINR > 0 || festive.gifts > 0 ? festive.label : null,
-      gift_count: festive.gifts,
+      // Named only when an offer was actually given, so an order can still be
+      // written on a database where migration 018 has not been run yet.
+      ...(discountINR > 0 || festive.gifts > 0
+        ? { festive_tier: festive.label || null, gift_count: festive.gifts }
+        : {}),
       shipping_inr: shippingINR,
       cod_fee_inr: codFeeINR,
       // What was actually charged: the goods less the offer, the delivery, and
@@ -1162,7 +1165,9 @@ app.post('/api/orders', requireAuth, async c => {
     ? (
         await getDb(c.env)
           .from('pending_checkouts')
-          .select('shipping_inr, cod_fee_inr, discount_inr, festive_tier, gift_count')
+          // Whole row rather than named columns: the festive ones arrive with
+          // migration 018, and this must keep working before it is run.
+          .select('*')
           .eq('razorpay_order_id', parkedId)
           .maybeSingle()
       ).data
@@ -1726,9 +1731,13 @@ app.post('/api/payments/razorpay/order', requireAuth, async c => {
       notes: notes ?? null,
       shipping_inr: priced.shippingINR,
       cod_fee_inr: priced.codFeeINR,
-      discount_inr: priced.festive.discountINR,
-      festive_tier: priced.festive.label || null,
-      gift_count: priced.festive.gifts,
+      ...(priced.festive.discountINR > 0 || priced.festive.gifts > 0
+        ? {
+            discount_inr: priced.festive.discountINR,
+            festive_tier: priced.festive.label || null,
+            gift_count: priced.festive.gifts,
+          }
+        : {}),
     });
     // Never block the payment over this — losing recovery is far better than
     // refusing a client who is ready to pay.
@@ -1972,6 +1981,37 @@ app.post('/api/uploads', requireAdmin, async c => {
 });
 
 /**
+ * Stores one smaller copy of an existing photograph.
+ *
+ * Confined to the variant prefix: nothing here can overwrite an original, or
+ * write anywhere else in the bucket. The bytes are sniffed exactly as an
+ * upload is, so this cannot become a way to serve a document from our domain.
+ */
+app.put('/api/images/variant/:width/*', requireAdmin, async c => {
+  const width = Number(c.req.param('width'));
+  if (!VARIANT_WIDTHS.includes(width as (typeof VARIANT_WIDTHS)[number])) {
+    return c.json({ error: `Width must be one of ${VARIANT_WIDTHS.join(', ')}` }, 400);
+  }
+
+  const key = c.req.path.replace(`/api/images/variant/${width}/`, '');
+  if (!key || key.startsWith('v/') || key.includes('..')) {
+    return c.json({ error: 'Bad image key' }, 400);
+  }
+
+  const bytes = new Uint8Array(await c.req.arrayBuffer());
+  if (bytes.length === 0) return c.json({ error: 'Empty body' }, 400);
+  if (bytes.length > 8 * 1024 * 1024) return c.json({ error: 'Too large' }, 400);
+
+  const sniffed = sniffImageType(bytes);
+  if (!sniffed) return c.json({ error: 'Not an image' }, 400);
+
+  await c.env.IMAGES.put(variantKey(width, key), bytes, {
+    httpMetadata: { contentType: sniffed.mime },
+  });
+  return c.json({ key: variantKey(width, key), bytes: bytes.length }, 201);
+});
+
+/**
  * Identifies an image by its first bytes.
  *
  * Deliberately excludes SVG, which is a document that can run script, and
@@ -1995,17 +2035,52 @@ function sniffImageType(bytes: Uint8Array): { mime: string; ext: string } | null
   return null;
 }
 
+/**
+ * The widths the shop keeps a smaller copy at.
+ *
+ * Vercel used to resize every photograph on the way out, and its optimiser now
+ * answers 402 on this account — so the catalogue went dark in the sizes it had
+ * not already cached. The copies are made once, in advance, and kept in R2
+ * beside the original: no allowance to spend, no library to run per request,
+ * and nothing that can stop working because a plan ran out.
+ */
+export const VARIANT_WIDTHS = [320, 640, 1080] as const;
+
+/** Where a smaller copy lives. The original is never written over. */
+export function variantKey(width: number, key: string): string {
+  return `v/${width}/${key}`;
+}
+
+/** The smallest kept width that still covers what was asked for. */
+function widthFor(requested: number | null): number | null {
+  if (!requested || !Number.isFinite(requested)) return null;
+  return VARIANT_WIDTHS.find(w => w >= requested) ?? null;
+}
+
 app.get('/api/images/*', async c => {
   const key = c.req.path.replace('/api/images/', '');
-  const object = await c.env.IMAGES.get(key);
+
+  // A smaller copy when one is asked for and exists; the original otherwise,
+  // so a photograph never fails to appear merely because it has no variant.
+  const wanted = widthFor(Number(c.req.query('w')) || null);
+  const variant = wanted ? await c.env.IMAGES.get(variantKey(wanted, key)) : null;
+  const object = variant ?? (await c.env.IMAGES.get(key));
   if (!object) return c.json({ error: 'Image not found' }, 404);
+
+  // A year is right for a photograph that will never change under its key, and
+  // wrong for a size that simply has not been made yet: cached immutably, the
+  // full-size fallback would be served in its place for that year. Five
+  // minutes, until the smaller copy exists.
+  const servedFallback = wanted !== null && !variant;
   return new Response(object.body as ReadableStream, {
     headers: {
       'Content-Type': object.httpMetadata?.contentType ?? 'image/jpeg',
       // Never let a browser decide these bytes are something more interesting.
       'X-Content-Type-Options': 'nosniff',
       'Content-Security-Policy': "default-src 'none'; sandbox",
-      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Cache-Control': servedFallback
+        ? 'public, max-age=300'
+        : 'public, max-age=31536000, immutable',
       etag: object.httpEtag,
     },
   });
