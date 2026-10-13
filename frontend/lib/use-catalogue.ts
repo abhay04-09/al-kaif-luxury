@@ -42,6 +42,7 @@ function normalize(product: ApiProduct): Product {
     lowStockThreshold: product.lowStockThreshold ?? 3,
     netQuantity: product.netQuantity ?? null,
     featured: Boolean(product.featured),
+    isNewArrival: Boolean(product.isNewArrival),
     sizes: product.sizes ?? []
   };
 }

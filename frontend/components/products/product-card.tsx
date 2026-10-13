@@ -15,13 +15,15 @@ type ProductCardProps = {
 export function ProductCard({ product }: ProductCardProps) {
   const [isZoomOpen, setIsZoomOpen] = useState(false);
 
-  // Deterministic badge label
-  const badgeLabel = 
-    product.category === "jewellery"
-      ? "✨ BESTSELLER"
-      : product.category === "perfumes"
-      ? "⭐ MUST TRY"
-      : "♥ FAN FAVORITE";
+  // The badge follows the ticks in the admin panel, and nothing else. It used
+  // to be decided by category alone, so every piece of jewellery called itself
+  // a bestseller from the hour it was added — including pieces that had never
+  // been sold. A piece with neither tick simply wears no badge.
+  const badgeLabel = product.isNewArrival
+    ? "NEW"
+    : product.featured
+      ? "BESTSELLER"
+      : null;
 
   const mrp = product.mrp;
   const discountPercent =
@@ -37,10 +39,12 @@ export function ProductCard({ product }: ProductCardProps) {
         <Link href={`/products/${product.slug}`} className="block flex-1 flex flex-col">
           {/* Product Image Container with Top Badge */}
           <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-brand-bg/50 p-2 flex items-center justify-center">
-            {/* Product Badge */}
-            <span className="absolute left-2.5 top-2.5 z-10 bg-[#8B0000] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
-              {badgeLabel}
-            </span>
+            {/* Product Badge — absent unless the shop has ticked something. */}
+            {badgeLabel ? (
+              <span className="absolute left-2.5 top-2.5 z-10 bg-[#8B0000] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                {badgeLabel}
+              </span>
+            ) : null}
 
             {/* Quick Zoom Button */}
             <button

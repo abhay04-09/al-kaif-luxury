@@ -27,6 +27,16 @@ const nextConfig: NextConfig = {
     root: path.resolve(__dirname),
   },
   images: {
+    // Vercel's image optimiser answers 402 Payment Required on this account:
+    // the plan's transformation allowance is spent, so every size it had not
+    // already cached came back broken — across the whole catalogue, and worse
+    // with each product added. Serving the originals needs no allowance and no
+    // plan. They come from Cloudflare R2 with a year-long immutable cache, so
+    // a browser fetches each one once.
+    //
+    // Turn this back off once the account is on a plan that permits the
+    // optimiser (and that permits a shop at all — Hobby does not).
+    unoptimized: true,
     // Every host here can hand bytes to the image optimiser, so the list is
     // exactly the hosts we use and no wildcard beyond them. A "**.workers.dev"
     // entry used to sit here, which let anyone with a free Cloudflare

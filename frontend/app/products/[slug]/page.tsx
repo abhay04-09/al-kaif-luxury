@@ -53,7 +53,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light">
               {product.collection} / {product.category}
             </p>
-            <h1 className="mt-4 font-serif text-5xl leading-tight text-porcelain sm:text-6xl">
+            <h1 className="mt-4 font-serif text-[1.75rem] leading-snug text-porcelain sm:text-4xl lg:text-5xl">
               {product.name}
             </h1>
             {/* The MRP is only shown when the shop has set one that is genuinely
@@ -78,7 +78,9 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 In the {festive!.title} — up to {bestPercent}% off at checkout
               </p>
             ) : null}
-            <p className="mt-6 text-base leading-8 text-porcelain/72">{product.description}</p>
+            <p className="mt-5 text-[0.95rem] leading-7 text-porcelain/80 sm:text-base sm:leading-8">
+              {product.description}
+            </p>
             <div className="mt-8">
               <AddToCartButton product={product} />
             </div>

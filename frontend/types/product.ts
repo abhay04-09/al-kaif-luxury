@@ -26,6 +26,8 @@ export type Product = {
   /** What is in the box — "1 pair", "Set of 4", "50 ml". */
   netQuantity: string | null;
   featured: boolean;
+  /** Ticked in the admin panel. The only thing that makes a card say "New". */
+  isNewArrival: boolean;
   /** Selectable size options, e.g. ring sizes. Empty when the piece has no sizes. */
   sizes: string[];
 };
