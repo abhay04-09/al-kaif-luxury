@@ -119,9 +119,11 @@ export function ProductCard({ product }: ProductCardProps) {
             ) : null}
           </div>
 
-          {/* Discount Percentage Badge: bg-[#8B0000]/15 text-[#8B0000] dark:text-[#FF6B81] text-[11px] font-bold px-1.5 py-0.5 rounded */}
+          {/* The saving, as a filled oval rather than a tinted rectangle: it is
+              the one thing on the card that should catch the eye after the
+              photograph, and a pale pink box did not. */}
           {discountPercent > 0 ? (
-            <span className="bg-[#8B0000]/15 text-[#8B0000] dark:text-[#FF6B81] text-[11px] font-bold px-1.5 py-0.5 rounded">
+            <span className="shrink-0 rounded-full bg-[#8B0000] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-[#8B0000]/20">
               {discountPercent}% OFF
             </span>
           ) : null}
