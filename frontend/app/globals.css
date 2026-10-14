@@ -160,10 +160,26 @@ select {
   }
 }
 
+/* The oval lifts and settles, so the saving moves even before the gloss
+   crosses it. Transform only, so nothing around it shifts as it bobs. */
+@keyframes discount-bob {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.06);
+    box-shadow: 0 6px 12px rgba(139, 0, 0, 0.35);
+  }
+}
+
 .discount-pill {
   position: relative;
   overflow: hidden;
   isolation: isolate;
+  animation: discount-bob 1.9s ease-in-out infinite;
+  will-change: transform;
 }
 
 .discount-pill::after {
