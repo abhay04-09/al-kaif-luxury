@@ -123,7 +123,7 @@ export function ProductCard({ product }: ProductCardProps) {
               the one thing on the card that should catch the eye after the
               photograph, and a pale pink box did not. */}
           {discountPercent > 0 ? (
-            <span className="shrink-0 rounded-full bg-[#8B0000] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm ring-1 ring-[#8B0000]/20">
+            <span className="discount-pill shrink-0 rounded-full bg-[#8B0000] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm">
               {discountPercent}% OFF
             </span>
           ) : null}
