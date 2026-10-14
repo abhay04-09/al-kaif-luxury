@@ -56,19 +56,19 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   return (
     <>
       <Navbar />
-      <main className="mx-auto min-h-screen max-w-7xl px-5 pb-24 pt-16 sm:px-8 lg:px-10">
+      <main className="mx-auto min-h-screen max-w-7xl px-5 pb-24 pt-8 sm:px-8 sm:pt-16 lg:px-10">
         <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light">AL-KAIF Shop</p>
-        <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <div className="mt-3 flex flex-col gap-4 md:mt-4 md:flex-row md:items-end md:justify-between md:gap-6">
           <div>
-            <h1 className="font-serif text-5xl text-porcelain sm:text-6xl">{heading}</h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-porcelain/70">
+            <h1 className="font-serif text-3xl leading-tight text-porcelain sm:text-5xl lg:text-6xl">{heading}</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-porcelain/70 sm:mt-5 sm:text-base sm:leading-8">
               Every piece is quality-checked, individually curated, and dispatched with AL-KAIF's signature tamper-proof packaging.
             </p>
           </div>
           {categories.length > 0 && (
-            <div className="flex flex-wrap gap-3">
+            <div className="-mx-5 flex gap-2.5 overflow-x-auto px-5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0 sm:gap-3">
               <a
-                className={`border px-4 py-3 text-xs uppercase tracking-luxury text-porcelain hover:border-gold-light ${
+                className={`shrink-0 whitespace-nowrap border px-4 py-2.5 text-xs uppercase tracking-luxury text-porcelain hover:border-gold-light sm:py-3 ${
                   category ? "border-white/10" : "border-gold-light"
                 }`}
                 href="/products"
@@ -78,7 +78,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               {categories.map((item) => (
                 <a
                   key={item.id}
-                  className={`border px-4 py-3 text-xs uppercase tracking-luxury text-porcelain hover:border-gold-light ${
+                  className={`shrink-0 whitespace-nowrap border px-4 py-2.5 text-xs uppercase tracking-luxury text-porcelain hover:border-gold-light sm:py-3 ${
                     category === item.id ? "border-gold-light" : "border-white/10"
                   }`}
                   href={`/products?category=${item.id}`}
@@ -92,9 +92,9 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
         {/* Tier filter buttons without "Shop by price" label or price amounts */}
         {tiers.length > 0 && (
-          <div className="mt-8 flex flex-wrap items-center gap-2.5 sm:gap-3">
+          <div className="mt-5 items-center sm:mt-8 -mx-5 flex gap-2.5 overflow-x-auto px-5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0 sm:gap-3">
             <a
-              className={`inline-flex items-center justify-center rounded-full border px-5 py-2 text-xs uppercase tracking-luxury font-medium transition-all duration-200 ${
+              className={`inline-flex shrink-0 whitespace-nowrap items-center justify-center rounded-full border px-5 py-2 text-xs uppercase tracking-luxury font-medium transition-all duration-200 ${
                 tier
                   ? "border-brand-border bg-brand-bg/60 text-brand-text/80 hover:border-brand-gold hover:text-brand-gold hover:bg-brand-gold/10 hover:shadow-md hover:-translate-y-0.5"
                   : "border-brand-gold bg-brand-gold/15 text-brand-gold font-semibold shadow-md shadow-brand-gold/10 ring-1 ring-brand-gold/40"
@@ -106,7 +106,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             {tiers.map((band) => (
               <a
                 key={band.id}
-                className={`inline-flex items-center justify-center rounded-full border px-5 py-2 text-xs uppercase tracking-luxury font-medium transition-all duration-200 ${
+                className={`inline-flex shrink-0 whitespace-nowrap items-center justify-center rounded-full border px-5 py-2 text-xs uppercase tracking-luxury font-medium transition-all duration-200 ${
                   tier === band.id
                     ? "border-brand-gold bg-brand-gold/15 text-brand-gold font-semibold shadow-md shadow-brand-gold/10 ring-1 ring-brand-gold/40"
                     : "border-brand-border bg-brand-bg/60 text-brand-text/80 hover:border-brand-gold hover:text-brand-gold hover:bg-brand-gold/10 hover:shadow-md hover:-translate-y-0.5"
@@ -120,12 +120,12 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         )}
 
         {subcategories.length > 0 && (
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <span className="text-[0.65rem] uppercase tracking-luxury text-porcelain/50">Refine</span>
+          <div className="mt-5 items-center sm:mt-8 -mx-5 flex gap-2.5 overflow-x-auto px-5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0 sm:gap-3">
+            <span className="shrink-0 self-center whitespace-nowrap text-[0.65rem] uppercase tracking-luxury text-porcelain/50">Refine</span>
             {subcategories.map((sub) => (
               <a
                 key={sub.id}
-                className="rounded-full border border-white/10 px-4 py-2 text-[0.65rem] uppercase tracking-luxury text-porcelain/80 hover:border-gold-light hover:text-porcelain"
+                className="shrink-0 whitespace-nowrap rounded-full border border-white/10 px-4 py-2 text-[0.65rem] uppercase tracking-luxury text-porcelain/80 hover:border-gold-light hover:text-porcelain"
                 href={`/products?category=${category}&subcategory=${sub.id}`}
               >
                 {sub.name}
@@ -150,7 +150,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             </a>
           </div>
         ) : (
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-6 grid gap-4 sm:mt-12 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {visibleProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
