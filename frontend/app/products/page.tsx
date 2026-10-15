@@ -41,6 +41,19 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       })
     : allProducts;
 
+  // A band with nothing in it is left out rather than offered: a "Premium"
+  // button that always opens an empty page reads as a broken shop. When the
+  // bag is filtered by band, the whole category is fetched to count against.
+  const catalogue = tier ? await getStoreProducts(category, subcategory) : allProducts;
+  const stockedTiers = tiers.filter((band) => {
+    if (band.minINR === undefined) return true;
+    return catalogue.some(
+      (p) =>
+        p.price >= (band.minINR ?? 0) &&
+        (band.maxINR === null || band.maxINR === undefined || p.price <= band.maxINR)
+    );
+  });
+
   const activeCategory = categories.find((item) => item.id === category);
   const subcategories = activeCategory?.children ?? [];
 
@@ -91,7 +104,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         </div>
 
         {/* Tier filter buttons without "Shop by price" label or price amounts */}
-        {tiers.length > 0 && (
+        {stockedTiers.length > 1 && (
           <div className="mt-5 items-center sm:mt-8 -mx-5 flex gap-2.5 overflow-x-auto px-5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0 sm:gap-3">
             <a
               className={`inline-flex shrink-0 whitespace-nowrap items-center justify-center rounded-full border px-5 py-2 text-xs uppercase tracking-luxury font-medium transition-all duration-200 ${
@@ -103,7 +116,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             >
               All
             </a>
-            {tiers.map((band) => (
+            {stockedTiers.map((band) => (
               <a
                 key={band.id}
                 className={`inline-flex shrink-0 whitespace-nowrap items-center justify-center rounded-full border px-5 py-2 text-xs uppercase tracking-luxury font-medium transition-all duration-200 ${

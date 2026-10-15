@@ -155,15 +155,18 @@ export function CartView() {
               <span>Subtotal</span>
               <span>{formatPrice(summary.subtotal)}</span>
             </div>
+            {/* Delivery is priced by the courier against a pin code, which the
+                bag does not have. Calling it complimentary here and charging
+                for it at checkout is how a client decides they were misled. */}
             <div className="flex justify-between">
               <span>Shipping</span>
-              <span>Complimentary</span>
+              <span className="text-xs text-mist">Calculated at checkout</span>
             </div>
             <div className="flex justify-between border-t border-white/10 pt-4 text-base text-porcelain">
               <span>
                 Total
                 <span className="mt-1 block text-xs text-mist">
-                  GST included
+                  GST included &middot; delivery added at checkout
                 </span>
               </span>
               <span>{formatPrice(summary.total)}</span>

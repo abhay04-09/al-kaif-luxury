@@ -817,14 +817,31 @@ app.put('/api/settings/tiers', requireAdmin, async c => {
 /** Public, so the storefront can label and link the bands without guessing. */
 app.get('/api/tiers', async c => {
   const tiers = await getPriceTierSettings(c.env);
+  // The bounds travel with the band so the storefront can tell which bands
+  // hold nothing: a "Premium" button that always opens an empty page reads as
+  // a broken shop, not an empty shelf.
   return c.json([
-    { id: 'classic', name: 'Classic', description: `Under ₹${tiers.classicUnder}` },
+    {
+      id: 'classic',
+      name: 'Classic',
+      description: `Under ₹${tiers.classicUnder}`,
+      minINR: 0,
+      maxINR: tiers.classicUnder - 1,
+    },
     {
       id: 'standard',
       name: 'Standard',
       description: `₹${tiers.classicUnder} – ₹${tiers.premiumAbove}`,
+      minINR: tiers.classicUnder,
+      maxINR: tiers.premiumAbove,
     },
-    { id: 'premium', name: 'Premium', description: `Above ₹${tiers.premiumAbove}` },
+    {
+      id: 'premium',
+      name: 'Premium',
+      description: `Above ₹${tiers.premiumAbove}`,
+      minINR: tiers.premiumAbove + 1,
+      maxINR: null,
+    },
   ]);
 });
 

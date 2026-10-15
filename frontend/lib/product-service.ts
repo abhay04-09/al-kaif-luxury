@@ -100,7 +100,14 @@ export async function getStoreProducts(
   return fetchProducts(category, subcategory, tier);
 }
 
-export type PriceBand = { id: string; name: string; description: string };
+export type PriceBand = {
+  id: string;
+  name: string;
+  description: string;
+  /** The band's bounds, so a band holding nothing can be left out. */
+  minINR?: number;
+  maxINR?: number | null;
+};
 
 /**
  * The price bands and where they sit, asked of the API rather than repeated

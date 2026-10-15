@@ -137,15 +137,9 @@ export function CartDrawer() {
             </button>
           </div>
 
-          {/* Complimentary Shipping Banner */}
-          {totalItemCount > 0 && (
-            <div className="bg-gradient-to-r from-amber-500/10 via-brand-gold/15 to-amber-500/10 px-6 py-2.5 border-b border-brand-gold/20 flex items-center gap-2 text-xs text-brand-text">
-              <Sparkles className="h-3.5 w-3.5 shrink-0 text-brand-gold" />
-              <span>
-                You qualify for <strong className="font-semibold text-brand-gold">FREE Express Shipping</strong> & Luxury Packaging!
-              </span>
-            </div>
-          )}
+          {/* A banner promising free express shipping stood here. The shop
+              charges the courier's rate by pin code, so every client who read
+              it was charged for delivery a screen later. */}
 
           {/* Body Content */}
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
@@ -294,7 +288,7 @@ export function CartDrawer() {
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">Complimentary</span>
+                  <span className="text-brand-muted">Calculated at checkout</span>
                 </div>
                 <div className="flex justify-between pt-2 border-t border-brand-border text-base font-serif text-brand-text">
                   <span>Total (Incl. Taxes)</span>
