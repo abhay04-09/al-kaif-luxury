@@ -3,6 +3,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { AddToCartButton } from "@/components/products/add-to-cart-button";
 import { ProductCard } from "@/components/products/product-card";
 import { ProductGallery } from "@/components/products/product-gallery";
+import { ColourOptions } from "@/components/products/colour-options";
 import { ScrollToTopOnOpen } from "@/components/products/scroll-to-top-on-open";
 import { formatPrice } from "@/lib/products";
 import { getStoreProductBySlug, getStoreProducts } from "@/lib/product-service";
@@ -26,6 +27,16 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   }
 
   const products = await getStoreProducts(product.category);
+
+  // The same design in its other colours. Matched across the whole catalogue
+  // rather than this category, since nothing stops a shop from filing two
+  // colours of one piece differently.
+  const group = product.colourGroup?.trim().toLowerCase() ?? "";
+  const colourOptions = group
+    ? (await getStoreProducts())
+        .filter((item) => (item.colourGroup ?? "").trim().toLowerCase() === group)
+        .sort((a, b) => (a.colourName ?? "").localeCompare(b.colourName ?? ""))
+    : [];
   const relatedProducts = products
     .filter((item) => item.category === product.category && item.id !== product.id)
     .slice(0, 3);
@@ -66,6 +77,8 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             <p className="mt-4 text-[0.825rem] leading-6 text-porcelain/80 sm:mt-5 sm:text-[0.95rem] sm:leading-7 lg:text-base lg:leading-8">
               {product.description}
             </p>
+            <ColourOptions current={product} options={colourOptions} />
+
             <div className="mt-8">
               <AddToCartButton product={product} />
             </div>

@@ -54,6 +54,10 @@ export interface Product {
   sku: string;
   /** Selectable size options shown as buttons on the storefront. */
   sizes?: string[];
+  /** What this colour is called, when the design comes in more than one. */
+  colourName?: string | null;
+  /** The word shared by every colour of one design. */
+  colourGroup?: string | null;
   seoTitle?: string | null;
   seoDescription?: string | null;
   seoKeywords?: string | null;

@@ -20,6 +20,8 @@ export type ApiProduct = {
   description: string;
   featured?: boolean;
   isNewArrival?: boolean;
+  colourName?: string | null;
+  colourGroup?: string | null;
   inStock: boolean;
   stockQuantity?: number | null;
   lowStockThreshold?: number;

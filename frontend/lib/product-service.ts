@@ -71,6 +71,8 @@ function normalize(product: ApiProduct): Product {
     lowStockThreshold: product.lowStockThreshold ?? 3,
     netQuantity: product.netQuantity ?? null,
     featured: Boolean(product.featured),
+    colourName: product.colourName?.trim() || null,
+    colourGroup: product.colourGroup?.trim() || null,
     isNewArrival: Boolean(product.isNewArrival),
     sizes: product.sizes ?? []
   };

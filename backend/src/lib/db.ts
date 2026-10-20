@@ -35,6 +35,10 @@ export function rowToProduct(r: any): Product {
     artisanStory: r.artisan_story ?? undefined,
     sku: r.sku ?? '',
     sizes: r.sizes ?? [],
+    /** What this colour is called, when the design comes in more than one. */
+    colourName: r.colour_name ?? null,
+    /** The word shared by every colour of one design. */
+    colourGroup: r.colour_group ?? null,
     seoTitle: r.seo_title ?? null,
     seoDescription: r.seo_description ?? null,
     seoKeywords: r.seo_keywords ?? null,
@@ -87,6 +91,15 @@ export function productToRow(p: Partial<Product>): Record<string, unknown> {
   if (p.artisanStory !== undefined) row.artisan_story = p.artisanStory;
   if (p.sku !== undefined) row.sku = p.sku;
   if (p.sizes !== undefined) row.sizes = p.sizes;
+  // Written whenever the form sends them, so a colour can be cleared as well
+  // as set. Both columns arrive with migration 019, which must be run before
+  // this is deployed.
+  if (p.colourName !== undefined) {
+    row.colour_name = String(p.colourName ?? '').trim().slice(0, 40) || null;
+  }
+  if (p.colourGroup !== undefined) {
+    row.colour_group = String(p.colourGroup ?? '').trim().slice(0, 80) || null;
+  }
   if (p.netQuantity !== undefined) {
     row.net_quantity = String(p.netQuantity ?? '').trim().slice(0, 60) || null;
   }

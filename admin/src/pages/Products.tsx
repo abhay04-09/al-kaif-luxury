@@ -26,6 +26,8 @@ const EMPTY_FORM: Partial<Product> = {
   subcategory: '',
   sku: '',
   sizes: [],
+  colourName: '',
+  colourGroup: '',
   priceINR: 100000,
   mrpINR: null,
   stockQuantity: null,
@@ -186,6 +188,17 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
   const [seoOpen, setSeoOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [sizeInput, setSizeInput] = useState('');
+
+  // Offered as suggestions so a group is joined by picking it, not by typing it
+  // again and hoping it matches. A group spelled two ways is two groups.
+  const colourNames = useMemo(
+    () => [...new Set(products.map(p => (p.colourName ?? '').trim()).filter(Boolean))].sort(),
+    [products]
+  );
+  const colourGroups = useMemo(
+    () => [...new Set(products.map(p => (p.colourGroup ?? '').trim()).filter(Boolean))].sort(),
+    [products]
+  );
 
   const addSize = () => {
     const size = sizeInput.trim();
@@ -929,6 +942,46 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                   ) : (
                     <p className="mt-1 text-[10px] text-[#6B7280]">Struck through on the storefront.</p>
                   )}
+                </div>
+              </div>
+
+              {/* Colour, and the thread to the same design in other colours */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[#996515] block mb-1">COLOUR</label>
+                  <input
+                    type="text"
+                    list="colour-names"
+                    value={form.colourName ?? ''}
+                    onChange={e => setForm(f => ({ ...f, colourName: e.target.value }))}
+                    placeholder="Rose Gold"
+                    className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs focus:border-[#B8860B] focus:outline-none"
+                  />
+                  <datalist id="colour-names">
+                    {colourNames.map(c => <option key={c} value={c} />)}
+                  </datalist>
+                  <p className="mt-1.5 text-[10px] text-[#6B7280]">
+                    What this one is called. Leave empty if the piece has only one colour.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-[#996515] block mb-1">COLOUR GROUP</label>
+                  <input
+                    type="text"
+                    list="colour-groups"
+                    value={form.colourGroup ?? ''}
+                    onChange={e => setForm(f => ({ ...f, colourGroup: e.target.value }))}
+                    placeholder="butterfly stud"
+                    className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs focus:border-[#B8860B] focus:outline-none"
+                  />
+                  <datalist id="colour-groups">
+                    {colourGroups.map(g => <option key={g} value={g} />)}
+                  </datalist>
+                  <p className="mt-1.5 text-[10px] text-[#6B7280]">
+                    Put the same word on every colour of one design and the product page offers the
+                    others. Pick from the list to join a group you have already made.
+                  </p>
                 </div>
               </div>
 
