@@ -26,6 +26,8 @@ export type Product = {
   /** What is in the box — "1 pair", "Set of 4", "50 ml". */
   netQuantity: string | null;
   featured: boolean;
+  /** Earrings, rings, bangles — what the piece actually is. */
+  subcategory: string | null;
   /** What this colour is called, when the design comes in more than one. */
   colourName: string | null;
   /** The word shared by every colour of one design. */

@@ -37,8 +37,21 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
         .filter((item) => (item.colourGroup ?? "").trim().toLowerCase() === group)
         .sort((a, b) => (a.colourName ?? "").localeCompare(b.colourName ?? ""))
     : [];
+  // Earrings beside earrings. The category alone was too broad: a pair of
+  // jhumkas was being shown beside bracelets and rings because all three are
+  // jewellery. Other colours of this same design are left out too — they are
+  // already offered as swatches above.
+  const kind = (product.subcategory ?? "").trim().toLowerCase();
+  const colourSiblings = new Set(colourOptions.map((item) => item.id));
   const relatedProducts = products
-    .filter((item) => item.category === product.category && item.id !== product.id)
+    .filter(
+      (item) =>
+        item.id !== product.id &&
+        !colourSiblings.has(item.id) &&
+        (kind
+          ? (item.subcategory ?? "").trim().toLowerCase() === kind
+          : item.category === product.category)
+    )
     .slice(0, 3);
   // The main image may be updated independently from an existing gallery.
   // Always render it first so the product page matches the catalogue card.
@@ -116,14 +129,16 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             </p>
           </div>
         </section>
+        {relatedProducts.length > 0 ? (
         <section className="mt-24">
-          <h2 className="font-serif text-4xl text-porcelain">You may also like</h2>
+          <h2 className="font-serif text-2xl text-porcelain sm:text-4xl">You may also like</h2>
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {relatedProducts.map((item) => (
               <ProductCard key={item.id} product={item} />
             ))}
           </div>
         </section>
+        ) : null}
       </main>
     </>
   );
