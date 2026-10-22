@@ -141,3 +141,41 @@ export async function getStoreProductById(id: string): Promise<Product | undefin
 export async function getStoreCategories(): Promise<ApiCategory[]> {
   return (await apiGet<ApiCategory[]>("/api/categories")) ?? [];
 }
+
+export type StoreReview = {
+  id: string;
+  authorName: string;
+  rating: number;
+  body: string;
+  pinned: boolean;
+  verifiedPurchase: boolean;
+  createdAt: string;
+};
+
+export type StoreReviewSummary = {
+  count: number;
+  average: number;
+  breakdown: { stars: number; count: number }[];
+};
+
+/**
+ * What clients have said about a piece.
+ *
+ * Read on every product page, so a short cache: a review posted a minute ago
+ * appearing a minute late is fine, and asking the API on every visit is not.
+ * An unreachable API leaves the section empty rather than failing the page.
+ */
+export async function getProductReviews(
+  productId: string
+): Promise<{ reviews: StoreReview[]; summary: StoreReviewSummary }> {
+  const data = await apiGet<{ reviews: StoreReview[]; summary: StoreReviewSummary }>(
+    `/api/products/${encodeURIComponent(productId)}/reviews`,
+    30
+  );
+  return (
+    data ?? {
+      reviews: [],
+      summary: { count: 0, average: 0, breakdown: [] }
+    }
+  );
+}

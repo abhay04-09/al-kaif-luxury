@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { Shield, LayoutDashboard, Package, ShoppingBag, Mail, LogOut, Loader2, FolderTree, Archive, Users, SlidersHorizontal } from 'lucide-react';
+import { Shield, LayoutDashboard, Package, ShoppingBag, Mail, LogOut, Loader2, FolderTree, Archive, Users, SlidersHorizontal, Star } from 'lucide-react';
 import { apiJson, getToken, setToken, SESSION_EXPIRED_EVENT } from './api';
 import { User } from './types';
 import { LoginPage } from './pages/Login';
@@ -11,8 +11,9 @@ import { SubscribersPage } from './pages/Subscribers';
 import { CategoriesPage } from './pages/Categories';
 import { CustomersPage } from './pages/Customers';
 import { SettingsPage } from './pages/Settings';
+import { ReviewsPage } from './pages/Reviews';
 
-type Tab = 'dashboard' | 'products' | 'archived' | 'categories' | 'orders' | 'customers' | 'subscribers' | 'settings';
+type Tab = 'dashboard' | 'products' | 'archived' | 'categories' | 'orders' | 'customers' | 'reviews' | 'subscribers' | 'settings';
 
 const NAV: { id: Tab; label: string; icon: React.FC<any> }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -21,6 +22,7 @@ const NAV: { id: Tab; label: string; icon: React.FC<any> }[] = [
   { id: 'categories', label: 'Categories', icon: FolderTree },
   { id: 'orders', label: 'Orders', icon: ShoppingBag },
   { id: 'customers', label: 'Customers', icon: Users },
+  { id: 'reviews', label: 'Reviews', icon: Star },
   { id: 'subscribers', label: 'Subscribers', icon: Mail },
   { id: 'settings', label: 'Settings', icon: SlidersHorizontal },
 ];
@@ -146,6 +148,7 @@ export const App: React.FC = () => {
         {tab === 'categories' && <CategoriesPage />}
         {tab === 'orders' && <OrdersPage />}
         {tab === 'customers' && <CustomersPage />}
+        {tab === 'reviews' && <ReviewsPage />}
         {tab === 'subscribers' && <SubscribersPage />}
         {tab === 'settings' && <SettingsPage />}
       </main>

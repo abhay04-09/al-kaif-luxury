@@ -815,6 +815,213 @@ app.put('/api/settings/tiers', requireAdmin, async c => {
 });
 
 /** Public, so the storefront can label and link the bands without guessing. */
+// ---------------------------------------------------------------- reviews
+
+interface ReviewRow {
+  id: string;
+  product_id: string;
+  user_id: string;
+  author_name: string;
+  rating: number;
+  body: string | null;
+  hidden: boolean;
+  pinned: boolean;
+  verified_purchase: boolean;
+  created_at: string;
+}
+
+function rowToReview(r: ReviewRow) {
+  return {
+    id: r.id,
+    productId: r.product_id,
+    authorName: r.author_name,
+    rating: Number(r.rating),
+    body: r.body ?? '',
+    hidden: Boolean(r.hidden),
+    pinned: Boolean(r.pinned),
+    verifiedPurchase: Boolean(r.verified_purchase),
+    createdAt: r.created_at,
+  };
+}
+
+/** The shape the shop page shows above the reviews themselves. */
+function summarise(reviews: { rating: number }[]) {
+  const count = reviews.length;
+  const counts = [0, 0, 0, 0, 0];
+  let total = 0;
+  for (const r of reviews) {
+    total += r.rating;
+    if (r.rating >= 1 && r.rating <= 5) counts[r.rating - 1] += 1;
+  }
+  return {
+    count,
+    // One decimal place: an average of 4.3333 claims a precision nobody has.
+    average: count ? Math.round((total / count) * 10) / 10 : 0,
+    // Five stars first, to read top-down the way the bars are drawn.
+    breakdown: [5, 4, 3, 2, 1].map(stars => ({ stars, count: counts[stars - 1] })),
+  };
+}
+
+/** Has this client an order with this piece in it? */
+async function hasBought(
+  db: ReturnType<typeof getDb>,
+  userId: string,
+  productId: string
+): Promise<boolean> {
+  const { data } = await db
+    .from('order_items')
+    .select('id, orders!inner(user_id)')
+    .eq('product_id', productId)
+    .eq('orders.user_id', userId)
+    .limit(1);
+  return Array.isArray(data) && data.length > 0;
+}
+
+/** Public: what clients have said about one piece. Hidden ones are not sent. */
+app.get('/api/products/:id/reviews', async c => {
+  const { data, error } = await getDb(c.env)
+    .from('reviews')
+    .select('*')
+    .eq('product_id', c.req.param('id'))
+    .eq('hidden', false)
+    .order('pinned', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) throw new Error(error.message);
+
+  const reviews = (data ?? []).map(rowToReview);
+  return c.json({ reviews, summary: summarise(reviews) });
+});
+
+/**
+ * Writing a review.
+ *
+ * Signed in only, and one per piece: a second attempt rewrites the first
+ * rather than stacking another star rating on top of it.
+ */
+app.post('/api/products/:id/reviews', requireAuth, async c => {
+  const user = currentUser(c)!;
+  if (!(await withinRate(c, `review:${user.sub}`, 10))) {
+    return c.json({ error: TOO_MANY }, 429);
+  }
+
+  const body = await c.req
+    .json<{ rating?: unknown; body?: unknown }>()
+    .catch(() => ({} as { rating?: unknown; body?: unknown }));
+  const rating = Math.round(Number(body.rating));
+  if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+    return c.json({ error: 'Please choose between one and five stars' }, 400);
+  }
+  const text = String(body.body ?? '').trim().slice(0, 1500);
+
+  const db = getDb(c.env);
+  const productId = String(c.req.param('id') ?? '');
+  if (!productId) return c.json({ error: 'Product not found' }, 404);
+  const { data: product } = await db
+    .from('products')
+    .select('id')
+    .eq('id', productId)
+    .maybeSingle();
+  if (!product) return c.json({ error: 'Product not found' }, 404);
+
+  const { data: existing } = await db
+    .from('reviews')
+    .select('id')
+    .eq('product_id', productId)
+    .eq('user_id', user.sub)
+    .maybeSingle();
+
+  const row = {
+    product_id: productId,
+    user_id: user.sub,
+    author_name: user.name || 'A client',
+    rating,
+    body: text || null,
+    verified_purchase: await hasBought(db, String(user.sub), productId),
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = existing
+    ? await db.from('reviews').update(row).eq('id', existing.id).select('*').single()
+    : await db
+        .from('reviews')
+        .insert({ ...row, id: `rev-${Date.now()}-${Math.floor(Math.random() * 1000)}` })
+        .select('*')
+        .single();
+  if (error || !data) throw new Error(error?.message ?? 'Could not save that review');
+
+  return c.json(rowToReview(data as ReviewRow), existing ? 200 : 201);
+});
+
+/** A client's own review of a piece, so the form can show what they wrote. */
+app.get('/api/products/:id/reviews/mine', requireAuth, async c => {
+  const user = currentUser(c)!;
+  const { data } = await getDb(c.env)
+    .from('reviews')
+    .select('*')
+    .eq('product_id', c.req.param('id'))
+    .eq('user_id', user.sub)
+    .maybeSingle();
+  return c.json({ review: data ? rowToReview(data as ReviewRow) : null });
+});
+
+/** Everything written, for the panel — hidden ones included. */
+app.get('/api/reviews', requireAdmin, async c => {
+  const { data, error } = await getDb(c.env)
+    .from('reviews')
+    .select('*, products(name, image)')
+    .order('pinned', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(500);
+  if (error) throw new Error(error.message);
+  return c.json(
+    (data ?? []).map((r: any) => ({
+      ...rowToReview(r),
+      productName: r.products?.name ?? '(deleted piece)',
+      productImage: r.products?.image ?? null,
+    }))
+  );
+});
+
+/** Pinning and hiding. Nothing else about a review may be edited by the shop. */
+app.put('/api/reviews/:id', requireAdmin, async c => {
+  const body = await c.req
+    .json<{ hidden?: unknown; pinned?: unknown }>()
+    .catch(() => ({} as { hidden?: unknown; pinned?: unknown }));
+  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (body.hidden !== undefined) patch.hidden = body.hidden === true;
+  if (body.pinned !== undefined) patch.pinned = body.pinned === true;
+
+  const { data, error } = await getDb(c.env)
+    .from('reviews')
+    .update(patch)
+    .eq('id', c.req.param('id'))
+    .select('*')
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return c.json({ error: 'Review not found' }, 404);
+  return c.json(rowToReview(data as ReviewRow));
+});
+
+/** The shop may delete any review; a client may delete their own. */
+app.delete('/api/reviews/:id', requireAuth, async c => {
+  const user = currentUser(c)!;
+  const db = getDb(c.env);
+  const { data: review } = await db
+    .from('reviews')
+    .select('id, user_id')
+    .eq('id', c.req.param('id'))
+    .maybeSingle();
+  if (!review) return c.json({ error: 'Review not found' }, 404);
+  if (user.role !== 'admin' && review.user_id !== user.sub) {
+    return c.json({ error: 'Review not found' }, 404);
+  }
+
+  const { error } = await db.from('reviews').delete().eq('id', review.id);
+  if (error) throw new Error(error.message);
+  return c.json({ success: true });
+});
+
 app.get('/api/tiers', async c => {
   const tiers = await getPriceTierSettings(c.env);
   // The bounds travel with the band so the storefront can tell which bands

@@ -192,3 +192,17 @@ export interface Customer {
   totalSpentINR: number;
   lastOrderAt: string | null;
 }
+
+export interface Review {
+  id: string;
+  productId: string;
+  productName: string;
+  productImage: string | null;
+  authorName: string;
+  rating: number;
+  body: string;
+  hidden: boolean;
+  pinned: boolean;
+  verifiedPurchase: boolean;
+  createdAt: string;
+}

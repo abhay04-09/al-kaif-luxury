@@ -6,7 +6,13 @@ import { ProductGallery } from "@/components/products/product-gallery";
 import { ColourOptions } from "@/components/products/colour-options";
 import { ScrollToTopOnOpen } from "@/components/products/scroll-to-top-on-open";
 import { formatPrice } from "@/lib/products";
-import { getStoreProductBySlug, getStoreProducts } from "@/lib/product-service";
+import {
+  getProductReviews,
+  getStoreProductBySlug,
+  getStoreProducts
+} from "@/lib/product-service";
+import { ProductReviews } from "@/components/products/product-reviews";
+import { getSessionToken } from "@/lib/session";
 
 type ProductDetailPageProps = {
   params: Promise<{
@@ -27,6 +33,10 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   }
 
   const products = await getStoreProducts(product.category);
+  const [{ reviews, summary }, sessionToken] = await Promise.all([
+    getProductReviews(product.id),
+    getSessionToken()
+  ]);
 
   // The same design in its other colours. Matched across the whole catalogue
   // rather than this category, since nothing stops a shop from filing two
@@ -129,6 +139,14 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             </p>
           </div>
         </section>
+        <ProductReviews
+          productId={product.id}
+          productSlug={product.slug}
+          reviews={reviews}
+          signedIn={Boolean(sessionToken)}
+          summary={summary}
+        />
+
         {relatedProducts.length > 0 ? (
         <section className="mt-24">
           <h2 className="font-serif text-2xl text-porcelain sm:text-4xl">You may also like</h2>
