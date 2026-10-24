@@ -77,7 +77,7 @@ export function ProductReviews({
   return (
     <section className="mt-20 border-t border-white/10 pt-10">
       <h2 className="font-serif text-2xl text-porcelain sm:text-3xl">
-        Client Reviews
+        Product Reviews
       </h2>
 
       {summary.count > 0 ? (
