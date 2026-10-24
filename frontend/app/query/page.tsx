@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { AlKaifMark } from "@/components/brand/al-kaif-mark";
 import { 
   MessageSquare, 
   Mail, 
@@ -41,17 +42,24 @@ export default function QuerySupportPage() {
     <>
       <Navbar />
       <main className="mx-auto min-h-screen max-w-7xl px-5 pb-24 pt-16 sm:px-8 lg:px-10">
-        {/* Header section */}
-        <div className="border-b border-white/10 pb-10">
-          <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light">
-            Concierge & Help Desk
-          </p>
-          <h1 className="mt-4 font-serif text-4xl text-porcelain sm:text-5xl lg:text-6xl">
-            Client Support & Queries
-          </h1>
-          <p className="mt-6 max-w-3xl text-base leading-8 text-porcelain/75">
-            Have a question about your order, fragrance notes, or jewelry care? Connect directly with our concierge team or log your query.
-          </p>
+        {/* Header section with Prominent Brand Crest */}
+        <div className="border-b border-white/10 pb-10 flex flex-col-reverse md:flex-row md:items-center justify-between gap-6">
+          <div className="max-w-2xl">
+            <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light">
+              Concierge & Help Desk
+            </p>
+            <h1 className="mt-4 font-serif text-4xl text-porcelain sm:text-5xl lg:text-6xl">
+              Client Support & Queries
+            </h1>
+            <p className="mt-6 text-base leading-8 text-porcelain/75">
+              Have a question about your order, fragrance notes, or jewelry care? Connect directly with our concierge team or log your query.
+            </p>
+          </div>
+
+          {/* Prominent Atelier Crest */}
+          <div className="shrink-0 flex items-center justify-center rounded-2xl border border-brand-gold/30 bg-brand-surface p-4 sm:p-5 shadow-2xl backdrop-blur-md">
+            <AlKaifMark className="h-16 sm:h-20 w-auto drop-shadow-md" />
+          </div>
         </div>
 
         {/* Support Options Grid */}
