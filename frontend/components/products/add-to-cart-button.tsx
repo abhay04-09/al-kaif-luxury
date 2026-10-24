@@ -1,6 +1,7 @@
 "use client";
 
 import { ShoppingBag, Zap, Heart } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { CartItem, Product } from "@/types/product";
@@ -17,6 +18,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
   const [selectedSize, setSelectedSize] = useState<string | null>(sizes.length === 1 ? sizes[0] : null);
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
+  const [everAdded, setEverAdded] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   const commitToCart = (): boolean => {
@@ -50,6 +52,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
   const addToCart = () => {
     if (!commitToCart()) return;
     setAdded(true);
+    setEverAdded(true);
     window.setTimeout(() => setAdded(false), 2000);
   };
 
@@ -112,6 +115,15 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
           <ShoppingBag aria-hidden="true" className="h-4 w-4" strokeWidth={1.8} />
           {added ? "Added to Bag" : "Add to Bag"}
         </button>
+
+        {everAdded && (
+          <Link
+            className="inline-flex min-h-12 items-center justify-center rounded-full px-3 text-xs font-bold uppercase tracking-luxury text-brand-gold underline underline-offset-4 transition hover:text-brand-gold-hover"
+            href="/cart"
+          >
+            View Bag
+          </Link>
+        )}
 
         <button
           className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full border border-brand-gold px-7 py-3 text-xs font-bold uppercase tracking-luxury text-brand-gold transition duration-300 hover:bg-brand-gold hover:text-black shadow-lg"
