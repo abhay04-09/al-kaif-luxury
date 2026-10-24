@@ -78,10 +78,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
     <div className="grid gap-5">
       {sizes.length > 0 && (
         <div>
-          <p className="text-[0.65rem] uppercase tracking-luxury text-brand-muted">
-            Size{selectedSize ? `: ${selectedSize}` : ""}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div aria-label="Size" className="flex flex-wrap gap-2" role="group">
             {sizes.map((size) => (
               <button
                 key={size}

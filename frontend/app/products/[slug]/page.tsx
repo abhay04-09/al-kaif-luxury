@@ -84,10 +84,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
         <section className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <ProductGallery alt={product.name} images={productImages} />
           <div className="lg:sticky lg:top-28 lg:h-fit">
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light">
-                {product.collection} / {product.category}
-              </p>
+            <div className="flex items-center justify-end gap-4">
               <ShareButton path={`/products/${product.slug}`} title={product.name} />
             </div>
             <h1 className="mt-3 font-serif text-[1.35rem] leading-snug text-porcelain sm:mt-4 sm:text-3xl lg:text-5xl">
@@ -109,30 +106,19 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
               ) : null}
             </div>
             <p className="mt-2 text-xs text-mist">Inclusive of all taxes</p>
-            <p className="mt-4 line-clamp-3 text-[0.825rem] leading-6 text-porcelain/80 sm:mt-5 sm:text-[0.95rem] sm:leading-7 lg:text-base lg:leading-8">
-              {product.description}
-            </p>
             <ColourOptions current={product} options={colourOptions} />
 
             <div className="mt-8">
               <AddToCartButton product={product} />
             </div>
-            {/* The shop's own count when it keeps one. A piece it does not count
-                simply reads "In stock" — no number is invented to fill the gap. */}
+            {/* Available or sold out, and nothing more: the shop's count of what
+                is on the shelf is not shown to clients. */}
             <p className="mt-6 text-sm text-porcelain/60">
               Availability:{" "}
               {!product.inStock || product.stockQuantity === 0 ? (
                 <span className="text-porcelain/45">Sold out</span>
-              ) : product.stockQuantity === null ? (
-                <span className="text-gold-light">In stock</span>
-              ) : product.stockQuantity <= product.lowStockThreshold ? (
-                <span className="text-[#FF6B81]">
-                  Only {product.stockQuantity} left
-                </span>
               ) : (
-                <span className="text-gold-light">
-                  In stock · {product.stockQuantity} available
-                </span>
+                <span className="text-gold-light">In stock</span>
               )}
             </p>
           </div>
