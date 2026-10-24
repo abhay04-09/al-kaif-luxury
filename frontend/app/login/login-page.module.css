@@ -285,7 +285,7 @@
 
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 900px) {
-  .loginWrapper { min-height: 100vh; border-radius: 0; box-shadow: none; }
+  .loginWrapper { min-height: 0; }
   .logoBlock { margin-bottom: 20px; }
   .logoImg { width: 160px; margin: 0 auto; display: block; }
   .formLogoImg { width: 150px; margin: 0 auto; display: block; }

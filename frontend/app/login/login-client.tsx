@@ -122,7 +122,9 @@ export function LoginClient() {
       }
 
       await refresh();
-      router.replace(next ?? "/orders");
+      // With nowhere to return to, stay on this page: signed in, it shows the
+      // client's orders in place of the form.
+      router.replace(next || "/login");
       router.refresh();
     } catch {
       setEmailError("Could not reach the maison. Please try again.");
