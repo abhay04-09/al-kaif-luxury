@@ -17,11 +17,24 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const { category, subcategory, search, query, tier } = await searchParams;
   const keyword = (search || query || "").toLowerCase().trim();
 
-  const [allProducts, categories, tiers] = await Promise.all([
+  const isFiltered = Boolean(category || subcategory || tier);
+  const [allProducts, categories, tiers, wholeShop] = await Promise.all([
     getStoreProducts(category, subcategory, tier),
     getStoreCategories(),
-    getPriceTiers()
+    getPriceTiers(),
+    // Only needed to see which categories hold anything; an unfiltered page
+    // already has the whole shop in hand.
+    isFiltered ? getStoreProducts() : Promise.resolve(null)
   ]);
+
+  // A category with nothing in it is left out rather than offered, the same as
+  // an empty price band below: a "Bespoke Perfumes" button that opens an empty
+  // page reads as a broken shop. It returns by itself once a piece is added,
+  // and the category being viewed is always kept.
+  const stockedCategories = categories.filter(
+    (item) =>
+      item.id === category || (wholeShop ?? allProducts).some((p) => p.category === item.id)
+  );
 
   const visibleProducts = keyword
     ? allProducts.filter((p) => {
@@ -78,7 +91,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               Every piece is quality-checked, individually curated, and dispatched with AL-KAIF's signature tamper-proof packaging.
             </p>
           </div>
-          {categories.length > 0 && (
+          {stockedCategories.length > 0 && (
             <div className="-mx-5 flex gap-2.5 overflow-x-auto px-5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:px-0 sm:pb-0 sm:gap-3">
               <a
                 className={`shrink-0 whitespace-nowrap border px-4 py-2.5 text-xs uppercase tracking-luxury text-porcelain hover:border-gold-light sm:py-3 ${
@@ -88,7 +101,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
               >
                 All
               </a>
-              {categories.map((item) => (
+              {stockedCategories.map((item) => (
                 <a
                   key={item.id}
                   className={`shrink-0 whitespace-nowrap border px-4 py-2.5 text-xs uppercase tracking-luxury text-porcelain hover:border-gold-light sm:py-3 ${
