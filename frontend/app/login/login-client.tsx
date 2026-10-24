@@ -132,84 +132,29 @@ export function LoginClient() {
 
   return (
     <div className={styles.loginWrapper}>
-      {/* LEFT PANEL */}
-      <div className={styles.loginLeft}>
-        <div className={`${styles.silkFold} ${styles.fold1}`} />
-        <div className={`${styles.silkFold} ${styles.fold2}`} />
-        <div className={`${styles.silkFold} ${styles.fold3}`} />
-
-        <svg className={styles.flowersWrap} viewBox="0 0 300 260" xmlns="http://www.w3.org/2000/svg">
-          <g stroke="#8a9a6b" strokeWidth="1.2" opacity="0.55" fill="none">
-            <path d="M40,30 C60,60 55,100 70,140" />
-            <path d="M55,25 C80,55 78,95 95,130" />
-            <path d="M20,45 C45,70 40,105 55,150" />
-          </g>
-          <g fill="#fffdfa" stroke="#e6dcc8" strokeWidth="1">
-            <circle cx="38" cy="28" r="6.5" /><circle cx="52" cy="20" r="5.5" /><circle cx="65" cy="34" r="6" />
-            <circle cx="24" cy="42" r="5.5" /><circle cx="78" cy="50" r="5" /><circle cx="90" cy="30" r="5.5" />
-            <circle cx="45" cy="55" r="5" /><circle cx="60" cy="62" r="4.5" /><circle cx="12" cy="60" r="4.5" />
-            <circle cx="100" cy="55" r="4.5" /><circle cx="30" cy="75" r="4" /><circle cx="70" cy="80" r="4" />
-            <circle cx="15" cy="20" r="4.5" /><circle cx="85" cy="15" r="4" />
-          </g>
-          <g fill="#d8cf9e">
-            <circle cx="38" cy="28" r="2.2" /><circle cx="52" cy="20" r="2" />
-            <circle cx="65" cy="34" r="2.1" /><circle cx="90" cy="30" r="2" />
-          </g>
-        </svg>
-
-        <svg className={styles.ribbonWrap} viewBox="0 0 260 220" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="satin" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#e8c583" />
-              <stop offset="45%" stopColor="#c9a15c" />
-              <stop offset="100%" stopColor="#a9803f" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M10,210 C60,170 40,120 90,110 C140,100 130,150 180,140 C210,134 220,160 250,150"
-            stroke="url(#satin)" strokeWidth="16" fill="none" strokeLinecap="round" opacity="0.9"
-          />
-          <path
-            d="M10,210 C60,170 40,120 90,110 C140,100 130,150 180,140 C210,134 220,160 250,150"
-            stroke="#fff3da" strokeWidth="3" fill="none" strokeLinecap="round" opacity="0.5"
-          />
-        </svg>
-
-        <div className={styles.logoBlock}>
-          <img src="/brand/al-kaif-brand-logo.png" alt="Al-Kaif" className={styles.logoImg} />
-          <div className={styles.brandLine}>
-            <div className={styles.bar} />
-            <div className={styles.brandSub}>ARTIFICIAL&nbsp; JEWELLERY</div>
-            <div className={styles.bar} />
-          </div>
-          <div className={styles.tagline}>Shine in Every Moment</div>
-          <div className={styles.tagUnderline}>
-            <div className={styles.bar2} />
-            <div className={styles.heartSmall}>&#9825;</div>
-            <div className={styles.bar2} />
-          </div>
-        </div>
-
-        <div className={styles.jewelStage}>
-          <div className={styles.velvetBox} />
-          <div className={styles.necklaceWrap}>
-            <img src="/login/necklace.jpg" alt="Necklace" />
-          </div>
-          <div className={styles.earringWrap}>
-            <img src="/login/earrings.jpg" alt="Earrings" />
-          </div>
-        </div>
-      </div>
-
-      {/* RIGHT PANEL */}
       <div className={styles.loginRight}>
         <button aria-label="Go back" className={styles.closeX} onClick={handleClose} type="button">
           &#10005;
         </button>
 
         <div className={styles.formCard}>
+          <div className={styles.logoBlock}>
+            <img src="/brand/al-kaif-brand-logo.png" alt="Al-Kaif" className={styles.logoImg} />
+            <div className={styles.brandLine}>
+              <div className={styles.bar} />
+              <div className={styles.brandSub}>ARTIFICIAL&nbsp; JEWELLERY</div>
+              <div className={styles.bar} />
+            </div>
+            <div className={styles.tagline}>Shine in Every Moment</div>
+            <div className={styles.tagUnderline}>
+              <div className={styles.bar2} />
+              <div className={styles.heartSmall}>&#9825;</div>
+              <div className={styles.bar2} />
+            </div>
+          </div>
+
           <div className={styles.welcomeRow}>
-            <h1>Welcome Back</h1>
+            <h1>Welcome to AL-Kaif</h1>
             <span className={styles.heart}>&#9825;</span>
           </div>
           <p className={styles.sub}>Login to continue shopping with AL-KAIF</p>
