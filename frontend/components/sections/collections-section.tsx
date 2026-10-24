@@ -128,14 +128,14 @@ export function CollectionsSection() {
                     x: translateX,
                     zIndex
                   }}
+                  whileTap={{ scale: scale * 0.97 }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
                   onClick={(event) => {
-                    // The SHOP NOW link navigates by itself.
+                    // The SHOP NOW link navigates by itself; a tap anywhere
+                    // else on any card opens that card's collection. The
+                    // arrows and dots are what move the stack.
                     if ((event.target as HTMLElement).closest("a")) return;
-                    // A card at the side is brought forward first; the card in
-                    // front opens its collection wherever it is tapped.
-                    if (isCurrent) router.push(item.link);
-                    else setActiveIndex(index);
+                    router.push(item.link);
                   }}
                   className={`absolute w-[280px] sm:w-[360px] h-[380px] sm:h-[460px] rounded-3xl lg:rounded-[24px] overflow-hidden border border-white/20 shadow-2xl cursor-pointer bg-black ${
                     isCurrent ? "ring-2 ring-gold-light/60 shadow-gold/20" : ""
@@ -214,13 +214,18 @@ export function CollectionsSection() {
             className="flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth px-14 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {collectionsList.map((item) => (
-              <article
+              // The whole card is the link, so a click or a tap anywhere on the
+              // photograph opens the collection. A drag to scroll the row is
+              // not a click and does not open it.
+              <Link
                 key={item.id}
-                className="group relative h-[440px] w-[300px] shrink-0 snap-start overflow-hidden rounded-[24px] border border-white/20 bg-black shadow-2xl xl:w-[320px]"
+                href={item.link}
+                aria-label={`Shop ${item.title}`}
+                className="group relative block h-[440px] w-[300px] shrink-0 snap-start overflow-hidden rounded-[24px] border border-white/20 bg-black shadow-2xl transition-transform duration-200 active:scale-[0.98] xl:w-[320px]"
               >
                 <Image
                   src={item.image}
-                  alt={item.title}
+                  alt=""
                   fill
                   sizes="320px"
                   className="object-cover transition duration-500 group-hover:scale-105"
@@ -233,17 +238,12 @@ export function CollectionsSection() {
                     {item.title}
                   </h3>
 
-                  {/* The link's ::after stretches over the whole card, so a
-                      click anywhere on it opens the collection. */}
-                  <Link
-                    href={item.link}
-                    className="mt-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-luxury text-white underline underline-offset-4 decoration-gold-light hover:text-gold-light transition after:absolute after:inset-0 after:content-['']"
-                  >
+                  <span className="mt-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-luxury text-white underline underline-offset-4 decoration-gold-light transition group-hover:text-gold-light">
                     <span>SHOP NOW</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                  </span>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
 
