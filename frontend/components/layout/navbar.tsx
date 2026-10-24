@@ -36,6 +36,13 @@ export function Navbar() {
   const router = useRouter();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const logoRef = useRef<HTMLAnchorElement>(null);
+  const searchButtonRef = useRef<HTMLButtonElement>(null);
+  const searchBarRef = useRef<HTMLDivElement>(null);
+  // Where the search bar sits inside the header, measured from the logo and the
+  // search icon so it grows out of the icon and stops short of the logo.
+  const [searchBox, setSearchBox] = useState({ left: 0, right: 0 });
 
   const isLoggedIn = status === "authenticated" && Boolean(user);
   const isAdmin = isLoggedIn && user?.role === "admin";
@@ -65,6 +72,42 @@ export function Navbar() {
     setIsSearchOpen(false);
   }, [pathname]);
 
+  // Keep the bar's footprint in step with the header as it is resized.
+  useEffect(() => {
+    function measure() {
+      const nav = navRef.current;
+      const logo = logoRef.current;
+      const button = searchButtonRef.current;
+      if (!nav || !logo || !button) return;
+
+      const navBox = nav.getBoundingClientRect();
+      // On a phone there is no room beside the logo, so the bar takes the row.
+      if (window.innerWidth < 1024) {
+        setSearchBox({ left: 12, right: 12 });
+        return;
+      }
+      setSearchBox({
+        left: logo.getBoundingClientRect().right - navBox.left + 24,
+        right: navBox.right - button.getBoundingClientRect().right
+      });
+    }
+
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
+  // A tap or click anywhere outside the bar folds it back into its icon.
+  useEffect(() => {
+    if (!isSearchOpen) return;
+    function handlePointerDown(event: PointerEvent) {
+      if (searchBarRef.current?.contains(event.target as Node)) return;
+      setIsSearchOpen(false);
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [isSearchOpen]);
+
   // Close on Escape key press
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -93,7 +136,8 @@ export function Navbar() {
       {/* Navigation Header Bar */}
       <nav
         aria-label="Primary navigation"
-        className="mx-auto flex h-16 sm:h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
+        className="relative mx-auto flex h-16 sm:h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
+        ref={navRef}
       >
         {/* Left Section: Mobile Hamburger + Logo + Desktop Nav Links */}
         <div className="flex items-center gap-4 sm:gap-8 lg:gap-10 h-full shrink-0">
@@ -119,20 +163,25 @@ export function Navbar() {
               href="/"
               aria-label="AL-KAIF Home"
               className="shrink-0 flex items-center transition hover:opacity-90"
+              ref={logoRef}
             >
               <AlKaifMark className="h-11 sm:h-14 lg:h-16 w-auto shrink-0 drop-shadow-sm" />
             </Link>
           </div>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden shrink-0 items-center gap-6 lg:flex h-full">
+          <div
+            className={`hidden shrink-0 items-center gap-7 transition-opacity duration-200 lg:flex xl:gap-9 h-full ${
+              isSearchOpen ? "pointer-events-none opacity-0" : ""
+            }`}
+          >
             {navigation.map((item) => {
               const hasSub = Boolean(item.subItems && item.subItems.length > 0);
 
               return (
                 <div key={item.label} className="relative group flex h-full items-center">
                   <Link
-                    className="inline-flex items-center gap-1 text-xs uppercase tracking-luxury text-brand-text transition hover:text-brand-gold font-medium"
+                    className="inline-flex items-center gap-1 text-[0.8rem] uppercase tracking-luxury text-brand-text transition hover:text-brand-gold font-semibold xl:text-sm"
                     href={item.href}
                   >
                     {item.label}
@@ -168,21 +217,14 @@ export function Navbar() {
           {/* Search Icon Trigger Button */}
           <button
             type="button"
-            onClick={() => setIsSearchOpen((prev) => !prev)}
-            aria-label={isSearchOpen ? "Close search bar" : "Open search bar"}
+            onClick={() => setIsSearchOpen(true)}
+            aria-label="Open search bar"
             aria-expanded={isSearchOpen}
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition ${
-              isSearchOpen
-                ? "bg-brand-gold/15 text-brand-gold ring-1 ring-brand-gold/40"
-                : "text-brand-text hover:bg-brand-bg hover:text-brand-gold"
-            }`}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-brand-text transition hover:bg-brand-bg hover:text-brand-gold"
+            ref={searchButtonRef}
             title="Search Products"
           >
-            {isSearchOpen ? (
-              <X className="h-[18px] w-[18px]" strokeWidth={1.8} />
-            ) : (
-              <Search className="h-[18px] w-[18px]" strokeWidth={1.8} />
-            )}
+            <Search className="h-[18px] w-[18px]" strokeWidth={1.8} />
           </button>
 
           {/* Wishlist Heart Icon */}
@@ -226,79 +268,77 @@ export function Navbar() {
             </span>
           </Link>
         </div>
-      </nav>
 
-      {/* Expandable Luxury Search Tab / Panel */}
-      {isSearchOpen && (
+        {/* Search bar: grows out of the search icon, inside the header itself.
+            It folds back into the icon when a finger or cursor is put down
+            anywhere outside it, and on Escape. */}
         <div
-          className="border-t border-brand-border bg-brand-surface/98 px-4 py-4 sm:py-5 backdrop-blur-md shadow-2xl transition-all duration-300 animate-in fade-in-50 slide-in-from-top-2"
+          className={`absolute inset-y-0 z-20 flex items-center justify-end ${
+            isSearchOpen ? "" : "pointer-events-none"
+          }`}
+          ref={searchBarRef}
+          style={{ left: searchBox.left, right: searchBox.right }}
         >
-          <div className="mx-auto max-w-3xl">
-            <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-              <Search
-                className="absolute left-4 h-4 w-4 text-brand-muted pointer-events-none sm:h-5 sm:w-5"
-                strokeWidth={1.8}
-              />
+          <form
+            className={`relative flex h-11 items-center overflow-hidden rounded-full border bg-brand-surface shadow-lg transition-[width,opacity] duration-300 ease-out focus-within:border-brand-gold focus-within:ring-2 focus-within:ring-brand-gold/20 sm:h-12 ${
+              isSearchOpen
+                ? "w-full border-brand-gold/50 opacity-100"
+                : "w-9 border-transparent opacity-0"
+            }`}
+            inert={!isSearchOpen}
+            onSubmit={handleSearchSubmit}
+            role="search"
+          >
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none ml-4 h-[18px] w-[18px] shrink-0 text-brand-muted"
+              strokeWidth={1.8}
+            />
 
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={searchPlaceholders[placeholderIndex]}
-                className="w-full rounded-full border border-brand-border bg-brand-bg/95 py-2.5 pl-11 pr-28 text-xs text-brand-text placeholder:text-brand-muted focus:border-brand-gold focus:outline-none focus:ring-2 focus:ring-brand-gold/20 transition-all shadow-inner sm:py-3.5 sm:pl-12 sm:pr-36 sm:text-sm"
-              />
+            <input
+              aria-label="Search products"
+              className="h-full min-w-0 flex-1 bg-transparent px-3 text-sm text-brand-text placeholder:text-brand-muted focus:outline-none"
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={searchPlaceholders[placeholderIndex]}
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+            />
 
-              {/* Trailing Controls: Clear Text & Submit */}
-              <div className="absolute right-2 sm:right-3 flex items-center gap-1 sm:gap-2">
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery("")}
-                    className="p-1 text-brand-muted hover:text-brand-text transition rounded-full hover:bg-brand-border/40"
-                    aria-label="Clear search input"
-                    title="Clear"
-                  >
-                    <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  </button>
-                )}
+            {searchQuery ? (
+              <button
+                aria-label="Clear search input"
+                className="shrink-0 rounded-full p-1.5 text-brand-muted transition hover:bg-brand-border/40 hover:text-brand-text"
+                onClick={() => {
+                  setSearchQuery("");
+                  searchInputRef.current?.focus();
+                }}
+                title="Clear"
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            ) : null}
 
-                <button
-                  type="submit"
-                  className="rounded-full bg-brand-gold/20 px-3.5 py-1 sm:px-4 sm:py-1.5 text-xs font-semibold uppercase tracking-wider text-brand-gold hover:bg-brand-gold hover:text-black transition"
-                >
-                  Search
-                </button>
-              </div>
-            </form>
+            <button
+              className="mr-1.5 shrink-0 rounded-full bg-brand-gold px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-black transition hover:bg-brand-gold-hover sm:px-5 sm:py-2"
+              type="submit"
+            >
+              Search
+            </button>
 
-            {/* Quick Search Tag Suggestions */}
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-              <span className="text-brand-muted font-medium">Trending Searches:</span>
-              {[
-                { label: "Kundan Chokers", query: "kundan" },
-                { label: "Jhumkas", query: "jhumka" },
-                { label: "Classic Bangles", query: "bangle" },
-                { label: "Royal Rings", query: "ring" },
-                { label: "Mangalsutra", query: "mangalsutra" }
-              ].map((tag) => (
-                <button
-                  key={tag.label}
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery(tag.query);
-                    router.push(`/products?search=${encodeURIComponent(tag.query)}`);
-                    setIsSearchOpen(false);
-                  }}
-                  className="rounded-full border border-brand-border bg-brand-bg/80 px-3 py-1 text-xs text-brand-text/80 transition hover:border-brand-gold hover:text-brand-gold hover:bg-brand-gold/10"
-                >
-                  {tag.label}
-                </button>
-              ))}
-            </div>
-          </div>
+            <button
+              aria-label="Close search"
+              className="mr-1.5 shrink-0 rounded-full p-1.5 text-brand-muted transition hover:bg-brand-border/40 hover:text-brand-text"
+              onClick={() => setIsSearchOpen(false)}
+              title="Close"
+              type="button"
+            >
+              <X className="h-[18px] w-[18px]" strokeWidth={1.8} />
+            </button>
+          </form>
         </div>
-      )}
+      </nav>
 
       {/* Mobile Menu Drawer */}
       {isMenuOpen ? (
