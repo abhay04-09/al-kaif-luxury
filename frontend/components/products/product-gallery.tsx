@@ -3,18 +3,22 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ProductZoomModal } from "./product-zoom-modal";
 
 /**
  * The product's photographs: swipe, or tap an arrow.
  *
- * The zoom controls, the "pinch or double tap" hint and the "Fullscreen Zoom"
- * button that used to sit on top of every photograph have been taken off at
- * the shop's request. They covered the piece a client came to look at — which
- * is the one thing a product photograph has to do.
+ * Zoom lives inside the photograph and nowhere else. On a pointer device the
+ * piece magnifies under the cursor, within its own frame; a tap or click opens
+ * the viewer, where pinching and the wheel scale the image alone and the page
+ * behind stays put. Nothing is drawn over the photograph — the zoom controls
+ * that once sat on it were taken off at the shop's request, because they
+ * covered the piece a client came to look at.
  */
 export function ProductGallery({ images, alt }: { images: string[]; alt: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [zoomOpen, setZoomOpen] = useState(false);
 
   function handleScroll() {
     const el = scrollRef.current;
@@ -28,6 +32,17 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
     el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" });
   }
 
+  // Keeps the magnified point under the cursor. Written straight to the image
+  // so a mouse move does not re-render the page.
+  function followPointer(event: React.MouseEvent<HTMLButtonElement>) {
+    const frame = event.currentTarget.getBoundingClientRect();
+    const image = event.currentTarget.querySelector("img");
+    if (!image) return;
+    const x = ((event.clientX - frame.left) / frame.width) * 100;
+    const y = ((event.clientY - frame.top) / frame.height) * 100;
+    image.style.transformOrigin = `${x}% ${y}%`;
+  }
+
   return (
     <div>
       <div className="relative">
@@ -37,19 +52,26 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
           className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {images.map((image, index) => (
-            <div
-              className="relative aspect-[4/5] w-full shrink-0 snap-center overflow-hidden rounded-2xl border border-white/10 bg-onyx"
+            <button
+              aria-label={`Zoom image ${index + 1} of ${images.length}`}
+              className="group relative aspect-[4/5] w-full shrink-0 cursor-zoom-in snap-center overflow-hidden rounded-2xl border border-white/10 bg-onyx"
               key={image}
+              onClick={() => {
+                setActiveIndex(index);
+                setZoomOpen(true);
+              }}
+              onMouseMove={followPointer}
+              type="button"
             >
               <Image
                 alt={alt}
-                className="object-cover"
+                className="object-cover transition-transform duration-200 ease-out [@media(hover:hover)]:group-hover:scale-[2]"
                 fill
                 priority={index === 0}
                 sizes="(min-width: 1024px) 40vw, 100vw"
                 src={image}
               />
-            </div>
+            </button>
           ))}
         </div>
 
@@ -96,6 +118,14 @@ export function ProductGallery({ images, alt }: { images: string[]; alt: string 
           ))}
         </div>
       ) : null}
+
+      <ProductZoomModal
+        alt={alt}
+        images={images}
+        initialIndex={activeIndex}
+        isOpen={zoomOpen}
+        onClose={() => setZoomOpen(false)}
+      />
     </div>
   );
 }
