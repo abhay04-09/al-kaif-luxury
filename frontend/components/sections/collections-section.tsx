@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -34,6 +35,7 @@ const collectionsList = [
 ];
 
 export function CollectionsSection() {
+  const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -127,7 +129,14 @@ export function CollectionsSection() {
                     zIndex
                   }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
-                  onClick={() => setActiveIndex(index)}
+                  onClick={(event) => {
+                    // The SHOP NOW link navigates by itself.
+                    if ((event.target as HTMLElement).closest("a")) return;
+                    // A card at the side is brought forward first; the card in
+                    // front opens its collection wherever it is tapped.
+                    if (isCurrent) router.push(item.link);
+                    else setActiveIndex(index);
+                  }}
                   className={`absolute w-[280px] sm:w-[360px] h-[380px] sm:h-[460px] rounded-3xl lg:rounded-[24px] overflow-hidden border border-white/20 shadow-2xl cursor-pointer bg-black ${
                     isCurrent ? "ring-2 ring-gold-light/60 shadow-gold/20" : ""
                   }`}
@@ -224,9 +233,11 @@ export function CollectionsSection() {
                     {item.title}
                   </h3>
 
+                  {/* The link's ::after stretches over the whole card, so a
+                      click anywhere on it opens the collection. */}
                   <Link
                     href={item.link}
-                    className="mt-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-luxury text-white underline underline-offset-4 decoration-gold-light hover:text-gold-light transition"
+                    className="mt-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-luxury text-white underline underline-offset-4 decoration-gold-light hover:text-gold-light transition after:absolute after:inset-0 after:content-['']"
                   >
                     <span>SHOP NOW</span>
                     <ArrowRight className="h-3.5 w-3.5" />
