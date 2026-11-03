@@ -85,7 +85,7 @@ export function CartView() {
           <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light">Shopping Bag</p>
           <h1 className="mt-4 font-serif text-5xl text-porcelain">Selected Pieces</h1>
           <div className="mt-10 divide-y divide-white/10 border-y border-white/10">
-            {summary.lines.map(({ product, quantity, size, lineTotal, href, bundle }) => (
+            {summary.lines.map(({ product, quantity, size, lineTotal, href, bundle, worth }) => (
               <div
                 className="grid gap-5 py-6 sm:grid-cols-[6rem_1fr_auto] sm:items-start"
                 key={`${product.id}-${size ?? ""}`}
@@ -129,7 +129,17 @@ export function CartView() {
                       Size: <span className="text-gold-light">{size}</span>
                     </p>
                   )}
-                  <p className="mt-4 text-sm text-porcelain/80">{formatPrice(lineTotal)}</p>
+                  {worth !== undefined ? (
+                    <div className="mt-4 text-sm">
+                      <span className="text-porcelain/50 line-through">{formatPrice(worth)}</span>{" "}
+                      <span className="text-porcelain">{formatPrice(lineTotal)}</span>
+                      <p className="mt-1 text-xs text-gold-light">
+                        Combo price · you save {formatPrice(worth - lineTotal)}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-4 text-sm text-porcelain/80">{formatPrice(lineTotal)}</p>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <button
@@ -165,8 +175,22 @@ export function CartView() {
         <aside className="h-fit border border-white/10 bg-onyx p-6">
           <h2 className="font-serif text-3xl text-porcelain">Order Summary</h2>
           <div className="mt-6 space-y-4 text-sm text-porcelain/72">
+            {summary.comboSavings > 0 ? (
+              <>
+                <div className="flex justify-between">
+                  <span>Price without combos</span>
+                  <span className="line-through">
+                    {formatPrice(summary.subtotal + summary.comboSavings)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-gold-light">
+                  <span>Combo savings</span>
+                  <span>− {formatPrice(summary.comboSavings)}</span>
+                </div>
+              </>
+            ) : null}
             <div className="flex justify-between">
-              <span>Subtotal</span>
+              <span>{summary.comboSavings > 0 ? "Your price" : "Subtotal"}</span>
               <span>{formatPrice(summary.subtotal)}</span>
             </div>
             {/* Delivery is priced by the courier against a pin code, which the

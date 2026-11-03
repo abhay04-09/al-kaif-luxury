@@ -50,7 +50,8 @@ export function getCartSummary(
         lineTotal: product.price * item.quantity,
         href: `/products/${product.slug}`,
         combo: undefined as CartItem["combo"],
-        bundle: undefined as { name: string; size?: string }[] | undefined
+        bundle: undefined as { name: string; size?: string }[] | undefined,
+        worth: undefined as number | undefined
       };
     })
     .filter((line) => line !== null);
@@ -63,9 +64,15 @@ export function getCartSummary(
   const shipping = subtotal > 0 ? 0 : 0;
   const total = subtotal + shipping;
 
+  // What the combos in the bag save against buying the same pieces one by one.
+  const comboSavings = lines
+    .filter((line) => line.product.inStock && line.worth !== undefined)
+    .reduce((sum, line) => sum + (line.worth! - line.lineTotal), 0);
+
   return {
     lines,
     hasSoldOut,
+    comboSavings,
     subtotal,
     shipping,
     total
@@ -138,7 +145,10 @@ function comboLine(
     lineTotal: price * item.quantity,
     href: "/combos",
     combo: saved as CartItem["combo"],
-    bundle: pieces as { name: string; size?: string }[] | undefined
+    bundle: pieces as { name: string; size?: string }[] | undefined,
+    // What the same pieces cost one by one, for the whole line. Only when it is
+    // genuinely more than the combo price: a "saving" of nothing is not shown.
+    worth: worth > price ? worth * item.quantity : undefined
   };
 }
 

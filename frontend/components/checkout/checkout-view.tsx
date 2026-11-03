@@ -720,14 +720,43 @@ export function CheckoutView() {
                   </p>
                 </div>
 
-                <p className="text-sm text-porcelain/80">{inr(line.lineTotal)}</p>
+                <div className="text-right">
+                  {line.worth !== undefined ? (
+                    <>
+                      <p className="text-xs text-porcelain/50 line-through">
+                        {inr(line.worth)}
+                      </p>
+                      <p className="text-sm text-porcelain">{inr(line.lineTotal)}</p>
+                      <p className="mt-0.5 text-[0.65rem] uppercase tracking-wider text-gold-light">
+                        Combo price
+                      </p>
+                      <p className="text-[0.65rem] text-gold-light">
+                        You save {inr(line.worth - line.lineTotal)}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-porcelain/80">{inr(line.lineTotal)}</p>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
 
           <dl className="space-y-3 border-t border-graphite px-6 py-5 text-sm">
+            {summary.comboSavings > 0 ? (
+              <>
+                <div className="flex justify-between text-porcelain/70">
+                  <dt>Price without combos</dt>
+                  <dd className="line-through">{inr(goods + summary.comboSavings)}</dd>
+                </div>
+                <div className="flex justify-between text-gold-light">
+                  <dt>Combo savings</dt>
+                  <dd>− {inr(summary.comboSavings)}</dd>
+                </div>
+              </>
+            ) : null}
             <div className="flex justify-between text-porcelain/70">
-              <dt>Subtotal</dt>
+              <dt>{summary.comboSavings > 0 ? "Your price" : "Subtotal"}</dt>
               <dd>{inr(goods)}</dd>
             </div>
             <div className="flex justify-between text-porcelain/70">
