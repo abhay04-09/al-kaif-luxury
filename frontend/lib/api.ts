@@ -22,6 +22,7 @@ export type ApiProduct = {
   isNewArrival?: boolean;
   colourName?: string | null;
   colourGroup?: string | null;
+  colourHex?: string | null;
   inStock: boolean;
   stockQuantity?: number | null;
   lowStockThreshold?: number;

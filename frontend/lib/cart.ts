@@ -134,6 +134,7 @@ function comboLine(
     subcategory: null,
     colourName: null,
     colourGroup: null,
+    colourHex: null,
     isNewArrival: false,
     sizes: []
   };

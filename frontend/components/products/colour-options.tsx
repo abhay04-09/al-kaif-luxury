@@ -82,7 +82,10 @@ function blend(hex: string, towards: 0 | 255, amount: number): string {
  * or deeper; "multi" is a ring of colours. A name this does not know gets a
  * quiet neutral rather than a wrong guess.
  */
-function swatchFor(name: string): string {
+function swatchFor(name: string, chosen?: string | null): string {
+  // The shade the shop picked beats any guess from the name.
+  if (chosen && /^#[0-9a-f]{6}$/i.test(chosen)) return chosen;
+
   const key = name.trim().toLowerCase();
   if (/\b(multi|multicolou?r|mixed|rainbow)\b/.test(key)) {
     return "conic-gradient(#E4572E, #F3B63F, #3FA66B, #3A6FB0, #8E54B8, #E4572E)";
@@ -137,7 +140,7 @@ export function ColourOptions({
               className={`relative block h-8 w-8 overflow-hidden rounded-full border border-black/20 ${
                 soldOut ? "opacity-45" : ""
               }`}
-              style={{ background: swatchFor(label) }}
+              style={{ background: swatchFor(label, option.colourHex) }}
             >
               {soldOut ? (
                 <span

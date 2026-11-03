@@ -75,6 +75,7 @@ function normalize(product: ApiProduct): Product {
     subcategory: product.subcategory?.trim() || null,
     colourName: product.colourName?.trim() || null,
     colourGroup: product.colourGroup?.trim() || null,
+    colourHex: /^#[0-9a-f]{6}$/i.test(product.colourHex ?? "") ? product.colourHex! : null,
     isNewArrival: Boolean(product.isNewArrival),
     sizes: product.sizes ?? []
   };

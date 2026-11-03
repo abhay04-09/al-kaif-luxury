@@ -39,6 +39,8 @@ export function rowToProduct(r: any): Product {
     colourName: r.colour_name ?? null,
     /** The word shared by every colour of one design. */
     colourGroup: r.colour_group ?? null,
+    /** The exact shade of the swatch, "#RRGGBB". Null means "work it out from the name". */
+    colourHex: r.colour_hex ?? null,
     seoTitle: r.seo_title ?? null,
     seoDescription: r.seo_description ?? null,
     seoKeywords: r.seo_keywords ?? null,
@@ -96,6 +98,12 @@ export function productToRow(p: Partial<Product>): Record<string, unknown> {
   // this is deployed.
   if (p.colourName !== undefined) {
     row.colour_name = String(p.colourName ?? '').trim().slice(0, 40) || null;
+  }
+  // Only a well-formed colour is stored; anything else clears it, and the
+  // storefront goes back to guessing from the colour's name. Needs migration 022.
+  if (p.colourHex !== undefined) {
+    const hex = String(p.colourHex ?? '').trim();
+    row.colour_hex = /^#[0-9a-f]{6}$/i.test(hex) ? hex.toUpperCase() : null;
   }
   if (p.colourGroup !== undefined) {
     row.colour_group = String(p.colourGroup ?? '').trim().slice(0, 80) || null;

@@ -32,6 +32,8 @@ export type Product = {
   colourName: string | null;
   /** The word shared by every colour of one design. */
   colourGroup: string | null;
+  /** The exact swatch shade the shop chose, "#RRGGBB"; null to work it out from the name. */
+  colourHex: string | null;
   /** Ticked in the admin panel. The only thing that makes a card say "New". */
   isNewArrival: boolean;
   /** Selectable size options, e.g. ring sizes. Empty when the piece has no sizes. */

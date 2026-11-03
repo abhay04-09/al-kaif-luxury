@@ -28,6 +28,7 @@ const EMPTY_FORM: Partial<Product> = {
   sizes: [],
   colourName: '',
   colourGroup: '',
+  colourHex: '',
   priceINR: 100000,
   mrpINR: null,
   stockQuantity: null,
@@ -962,6 +963,48 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                   </datalist>
                   <p className="mt-1.5 text-[10px] text-[#6B7280]">
                     What this one is called. Leave empty if the piece has only one colour.
+                  </p>
+
+                  {/* The dot on the product page. Left on automatic it is worked out
+                      from the name above; picking a shade here is exact, and is the
+                      way to be sure for a name the website has never heard of. */}
+                  <div className="mt-3 flex items-center gap-3">
+                    <span
+                      className="w-7 h-7 rounded-full border border-[#EAE5D9] shrink-0"
+                      style={{ background: form.colourHex || '#B9B2A4' }}
+                      title={form.colourHex ? form.colourHex : 'Automatic'}
+                    />
+                    {form.colourHex ? (
+                      <>
+                        <input
+                          type="color"
+                          value={form.colourHex}
+                          onChange={e => setForm(f => ({ ...f, colourHex: e.target.value.toUpperCase() }))}
+                          className="h-8 w-12 p-0 border border-[#EAE5D9] rounded-xs bg-transparent cursor-pointer"
+                          aria-label="Swatch colour"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setForm(f => ({ ...f, colourHex: '' }))}
+                          className="text-[10px] uppercase tracking-wider text-[#6B7280] hover:text-[#18181B] underline"
+                        >
+                          Use automatic
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, colourHex: '#C8A24B' }))}
+                        className="text-[10px] uppercase tracking-wider text-[#996515] hover:text-[#18181B] underline"
+                      >
+                        Choose the exact shade
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-1.5 text-[10px] text-[#6B7280]">
+                    {form.colourHex
+                      ? 'This exact shade is shown on the website.'
+                      : 'Automatic: the website guesses the shade from the name.'}
                   </p>
                 </div>
 

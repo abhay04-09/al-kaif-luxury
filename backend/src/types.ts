@@ -58,6 +58,8 @@ export interface Product {
   colourName?: string | null;
   /** The word shared by every colour of one design. */
   colourGroup?: string | null;
+  /** The exact shade of the colour swatch, "#RRGGBB"; empty to work it out from the name. */
+  colourHex?: string | null;
   seoTitle?: string | null;
   seoDescription?: string | null;
   seoKeywords?: string | null;
