@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, ShoppingBag, X, Zap } from "lucide-react";
 import { comboLineId } from "@/lib/cart";
@@ -35,6 +36,7 @@ export function ComboBuilder({ combo, pieces }: { combo: Combo; pieces: ComboPie
   const [kind, setKind] = useState("all");
   const [sort, setSort] = useState<Sort>("shop");
   const [error, setError] = useState<string | null>(null);
+  const [added, setAdded] = useState(false);
 
   const byId = useMemo(() => new Map(pieces.map((piece) => [piece.id, piece])), [pieces]);
 
@@ -115,6 +117,8 @@ export function ComboBuilder({ combo, pieces }: { combo: Combo; pieces: ComboPie
   function addToBag() {
     if (!commit()) return;
     setPicks([]);
+    setAdded(true);
+    window.setTimeout(() => setAdded(false), 4000);
   }
 
   function buyNow() {
@@ -250,6 +254,16 @@ export function ComboBuilder({ combo, pieces }: { combo: Combo; pieces: ComboPie
           {error ? (
             <p className="mb-2 text-xs font-bold text-[#FF6B81]" role="alert">
               {error}
+            </p>
+          ) : null}
+
+          {added ? (
+            <p className="mb-2 text-xs font-semibold text-brand-gold" role="status">
+              Combo added to your bag.{" "}
+              <Link className="underline underline-offset-4" href="/cart">
+                View bag
+              </Link>{" "}
+              or choose another set.
             </p>
           ) : null}
 
