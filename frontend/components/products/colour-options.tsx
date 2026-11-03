@@ -117,8 +117,8 @@ export function ColourOptions({
         <span className="uppercase tracking-luxury">Colour</span>
         {current.colourName ? (
           <>
-            {": "}
-            <span className="text-porcelain">{current.colourName}</span>
+            <span aria-hidden="true">:</span>
+            <span className="ml-1.5 text-porcelain">{current.colourName}</span>
           </>
         ) : null}
       </p>
