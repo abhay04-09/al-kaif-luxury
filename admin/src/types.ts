@@ -193,6 +193,27 @@ export interface Customer {
   lastOrderAt: string | null;
 }
 
+/** "Any 4 earrings for ₹899", as the panel sees it. */
+export interface Combo {
+  id: string;
+  name: string;
+  description: string;
+  image: string | null;
+  pieces: number;
+  priceINR: number;
+  /** Category or sub-category ids the client may pick from. */
+  categories: string[];
+  /** Individual pieces on offer in addition to those categories. */
+  productIds: string[];
+  active: boolean;
+  sort: number;
+  /** Pieces in stock that currently qualify. */
+  available?: number;
+  /** What the cheapest / dearest N qualifying pieces would cost one by one. */
+  cheapestWorthINR?: number | null;
+  dearestWorthINR?: number | null;
+}
+
 export interface Review {
   id: string;
   productId: string;

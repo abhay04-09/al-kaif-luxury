@@ -15,7 +15,7 @@ import {
 import { useSession } from "@/components/auth/session-provider";
 import { UseMyLocation } from "@/components/location/use-my-location";
 import { API_BASE } from "@/lib/api";
-import { getCartSummary } from "@/lib/cart";
+import { getCartSummary, toOrderItem } from "@/lib/cart";
 import { useCatalogue } from "@/lib/use-catalogue";
 import type { CartItem } from "@/types/product";
 
@@ -77,7 +77,7 @@ function StepHeading({ step, title }: { step: string; title: string }) {
 export function CheckoutView() {
   const router = useRouter();
   const { user, status } = useSession();
-  const { catalogue, isLoading } = useCatalogue();
+  const { catalogue, combos, isLoading } = useCatalogue();
 
   const [items, setItems] = useState<CartItem[]>([]);
   const [cartReady, setCartReady] = useState(false);
@@ -132,8 +132,8 @@ export function CheckoutView() {
   }, [savedAddress]);
 
   const summary = useMemo(
-    () => getCartSummary(items, catalogue),
-    [items, catalogue]
+    () => getCartSummary(items, catalogue, combos),
+    [items, catalogue, combos]
   );
 
   // Memoised, and it matters: this list is a dependency of the delivery quote
@@ -148,12 +148,7 @@ export function CheckoutView() {
   const tax = goods - Math.round(goods / (1 + GST_RATE));
 
   const orderItems = useMemo(
-    () =>
-      payableLines.map((line) => ({
-        productId: line.product.id,
-        quantity: line.quantity,
-        selectedSize: line.size
-      })),
+    () => payableLines.map(toOrderItem),
     [payableLines]
   );
 
@@ -256,11 +251,7 @@ export function CheckoutView() {
       giftWrapped
     };
 
-    const orderItems = payableLines.map((line) => ({
-      productId: line.product.id,
-      quantity: line.quantity,
-      selectedSize: line.size
-    }));
+    const orderItems = payableLines.map(toOrderItem);
 
     setIsPlacing(true);
 
@@ -713,6 +704,16 @@ export function CheckoutView() {
                   <p className="truncate text-sm text-porcelain">
                     {line.product.name}
                   </p>
+                  {line.bundle ? (
+                    <ul className="mt-1 space-y-0.5 text-xs text-mist">
+                      {line.bundle.map((piece, index) => (
+                        <li className="truncate" key={index}>
+                          {piece.name}
+                          {piece.size ? ` · ${piece.size}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                   <p className="mt-1 text-xs text-mist">
                     Qty {line.quantity}
                     {line.size ? ` · ${line.size}` : ""}

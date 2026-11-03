@@ -38,8 +38,36 @@ export type Product = {
   sizes: string[];
 };
 
+/** "Any 4 earrings for ₹899" — set up by the shop in the admin panel. */
+export type Combo = {
+  id: string;
+  name: string;
+  description: string;
+  image: string | null;
+  /** How many pieces the client chooses. */
+  pieces: number;
+  /** What the whole combo costs. */
+  price: number;
+  /** The pieces on the shelf that the client may choose from. */
+  productIds: string[];
+};
+
+export type ComboPick = { productId: string; size?: string };
+
 export type CartItem = {
   productId: string;
   quantity: number;
   size?: string;
+  /**
+   * Present when this line is a combo rather than a single piece. `productId`
+   * then holds a made-up id for the line (see comboLineId); the real pieces are
+   * in `picks`. The name and price are kept only so the bag can still be drawn
+   * before the live offer has loaded — the server prices every combo itself.
+   */
+  combo?: {
+    id: string;
+    name: string;
+    price: number;
+    picks: ComboPick[];
+  };
 };

@@ -30,6 +30,8 @@ import {
   trackByAwb,
 } from './lib/shipmozo';
 import { SEED_PRODUCTS } from './data/seedProducts';
+import { allocate, comboToRow, inPool, rowToCombo } from './lib/combos';
+import type { Combo, PoolProduct } from './lib/combos';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -634,6 +636,9 @@ interface IncomingItem {
   quantity: number;
   selectedMetal?: string;
   selectedSize?: string;
+  /** Present when this line is a combo: the pieces the client chose for it. */
+  comboId?: string;
+  picks?: { productId: string; size?: string }[];
 }
 
 /** Recomputes all money amounts from DB prices so the client can't tamper with totals. */
@@ -659,24 +664,111 @@ function splitTax(totalINR: number) {
 async function priceItems(env: Env, items: IncomingItem[]) {
   if (!Array.isArray(items) || items.length === 0) throw new CartError('Cart is empty');
   const db = getDb(env);
-  const ids = items.map(i => i.productId);
-  const { data: rows, error } = await db.from('products').select('*').in('id', ids);
+
+  const bundles = items.filter(i => i && i.comboId);
+  const singles = items.filter(i => i && !i.comboId);
+
+  // Every piece named anywhere in the bag, whether on its own or inside a combo.
+  const ids = new Set<string>(singles.map(i => String(i.productId)));
+  for (const bundle of bundles) {
+    for (const pick of Array.isArray(bundle.picks) ? bundle.picks : []) {
+      ids.add(String(pick?.productId));
+    }
+  }
+  const { data: rows, error } = await db.from('products').select('*').in('id', [...ids]);
   if (error) throw new Error(error.message);
   const byId = new Map((rows ?? []).map(r => [r.id, rowToProduct(r)]));
 
-  let subtotalINR = 0;
-  let subtotalUSD = 0;
-  const lines = items.map(i => {
-    const product = byId.get(i.productId);
-    if (!product) throw new CartError(`Product not found: ${i.productId}`);
+  const combos = new Map<string, Combo>();
+  if (bundles.length > 0) {
+    const { data: comboRows, error: comboErr } = await db
+      .from('combos')
+      .select('*')
+      .in('id', [...new Set(bundles.map(b => String(b.comboId)))]);
+    if (comboErr) throw new Error(comboErr.message);
+    for (const row of comboRows ?? []) combos.set(row.id, rowToCombo(row));
+  }
+
+  /** How many of each piece the whole bag asks for, singles and combos together. */
+  const demand = new Map<string, number>();
+  const want = (id: string, n: number) => demand.set(id, (demand.get(id) ?? 0) + n);
+
+  const available = (product: ReturnType<typeof rowToProduct> | undefined, id: string) => {
+    if (!product) throw new CartError(`Product not found: ${id}`);
     // A piece can sell out or be archived while it sits in someone's bag.
     if (product.archived) throw new CartError(`No longer available: ${product.name}`);
     if (!product.inStock) throw new CartError(`Out of stock: ${product.name}`);
+    return product;
+  };
+
+  const lines: {
+    product: ReturnType<typeof rowToProduct>;
+    quantity: number;
+    selectedMetal?: string;
+    selectedSize?: string;
+  }[] = [];
+
+  for (const i of singles) {
+    const product = available(byId.get(i.productId), i.productId);
     const quantity = Math.max(1, Math.min(50, Math.floor(Number(i.quantity) || 1)));
-    // A counted piece cannot be sold beyond what is on the shelf. Pieces that
-    // are not counted keep the old behaviour and rely on inStock alone.
+    want(product.id, quantity);
+    lines.push({ product, quantity, selectedMetal: i.selectedMetal, selectedSize: i.selectedSize });
+  }
+
+  for (const bundle of bundles) {
+    const combo = combos.get(String(bundle.comboId));
+    if (!combo || !combo.active) {
+      throw new CartError('A combo in your bag is no longer on offer. Please remove it.');
+    }
+    const picks = Array.isArray(bundle.picks) ? bundle.picks : [];
+    if (picks.length !== combo.pieces) {
+      throw new CartError(`Choose exactly ${combo.pieces} pieces for ${combo.name}`);
+    }
+    const chosen = picks.map(p => available(byId.get(String(p?.productId)), String(p?.productId)));
+    if (new Set(chosen.map(p => p.id)).size !== chosen.length) {
+      throw new CartError(`Each piece in ${combo.name} must be different`);
+    }
+    for (const product of chosen) {
+      if (!inPool(combo, product)) {
+        throw new CartError(`${product.name} is not part of ${combo.name}`);
+      }
+    }
+
+    // The same combo can be bought more than once; each one is its own set of
+    // pieces, priced on its own.
+    const copies = Math.max(1, Math.min(10, Math.floor(Number(bundle.quantity) || 1)));
+    const prices = allocate(combo.priceINR, chosen.map(p => p.priceINR));
+    const weightsUSD = chosen.map(p => p.priceUSD ?? 0);
+    const usdTotal = weightsUSD.reduce((a, b) => a + b, 0);
+    const usdShare = allocate(Math.round(usdTotal), weightsUSD);
+
+    for (let copy = 0; copy < copies; copy++) {
+      chosen.forEach((product, index) => {
+        want(product.id, 1);
+        lines.push({
+          // Recorded at its share of the combo price, and named for the combo,
+          // so the order, the packing slip and the email all say what it was.
+          product: {
+            ...product,
+            name: `${product.name} (${combo.name})`,
+            priceINR: prices[index],
+            priceUSD: usdShare[index],
+          },
+          quantity: 1,
+          selectedSize: picks[index]?.size ? String(picks[index].size) : undefined,
+        });
+      });
+    }
+  }
+
+  // A counted piece cannot be sold beyond what is on the shelf. Pieces that
+  // are not counted keep the old behaviour and rely on inStock alone. Checked
+  // against the whole bag, so a piece on its own and again in a combo cannot
+  // together exceed what exists.
+  for (const [id, asked] of demand) {
+    const product = byId.get(id)!;
     if (product.stockQuantity !== null && product.stockQuantity !== undefined) {
-      if (product.stockQuantity < quantity) {
+      if (product.stockQuantity < asked) {
         throw new CartError(
           product.stockQuantity === 0
             ? `Out of stock: ${product.name}`
@@ -684,10 +776,14 @@ async function priceItems(env: Env, items: IncomingItem[]) {
         );
       }
     }
-    subtotalINR += product.priceINR * quantity;
-    subtotalUSD += (product.priceUSD ?? 0) * quantity;
-    return { product, quantity, selectedMetal: i.selectedMetal, selectedSize: i.selectedSize };
-  });
+  }
+
+  let subtotalINR = 0;
+  let subtotalUSD = 0;
+  for (const line of lines) {
+    subtotalINR += line.product.priceINR * line.quantity;
+    subtotalUSD += (line.product.priceUSD ?? 0) * line.quantity;
+  }
 
   const { taxINR } = splitTax(subtotalINR);
   const taxUSD = subtotalUSD - Math.round(subtotalUSD / (1 + GST_RATE));
@@ -1019,6 +1115,125 @@ app.delete('/api/reviews/:id', requireAuth, async c => {
 
   const { error } = await db.from('reviews').delete().eq('id', review.id);
   if (error) throw new Error(error.message);
+  return c.json({ success: true });
+});
+
+// ---------------------------------------------------------------- combos
+
+/** Every piece that could be part of a combo: on sale, and not archived. */
+async function poolCandidates(
+  db: ReturnType<typeof getDb>,
+  { inStockOnly }: { inStockOnly: boolean }
+): Promise<PoolProduct[]> {
+  let query = db
+    .from('products')
+    .select('id, category, subcategory, price_inr, in_stock, archived')
+    .eq('archived', false);
+  if (inStockOnly) query = query.eq('in_stock', true);
+  const { data, error } = await query.limit(5000);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    category: r.category ?? null,
+    subcategory: r.subcategory ?? null,
+    priceINR: Number(r.price_inr),
+  }));
+}
+
+/**
+ * The combos on offer, each with the pieces the client may choose from.
+ *
+ * Public. A combo with fewer pieces on the shelf than it asks the client to
+ * pick cannot be bought, so it is left out rather than shown and then refused.
+ */
+app.get('/api/combos', async c => {
+  const db = getDb(c.env);
+  const { data, error } = await db
+    .from('combos')
+    .select('*')
+    .eq('active', true)
+    .order('sort', { ascending: true })
+    .order('created_at', { ascending: false });
+  // Until migration 021 has been run there is no table. The shop simply has no
+  // offers yet; it must not be taken down for lack of one.
+  if (error && /combos/i.test(error.message)) return c.json([]);
+  if (error) throw new Error(error.message);
+
+  const pool = await poolCandidates(db, { inStockOnly: true });
+  const combos = (data ?? []).map(rowToCombo).map(combo => ({
+    ...combo,
+    productIds: pool.filter(p => inPool(combo, p)).map(p => p.id),
+  }));
+  return c.json(combos.filter(combo => combo.productIds.length >= combo.pieces));
+});
+
+/** Everything, for the panel — inactive and short-stocked combos included. */
+app.get('/api/combos/admin', requireAdmin, async c => {
+  const db = getDb(c.env);
+  const { data, error } = await db
+    .from('combos')
+    .select('*')
+    .order('sort', { ascending: true })
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+
+  const pool = await poolCandidates(db, { inStockOnly: true });
+  return c.json(
+    (data ?? []).map(rowToCombo).map(combo => {
+      const mine = pool.filter(p => inPool(combo, p));
+      const prices = mine.map(p => p.priceINR).sort((a, b) => a - b);
+      const cheapest = prices.slice(0, combo.pieces).reduce((a, b) => a + b, 0);
+      const dearest = prices.slice(-combo.pieces).reduce((a, b) => a + b, 0);
+      return {
+        ...combo,
+        // What the panel needs to say whether the offer makes sense.
+        available: mine.length,
+        cheapestWorthINR: prices.length >= combo.pieces ? cheapest : null,
+        dearestWorthINR: prices.length >= combo.pieces ? dearest : null,
+      };
+    })
+  );
+});
+
+app.post('/api/combos', requireAdmin, async c => {
+  const body = await c.req.json().catch(() => ({}));
+  const { row, problem } = comboToRow(body, { partial: false });
+  if (problem) return c.json({ error: problem }, 400);
+
+  const { data, error } = await getDb(c.env)
+    .from('combos')
+    .insert({ ...row, id: `cmb-${Date.now()}-${Math.floor(Math.random() * 1000)}` })
+    .select('*')
+    .single();
+  if (error || !data) throw new Error(error?.message ?? 'Could not save the combo');
+  return c.json(rowToCombo(data), 201);
+});
+
+app.put('/api/combos/:id', requireAdmin, async c => {
+  const body = await c.req.json().catch(() => ({}));
+  const { row, problem } = comboToRow(body, { partial: true });
+  if (problem) return c.json({ error: problem }, 400);
+
+  const { data, error } = await getDb(c.env)
+    .from('combos')
+    .update({ ...row, updated_at: new Date().toISOString() })
+    .eq('id', c.req.param('id'))
+    .select('*')
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return c.json({ error: 'Combo not found' }, 404);
+  return c.json(rowToCombo(data));
+});
+
+app.delete('/api/combos/:id', requireAdmin, async c => {
+  const { data, error } = await getDb(c.env)
+    .from('combos')
+    .delete()
+    .eq('id', c.req.param('id'))
+    .select('id')
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return c.json({ error: 'Combo not found' }, 404);
   return c.json({ success: true });
 });
 

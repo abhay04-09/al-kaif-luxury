@@ -19,8 +19,11 @@ export function CartView() {
     setItems(stored ? JSON.parse(stored) : []);
   }, []);
 
-  const { catalogue } = useCatalogue();
-  const summary = useMemo(() => getCartSummary(items, catalogue), [items, catalogue]);
+  const { catalogue, combos } = useCatalogue();
+  const summary = useMemo(
+    () => getCartSummary(items, catalogue, combos),
+    [items, catalogue, combos]
+  );
 
   const persist = (nextItems: CartItem[]) => {
     setItems(nextItems);
@@ -82,14 +85,14 @@ export function CartView() {
           <p className="text-[0.7rem] uppercase tracking-luxury text-gold-light">Shopping Bag</p>
           <h1 className="mt-4 font-serif text-5xl text-porcelain">Selected Pieces</h1>
           <div className="mt-10 divide-y divide-white/10 border-y border-white/10">
-            {summary.lines.map(({ product, quantity, size, lineTotal }) => (
+            {summary.lines.map(({ product, quantity, size, lineTotal, href, bundle }) => (
               <div
                 className="grid gap-5 py-6 sm:grid-cols-[6rem_1fr_auto] sm:items-start"
                 key={`${product.id}-${size ?? ""}`}
               >
                 <Link
                   className="relative block aspect-[4/5] w-24 shrink-0 overflow-hidden border border-white/10 bg-onyx"
-                  href={`/products/${product.slug}`}
+                  href={href}
                 >
                   <Image
                     alt={product.name}
@@ -109,7 +112,18 @@ export function CartView() {
                       Sold out — remove to continue
                     </p>
                   )}
-                  <p className="mt-2 text-sm text-porcelain/60">{product.material}</p>
+                  {bundle ? (
+                    <ul className="mt-2 space-y-0.5 text-sm text-porcelain/60">
+                      {bundle.map((piece, index) => (
+                        <li key={index}>
+                          {piece.name}
+                          {piece.size ? ` · ${piece.size}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2 text-sm text-porcelain/60">{product.material}</p>
+                  )}
                   {size && (
                     <p className="mt-2 text-xs uppercase tracking-luxury text-porcelain/70">
                       Size: <span className="text-gold-light">{size}</span>

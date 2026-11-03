@@ -1,6 +1,7 @@
 import "server-only";
-import { apiGet, type ApiCategory, type ApiProduct } from "@/lib/api";
-import type { Product, ProductCategory } from "@/types/product";
+import { apiGet, type ApiCategory, type ApiCombo, type ApiProduct } from "@/lib/api";
+import { toCombo } from "@/lib/combos";
+import type { Combo, Product, ProductCategory } from "@/types/product";
 
 // Products are managed in the AL-KAIFF admin panel and served by the
 // Cloudflare Worker API. This module is the only place that talks to it.
@@ -140,6 +141,12 @@ export async function getStoreProductById(id: string): Promise<Product | undefin
 /** Top-level categories (with their sub-categories) as configured in the admin panel. */
 export async function getStoreCategories(): Promise<ApiCategory[]> {
   return (await apiGet<ApiCategory[]>("/api/categories")) ?? [];
+}
+
+/** The combo offers the shop has set up, with the pieces each may be chosen from. */
+export async function getStoreCombos(): Promise<Combo[]> {
+  const combos = await apiGet<ApiCombo[]>("/api/combos", 30);
+  return (combos ?? []).map(toCombo);
 }
 
 export type StoreReview = {

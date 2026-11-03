@@ -35,6 +35,18 @@ export type ApiProduct = {
   seoKeywords?: string | null;
 };
 
+/** A combo offer as the backend sends it. */
+export type ApiCombo = {
+  id: string;
+  name: string;
+  description?: string;
+  image?: string | null;
+  pieces: number;
+  priceINR: number;
+  /** The pieces currently on the shelf that the client may choose from. */
+  productIds: string[];
+};
+
 export type ApiCategory = {
   id: string;
   name: string;

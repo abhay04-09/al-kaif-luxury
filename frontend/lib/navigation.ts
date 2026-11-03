@@ -10,5 +10,6 @@ export const primaryNavigation: NavItem[] = [
   { label: "Necklace Sets", href: "/products?category=jewellery&search=necklace" },
   { label: "Earrings", href: "/products?category=jewellery&search=earrings" },
   { label: "Bangles & Kadas", href: "/products?category=jewellery&search=bangle" },
-  { label: "Chokers", href: "/products?category=jewellery&search=choker" }
+  { label: "Chokers", href: "/products?category=jewellery&search=choker" },
+  { label: "Combo Offers", href: "/combos" }
 ];

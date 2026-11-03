@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { API_BASE, type ApiProduct } from "@/lib/api";
-import type { Product } from "@/types/product";
+import { API_BASE, type ApiCombo, type ApiProduct } from "@/lib/api";
+import { toCombo } from "@/lib/combos";
+import type { Combo, Product } from "@/types/product";
 
 function slugify(value: string) {
   return value
@@ -50,28 +51,46 @@ function normalize(product: ApiProduct): Product {
   };
 }
 
-/** Loads the live catalogue in client components (cart, checkout). */
+/**
+ * Loads the live catalogue in client components (cart, checkout).
+ *
+ * `combos` is null until the live offers have arrived, and stays null if they
+ * cannot be reached — a bag holding a combo is then drawn from what was saved
+ * with it, and the server has the final say at checkout either way.
+ */
 export function useCatalogue() {
   const [catalogue, setCatalogue] = useState<Product[]>([]);
+  const [combos, setCombos] = useState<Combo[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
-    fetch(`${API_BASE}/api/products`)
+    const products = fetch(`${API_BASE}/api/products`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data: ApiProduct[]) => {
         if (!cancelled && Array.isArray(data)) setCatalogue(data.map(normalize));
       })
-      .catch(() => undefined)
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
+      .catch(() => undefined);
+
+    // Offers load alongside the catalogue but never hold it up: a shop with no
+    // combos, or a Worker that has not been given the table yet, answers with
+    // an error here and the rest of the bag carries on.
+    const offers = fetch(`${API_BASE}/api/combos`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: ApiCombo[] | null) => {
+        if (!cancelled && Array.isArray(data)) setCombos(data.map(toCombo));
+      })
+      .catch(() => undefined);
+
+    Promise.all([products, offers]).finally(() => {
+      if (!cancelled) setIsLoading(false);
+    });
 
     return () => {
       cancelled = true;
     };
   }, []);
 
-  return { catalogue, isLoading };
+  return { catalogue, combos, isLoading };
 }
