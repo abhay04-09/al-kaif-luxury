@@ -211,8 +211,10 @@ export function ComboBuilder({ combo, pieces }: { combo: Combo; pieces: ComboPie
       </ul>
 
       {/* The tray stays in view while the client browses, so the count, the
-          price and the button never scroll away from the choosing. */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-brand-border bg-brand-surface/95 backdrop-blur-md">
+          price and the button never scroll away from the choosing. It sits
+          above the floating chat button (z-50), which otherwise lands on top
+          of "Add to Bag" and makes it untappable on a phone. */}
+      <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-brand-border bg-brand-surface/95 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-8">
           {chosen.length > 0 ? (
             <ul className="mb-3 flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
