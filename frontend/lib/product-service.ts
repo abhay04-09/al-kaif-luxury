@@ -16,6 +16,8 @@ function toDetails(product: ApiProduct): string[] {
 
   for (const [key, value] of Object.entries(specs)) {
     if (!value) continue;
+    // Measurements are worded as their own rows below, not as "Dimensions notes".
+    if (key === "dimensions") continue;
     const label = key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
 
     if (typeof value === "string" || typeof value === "number") {
@@ -26,6 +28,21 @@ function toDetails(product: ApiProduct): string[] {
           details.push(`${innerKey.replace(/^./, (c) => c.toUpperCase())} notes: ${innerValue}`);
         }
       }
+    }
+  }
+
+  const dimensions = specs.dimensions as
+    | { length?: string; breadth?: string; width?: string; unit?: string }
+    | undefined;
+  if (dimensions && typeof dimensions === "object") {
+    const unit = dimensions.unit === "in" ? "inch" : dimensions.unit || "cm";
+    const rows: [string, string | undefined][] = [
+      ["Length", dimensions.length],
+      ["Breadth", dimensions.breadth],
+      ["Width", dimensions.width]
+    ];
+    for (const [label, value] of rows) {
+      if (value) details.push(`${label}: ${value} ${unit}`);
     }
   }
 

@@ -49,6 +49,13 @@ export interface Product {
     volume?: string; // e.g. 100ml / 3.4 fl. oz
     concentration?: string; // e.g. Pure Extrait de Parfum (30%)
     caseSize?: string; // e.g. 41mm Swiss Automatic
+    /** How big the piece is. Numbers are kept as typed ("2.5"); every part is optional. */
+    dimensions?: {
+      length?: string;
+      breadth?: string;
+      width?: string;
+      unit?: 'cm' | 'mm' | 'in';
+    };
   };
   artisanStory?: string;
   sku: string;

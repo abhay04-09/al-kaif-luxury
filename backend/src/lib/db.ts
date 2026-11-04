@@ -50,6 +50,42 @@ export function rowToProduct(r: any): Product {
   };
 }
 
+const DIMENSION_UNITS = ['cm', 'mm', 'in'];
+
+/**
+ * Keeps the measurements honest.
+ *
+ * Each of length, breadth and width is stored only if it is a positive number,
+ * and a piece with none of them simply has no dimensions. Everything else in
+ * the specifications is passed through untouched.
+ */
+function cleanSpecifications(specs: Product['specifications']): Product['specifications'] {
+  const out: Record<string, unknown> = { ...(specs ?? {}) };
+  const raw = out.dimensions as Record<string, unknown> | undefined;
+
+  if (raw && typeof raw === 'object') {
+    const kept: Record<string, string> = {};
+    for (const key of ['length', 'breadth', 'width']) {
+      const text = String(raw[key] ?? '').trim();
+      const n = Number(text);
+      if (text !== '' && Number.isFinite(n) && n > 0 && n < 100000) {
+        kept[key] = String(Math.round(n * 100) / 100);
+      }
+    }
+    if (Object.keys(kept).length > 0) {
+      out.dimensions = {
+        ...kept,
+        unit: DIMENSION_UNITS.includes(String(raw.unit)) ? raw.unit : 'cm',
+      };
+    } else {
+      delete out.dimensions;
+    }
+  } else {
+    delete out.dimensions;
+  }
+  return out as Product['specifications'];
+}
+
 export function productToRow(p: Partial<Product>): Record<string, unknown> {
   const row: Record<string, unknown> = {};
   if (p.id !== undefined) row.id = p.id;
@@ -89,7 +125,7 @@ export function productToRow(p: Partial<Product>): Record<string, unknown> {
   if (p.lowStockThreshold !== undefined) {
     row.low_stock_threshold = Math.max(0, Math.floor(Number(p.lowStockThreshold) || 0));
   }
-  if (p.specifications !== undefined) row.specifications = p.specifications;
+  if (p.specifications !== undefined) row.specifications = cleanSpecifications(p.specifications);
   if (p.artisanStory !== undefined) row.artisan_story = p.artisanStory;
   if (p.sku !== undefined) row.sku = p.sku;
   if (p.sizes !== undefined) row.sizes = p.sizes;

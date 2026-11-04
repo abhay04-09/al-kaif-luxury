@@ -427,6 +427,16 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
     }
   };
 
+  /** Changes one of length, breadth, width or the unit, keeping the rest of the specifications. */
+  const setDimension = (patch: Record<string, string>) =>
+    setForm(f => ({
+      ...f,
+      specifications: {
+        ...(f.specifications ?? {}),
+        dimensions: { ...(f.specifications?.dimensions ?? {}), ...patch },
+      },
+    }));
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     // A new colour starts without a photograph on purpose — the old colour's
@@ -1266,6 +1276,43 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                 <p className="mt-1.5 text-[10px] text-[#6B7280]">
                   Customers pick one of these on the product page, and their choice appears on the order.
                   Leave empty if the piece has no sizes.
+                </p>
+              </div>
+
+              {/* Measurements */}
+              <div>
+                <label className="text-[#996515] block mb-1">DIMENSIONS (OPTIONAL)</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {(['length', 'breadth', 'width'] as const).map(key => (
+                    <div key={key}>
+                      <span className="block mb-1 text-[10px] uppercase tracking-wider text-[#6B7280]">{key}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={form.specifications?.dimensions?.[key] ?? ''}
+                        onChange={e => setDimension({ [key]: e.target.value })}
+                        placeholder="e.g. 2.5"
+                        className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs focus:border-[#B8860B] focus:outline-none"
+                      />
+                    </div>
+                  ))}
+                  <div>
+                    <span className="block mb-1 text-[10px] uppercase tracking-wider text-[#6B7280]">Unit</span>
+                    <select
+                      value={form.specifications?.dimensions?.unit ?? 'cm'}
+                      onChange={e => setDimension({ unit: e.target.value as 'cm' | 'mm' | 'in' })}
+                      className="w-full bg-[#FBF9F5] border border-[#EAE5D9] p-2.5 rounded-xs text-[#18181B]"
+                    >
+                      <option value="cm">cm</option>
+                      <option value="mm">mm</option>
+                      <option value="in">inch</option>
+                    </select>
+                  </div>
+                </div>
+                <p className="mt-1.5 text-[10px] text-[#6B7280]">
+                  Shown under Specifications on the product page. Fill in only the ones that apply; leave all
+                  blank for a piece with no measurements.
                 </p>
               </div>
 
