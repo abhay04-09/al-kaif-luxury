@@ -164,6 +164,21 @@ function SkeletonRow() {
 }
 
 /** Renders the live catalogue, or the archive when `archived` is set. */
+/**
+ * The name for another colour of a piece.
+ *
+ * Shop names usually carry the colour in them ("GOLDEN PINK CRYSTAL BOW STUD"),
+ * so the old colour's word is swapped for the new one, keeping the capitals the
+ * shop uses. When the name does not mention its colour the new one is added on
+ * the end — and the form is open, so the shop can still edit it.
+ */
+const nameForColour = (name: string, from: string, to: string): string => {
+  const escaped = from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const word = name === name.toUpperCase() ? to.toUpperCase() : to;
+  const found = new RegExp(`\\b${escaped}\\b`, 'i');
+  return found.test(name) ? name.replace(found, word) : `${name} - ${word}`;
+};
+
 export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = false }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -189,6 +204,11 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
   const [seoOpen, setSeoOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [sizeInput, setSizeInput] = useState('');
+  // "Add another colour": the name being typed, and the piece a new colour
+  // is being made from, so the form can say what it is.
+  const [addColourName, setAddColourName] = useState('');
+  const [addingColour, setAddingColour] = useState(false);
+  const [colourOf, setColourOf] = useState<Product | null>(null);
 
   // Offered as suggestions so a group is joined by picking it, not by typing it
   // again and hoping it matches. A group spelled two ways is two groups.
@@ -314,19 +334,107 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
   // ── actions ──
   const openAdd = () => {
     setEditing(null);
+    setColourOf(null);
+    setAddColourName('');
     setForm({ ...EMPTY_FORM, category: categories[0]?.id ?? 'jewellery' });
     setIsModalOpen(true);
   };
 
   const openEdit = (p: Product) => {
     setEditing(p);
+    setColourOf(null);
+    setAddColourName('');
     setForm({ ...p, secondaryImages: p.secondaryImages ?? [] });
     setIsModalOpen(true);
     setMenuFor(null);
   };
 
+  // The other colours of the piece being edited, found by their shared group.
+  const siblings = useMemo(() => {
+    const key = (form.colourGroup ?? '').trim().toLowerCase();
+    if (!key || !editing) return [];
+    return products.filter(x => (x.colourGroup ?? '').trim().toLowerCase() === key);
+  }, [products, form.colourGroup, editing]);
+
+  const jumpTo = (other: Product) => {
+    const unchanged =
+      editing &&
+      JSON.stringify({ ...editing, secondaryImages: editing.secondaryImages ?? [] }) === JSON.stringify(form);
+    if (!unchanged && !window.confirm('You have unsaved changes to this piece. Leave without saving them?')) return;
+    openEdit(other);
+  };
+
+  /**
+   * Makes another colour of this piece.
+   *
+   * The piece is saved first, with a group name made for it if it has none, so
+   * the shop never has to invent or retype one. Then the form opens on a new,
+   * unsaved piece that is a copy — same price, description and sizes, but no
+   * photographs and no stock, since those belong to the new colour. Nothing is
+   * created until that form is saved, so backing out leaves nothing behind.
+   */
+  const addColour = async () => {
+    if (!editing) return;
+    const mine = (form.colourName ?? '').trim();
+    const colour = addColourName.trim();
+    if (!mine) {
+      toast.error('First give this piece its own colour name, in the COLOUR box above.');
+      return;
+    }
+    if (!colour) {
+      toast.error('Type the name of the new colour, for example Red.');
+      return;
+    }
+    const taken = [mine, ...siblings.map(x => (x.colourName ?? '').trim())].map(n => n.toLowerCase());
+    if (taken.includes(colour.toLowerCase())) {
+      toast.error(`${colour} is already one of this design's colours.`);
+      return;
+    }
+
+    setAddingColour(true);
+    try {
+      const slug = String(form.name ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+      const group = (form.colourGroup ?? '').trim() || `${slug || 'design'}-${editing.id.slice(-5)}`;
+      const saved = { ...form, colourName: mine, colourGroup: group };
+      await apiJson(`/api/products/${editing.id}`, { method: 'PUT', body: JSON.stringify(saved) });
+      await refresh();
+
+      const copy: Partial<Product> = {
+        ...saved,
+        name: nameForColour(String(form.name ?? ''), mine, colour),
+        sku: '',
+        colourName: colour,
+        colourHex: '',
+        image: '',
+        secondaryImages: [],
+        stockQuantity: null,
+        inStock: true,
+        featured: false,
+      };
+      for (const key of ['id', 'createdAt', 'archived', 'archivedAt', 'priceTier'] as const) {
+        delete (copy as any)[key];
+      }
+
+      setColourOf(editing);
+      setEditing(null);
+      setForm(copy);
+      setAddColourName('');
+      toast.success(`Now add the ${colour} photographs and stock, then press Save.`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not add the colour');
+    } finally {
+      setAddingColour(false);
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    // A new colour starts without a photograph on purpose — the old colour's
+    // would be the wrong one — so it may not be saved until it has its own.
+    if (!editing && colourOf && !form.image) {
+      toast.error(`Add a photograph of the ${form.colourName || 'new'} colour first, or the website would show a blank picture.`);
+      return;
+    }
     setIsSaving(true);
     try {
       if (editing) {
@@ -337,6 +445,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
         toast.success('Product created');
       }
       await refresh();
+      setColourOf(null);
       setIsModalOpen(false);
     } catch (err: any) {
       toast.error(err?.message || 'Could not save the product');
@@ -1022,10 +1131,95 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
                     {colourGroups.map(g => <option key={g} value={g} />)}
                   </datalist>
                   <p className="mt-1.5 text-[10px] text-[#6B7280]">
-                    Put the same word on every colour of one design and the product page offers the
-                    others. Pick from the list to join a group you have already made.
+                    Made for you when you use "Add another colour" below. Only type here to join
+                    pieces together by hand.
                   </p>
                 </div>
+              </div>
+
+              {/* Every colour of this design, and the way to add another */}
+              <div className="border border-[#EAE5D9] rounded-xs p-4 bg-[#FBF9F5] space-y-3">
+                <p className="text-[#996515]">COLOURS OF THIS DESIGN</p>
+
+                {colourOf && !editing ? (
+                  <p className="text-[11px] text-[#18181B] bg-[#B8860B]/10 border border-[#B8860B]/40 rounded-xs p-3">
+                    This is a new colour of <strong>{colourOf.name}</strong>. The price, description and sizes
+                    are copied over. Add its own photographs and stock, check the name, then press Save.
+                  </p>
+                ) : null}
+
+                {editing ? (
+                  <>
+                    {siblings.length > 1 ? (
+                      <ul className="divide-y divide-[#EAE5D9] border border-[#EAE5D9] rounded-xs bg-white">
+                        {siblings.map(x => (
+                          <li key={x.id} className="flex items-center gap-3 p-2.5">
+                            <span
+                              className="w-5 h-5 rounded-full border border-[#EAE5D9] shrink-0"
+                              style={{ background: x.colourHex || '#B9B2A4' }}
+                            />
+                            <span className="flex-1 min-w-0 truncate">
+                              {x.colourName || '(no colour name)'}
+                              <span className="text-[#6B7280]"> · ₹{Math.round(x.priceINR).toLocaleString('en-IN')}</span>
+                              {!x.inStock || x.stockQuantity === 0 ? (
+                                <span className="text-red-700"> · sold out</span>
+                              ) : null}
+                            </span>
+                            {x.id === editing.id ? (
+                              <span className="text-[10px] uppercase tracking-wider text-[#996515]">This one</span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => jumpTo(x)}
+                                className="text-[10px] uppercase tracking-wider text-[#996515] hover:text-[#18181B] underline"
+                              >
+                                Edit
+                              </button>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-[11px] text-[#6B7280]">
+                        Only one colour so far. Add the others below and the product page will offer them as
+                        round colour dots.
+                      </p>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="text"
+                        list="colour-names"
+                        value={addColourName}
+                        onChange={e => setAddColourName(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addColour();
+                          }
+                        }}
+                        placeholder="New colour, e.g. Red"
+                        className="flex-1 min-w-[10rem] bg-white border border-[#EAE5D9] p-2.5 rounded-xs focus:border-[#B8860B] focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={addColour}
+                        disabled={addingColour}
+                        className="px-4 py-2.5 bg-[#B8860B] text-black font-semibold rounded-xs uppercase tracking-wider disabled:opacity-50"
+                      >
+                        {addingColour ? 'Adding…' : '+ Add another colour'}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-[#6B7280]">
+                      Saves this piece, then opens the new colour with the price, description and sizes already
+                      filled in — you only add its photographs and stock.
+                    </p>
+                  </>
+                ) : !colourOf ? (
+                  <p className="text-[11px] text-[#6B7280]">
+                    Save this piece first. After that you can add its other colours from here.
+                  </p>
+                ) : null}
               </div>
 
               {/* Sizes */}
