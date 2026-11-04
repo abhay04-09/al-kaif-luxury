@@ -3,22 +3,15 @@
 import { useEffect, useState } from "react";
 import { API_BASE, type ApiCombo, type ApiProduct } from "@/lib/api";
 import { toCombo } from "@/lib/combos";
+import { slugify, slugsById } from "@/lib/slug";
 import type { Combo, Product } from "@/types/product";
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function normalize(product: ApiProduct): Product {
+function normalize(product: ApiProduct, slug?: string): Product {
   const specs = (product.specifications ?? {}) as Record<string, unknown>;
 
   return {
     id: product.id,
-    slug: slugify(product.name) || product.id,
+    slug: slug ?? (slugify(product.name) || product.id),
     name: product.name,
     category: product.category,
     collection: product.subtitle || product.category,
@@ -70,7 +63,9 @@ export function useCatalogue() {
     const products = fetch(`${API_BASE}/api/products`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data: ApiProduct[]) => {
-        if (!cancelled && Array.isArray(data)) setCatalogue(data.map(normalize));
+        if (cancelled || !Array.isArray(data)) return;
+        const slugs = slugsById(data);
+        setCatalogue(data.map((product) => normalize(product, slugs.get(product.id))));
       })
       .catch(() => undefined);
 

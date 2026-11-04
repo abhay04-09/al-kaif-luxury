@@ -1,18 +1,13 @@
 import "server-only";
 import { apiGet, type ApiCategory, type ApiCombo, type ApiProduct } from "@/lib/api";
 import { toCombo } from "@/lib/combos";
+import { slugify, slugsById } from "@/lib/slug";
 import type { Combo, Product, ProductCategory } from "@/types/product";
 
 // Products are managed in the AL-KAIFF admin panel and served by the
 // Cloudflare Worker API. This module is the only place that talks to it.
 
-export function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+export { slugify };
 
 /** Turns the specifications object into the bullet list the product page renders. */
 function toDetails(product: ApiProduct): string[] {
@@ -40,14 +35,14 @@ function toDetails(product: ApiProduct): string[] {
   return details;
 }
 
-function normalize(product: ApiProduct): Product {
+function normalize(product: ApiProduct, slug?: string): Product {
   const specs = (product.specifications ?? {}) as Record<string, unknown>;
 
   return {
     id: product.id,
-    // The backend has no slug column, so derive a stable one from the name and
-    // fall back to the id when a name produces nothing usable.
-    slug: slugify(product.name) || product.id,
+    // The backend has no slug column, so one is derived from the name (and the
+    // id, where two pieces share a name) — see slugsById.
+    slug: slug ?? (slugify(product.name) || product.id),
     name: product.name,
     category: product.category,
     collection: product.subtitle || product.category,
@@ -94,7 +89,14 @@ async function fetchProducts(
 
   const products = await apiGet<ApiProduct[]>(`/api/products${query ? `?${query}` : ""}`);
   if (!products) return [];
-  return products.map(normalize);
+
+  // A filtered list cannot tell whether a piece shares its name with one that
+  // was filtered out, so addresses are always worked out from the whole shop.
+  // The request is the one every unfiltered page makes, so it is served from
+  // the cache.
+  const whole = query ? ((await apiGet<ApiProduct[]>("/api/products")) ?? products) : products;
+  const slugs = slugsById(whole);
+  return products.map((product) => normalize(product, slugs.get(product.id)));
 }
 
 export async function getStoreProducts(
