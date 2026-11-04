@@ -206,3 +206,16 @@ select {
     scroll-behavior: auto !important;
   }
 }
+
+/* The home page's product boxes scroll without a visible scrollbar; the
+   fading edge and the arrow below them show that there is more. */
+.scroll-box {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scroll-box::-webkit-scrollbar {
+  display: none;
+}
+.scroll-box > div > * {
+  scroll-snap-align: start;
+}

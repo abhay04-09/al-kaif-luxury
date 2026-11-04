@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -37,7 +37,6 @@ const collectionsList = [
 export function CollectionsSection() {
   const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   function prevSlide() {
     setActiveIndex((prev) => (prev - 1 + collectionsList.length) % collectionsList.length);
@@ -47,11 +46,6 @@ export function CollectionsSection() {
     setActiveIndex((prev) => (prev + 1) % collectionsList.length);
   }
 
-  function scrollByAmount(direction: 1 | -1) {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollBy({ left: direction * el.clientWidth * 0.8, behavior: "smooth" });
-  }
 
   return (
     <section id="collections" className="w-full bg-obsidian py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
@@ -199,35 +193,23 @@ export function CollectionsSection() {
         </div>
         </div>
 
-        {/* Desktop: Continuous Horizontal Scrolling Row (no more single centered card with empty gutters) */}
-        <div className="relative hidden lg:block my-8">
-          <button
-            onClick={() => scrollByAmount(-1)}
-            aria-label="Scroll collections left"
-            className="absolute left-0 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md transition hover:bg-gold-light hover:text-black shadow-2xl"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-
-          <div
-            ref={scrollRef}
-            className="flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth px-14 pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
+        {/* Desktop: all four collections in one row, nothing to scroll */}
+        <div className="hidden lg:block my-8">
+          <div className="grid grid-cols-4 gap-6">
             {collectionsList.map((item) => (
               // The whole card is the link, so a click or a tap anywhere on the
-              // photograph opens the collection. A drag to scroll the row is
-              // not a click and does not open it.
+              // photograph opens the collection.
               <Link
                 key={item.id}
                 href={item.link}
                 aria-label={`Shop ${item.title}`}
-                className="group relative block h-[440px] w-[300px] shrink-0 snap-start overflow-hidden rounded-[24px] border border-white/20 bg-black shadow-2xl transition-transform duration-200 active:scale-[0.98] xl:w-[320px]"
+                className="group relative block h-[440px] overflow-hidden rounded-[24px] border border-white/20 bg-black shadow-2xl transition-transform duration-200 active:scale-[0.98]"
               >
                 <Image
                   src={item.image}
                   alt=""
                   fill
-                  sizes="320px"
+                  sizes="25vw"
                   className="object-cover transition duration-500 group-hover:scale-105"
                 />
 
@@ -246,14 +228,6 @@ export function CollectionsSection() {
               </Link>
             ))}
           </div>
-
-          <button
-            onClick={() => scrollByAmount(1)}
-            aria-label="Scroll collections right"
-            className="absolute right-0 top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-md transition hover:bg-gold-light hover:text-black shadow-2xl"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
         </div>
       </div>
     </section>
