@@ -43,7 +43,10 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         const details = (p.details || []).join(" ").toLowerCase();
         const cat = (p.category || "").toLowerCase();
 
-        if (keyword === "ring") return name.includes("ring") || desc.includes("ring");
+        // "ring" is also inside "earring", so a plain substring match listed
+        // 436 earrings, mangalsutras and chains as rings. A ring is a piece
+        // filed under Rings, or one that names itself a ring as a whole word.
+        if (keyword === "ring") return p.subcategory === "rings" || /\brings?\b/.test(name);
         if (keyword === "bangle") return name.includes("bangle") || name.includes("kada") || name.includes("bracelet") || desc.includes("bangle");
         if (keyword === "jhumka" || keyword === "earring" || keyword === "earrings") return name.includes("jhumka") || name.includes("earring") || name.includes("chandbali") || desc.includes("earring");
         if (keyword === "necklace") return name.includes("necklace") || name.includes("set") || name.includes("choker") || desc.includes("necklace");
