@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { Shield, LayoutDashboard, Package, ShoppingBag, Mail, LogOut, Loader2, FolderTree, Archive, Users, SlidersHorizontal, Star, Layers } from 'lucide-react';
+import { Shield, LayoutDashboard, Package, ShoppingBag, Mail, LogOut, Loader2, FolderTree, Archive, Users, SlidersHorizontal, Star, Layers, IndianRupee } from 'lucide-react';
 import { apiJson, getToken, setToken, SESSION_EXPIRED_EVENT } from './api';
 import { User } from './types';
 import { LoginPage } from './pages/Login';
@@ -13,14 +13,16 @@ import { CustomersPage } from './pages/Customers';
 import { SettingsPage } from './pages/Settings';
 import { ReviewsPage } from './pages/Reviews';
 import { CombosPage } from './pages/Combos';
+import { PricingPage } from './pages/Pricing';
 
-type Tab = 'dashboard' | 'products' | 'archived' | 'categories' | 'orders' | 'combos' | 'customers' | 'reviews' | 'subscribers' | 'settings';
+type Tab = 'dashboard' | 'products' | 'archived' | 'categories' | 'orders' | 'pricing' | 'combos' | 'customers' | 'reviews' | 'subscribers' | 'settings';
 
 const NAV: { id: Tab; label: string; icon: React.FC<any> }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'products', label: 'Products', icon: Package },
   { id: 'archived', label: 'Archived', icon: Archive },
   { id: 'categories', label: 'Categories', icon: FolderTree },
+  { id: 'pricing', label: 'Bulk Pricing', icon: IndianRupee },
   { id: 'combos', label: 'Combo Offers', icon: Layers },
   { id: 'orders', label: 'Orders', icon: ShoppingBag },
   { id: 'customers', label: 'Customers', icon: Users },
@@ -148,6 +150,7 @@ export const App: React.FC = () => {
         {tab === 'products' && <ProductsPage key="live" />}
         {tab === 'archived' && <ProductsPage key="archived" archived />}
         {tab === 'categories' && <CategoriesPage />}
+        {tab === 'pricing' && <PricingPage />}
         {tab === 'combos' && <CombosPage />}
         {tab === 'orders' && <OrdersPage />}
         {tab === 'customers' && <CustomersPage />}

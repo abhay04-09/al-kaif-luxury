@@ -505,6 +505,87 @@ async function assertMrpAbovePrice(
   }
 }
 
+/**
+ * Changes the selling price and MRP of many products at once.
+ *
+ * The panel works out the new figures; this checks every one of them again,
+ * because a bulk change is the easiest way to price a whole shelf wrongly. A
+ * product that fails is reported and left as it was — it does not stop the
+ * rest — and the old figures come back so the change can be undone.
+ */
+app.post('/api/pricing/bulk', requireAdmin, async c => {
+  const body = await c.req
+    .json<{ changes?: { id?: unknown; priceINR?: unknown; mrpINR?: unknown }[] }>()
+    .catch(() => ({} as { changes?: { id?: unknown; priceINR?: unknown; mrpINR?: unknown }[] }));
+  const changes = Array.isArray(body.changes) ? body.changes : [];
+  if (changes.length === 0) throw new CartError('There are no price changes to save');
+  if (changes.length > 1000) throw new CartError('Change at most 1,000 products at a time');
+
+  const clean: { id: string; price: number; mrp: number | null }[] = [];
+  const seen = new Set<string>();
+  for (const change of changes) {
+    const id = String(change?.id ?? '');
+    const price = Math.round(Number(change?.priceINR));
+    const mrpRaw = change?.mrpINR;
+    const mrp = mrpRaw === null || mrpRaw === undefined || mrpRaw === '' ? null : Math.round(Number(mrpRaw));
+
+    if (!id || seen.has(id)) throw new CartError('A product appears twice, or has no id');
+    if (!Number.isFinite(price) || price < 1 || price > 1_000_000) {
+      throw new CartError(`${id}: the selling price must be between ₹1 and ₹10,00,000`);
+    }
+    if (mrp !== null && (!Number.isFinite(mrp) || mrp <= price)) {
+      throw new CartError(
+        `${id}: the MRP must be higher than the selling price (₹${price}) — leave it blank for no discount`
+      );
+    }
+    seen.add(id);
+    clean.push({ id, price, mrp });
+  }
+
+  const db = getDb(c.env);
+  const { data: existing, error } = await db
+    .from('products')
+    .select('id, price_inr, mrp_inr')
+    .in('id', clean.map(x => x.id));
+  if (error) throw new Error(error.message);
+  const before = new Map((existing ?? []).map((r: any) => [r.id, r]));
+
+  const failed: { id: string; error: string }[] = [];
+  const undo: { id: string; priceINR: number; mrpINR: number | null }[] = [];
+  let updated = 0;
+
+  const todo = clean.filter(x => {
+    if (before.has(x.id)) return true;
+    failed.push({ id: x.id, error: 'Product not found' });
+    return false;
+  });
+
+  // In small groups, so a long list does not open a hundred connections at once.
+  for (let i = 0; i < todo.length; i += 20) {
+    await Promise.all(
+      todo.slice(i, i + 20).map(async x => {
+        const { error: err } = await db
+          .from('products')
+          .update({ price_inr: x.price, mrp_inr: x.mrp })
+          .eq('id', x.id);
+        if (err) {
+          failed.push({ id: x.id, error: err.message });
+          return;
+        }
+        const old: any = before.get(x.id);
+        undo.push({
+          id: x.id,
+          priceINR: Number(old.price_inr),
+          mrpINR: old.mrp_inr === null || old.mrp_inr === undefined ? null : Number(old.mrp_inr),
+        });
+        updated++;
+      })
+    );
+  }
+
+  return c.json({ updated, failed, undo });
+});
+
 app.post('/api/products', requireAdmin, async c => {
   const body = await c.req.json();
   const db = getDb(c.env);
