@@ -32,13 +32,13 @@ function toDetails(product: ApiProduct): string[] {
   }
 
   const dimensions = specs.dimensions as
-    | { length?: string; breadth?: string; width?: string; unit?: string }
+    | { length?: string; height?: string; width?: string; unit?: string }
     | undefined;
   if (dimensions && typeof dimensions === "object") {
     const unit = dimensions.unit === "in" ? "inch" : dimensions.unit || "cm";
     const rows: [string, string | undefined][] = [
       ["Length", dimensions.length],
-      ["Breadth", dimensions.breadth],
+      ["Height", dimensions.height],
       ["Width", dimensions.width]
     ];
     for (const [label, value] of rows) {

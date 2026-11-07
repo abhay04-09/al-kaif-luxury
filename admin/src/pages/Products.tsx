@@ -427,7 +427,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
     }
   };
 
-  /** Changes one of length, breadth, width or the unit, keeping the rest of the specifications. */
+  /** Changes one of length, height, width or the unit, keeping the rest of the specifications. */
   const setDimension = (patch: Record<string, string>) =>
     setForm(f => ({
       ...f,
@@ -1283,7 +1283,7 @@ export const ProductsPage: React.FC<{ archived?: boolean }> = ({ archived = fals
               <div>
                 <label className="text-[#996515] block mb-1">DIMENSIONS (OPTIONAL)</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {(['length', 'breadth', 'width'] as const).map(key => (
+                  {(['length', 'height', 'width'] as const).map(key => (
                     <div key={key}>
                       <span className="block mb-1 text-[10px] uppercase tracking-wider text-[#6B7280]">{key}</span>
                       <input

@@ -52,7 +52,7 @@ export interface Product {
     /** How big the piece is. Numbers are kept as typed ("2.5"); every part is optional. */
     dimensions?: {
       length?: string;
-      breadth?: string;
+      height?: string;
       width?: string;
       unit?: 'cm' | 'mm' | 'in';
     };

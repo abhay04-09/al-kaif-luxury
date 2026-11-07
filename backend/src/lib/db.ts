@@ -55,7 +55,7 @@ const DIMENSION_UNITS = ['cm', 'mm', 'in'];
 /**
  * Keeps the measurements honest.
  *
- * Each of length, breadth and width is stored only if it is a positive number,
+ * Each of length, height and width is stored only if it is a positive number,
  * and a piece with none of them simply has no dimensions. Everything else in
  * the specifications is passed through untouched.
  */
@@ -65,7 +65,7 @@ function cleanSpecifications(specs: Product['specifications']): Product['specifi
 
   if (raw && typeof raw === 'object') {
     const kept: Record<string, string> = {};
-    for (const key of ['length', 'breadth', 'width']) {
+    for (const key of ['length', 'height', 'width']) {
       const text = String(raw[key] ?? '').trim();
       const n = Number(text);
       if (text !== '' && Number.isFinite(n) && n > 0 && n < 100000) {
